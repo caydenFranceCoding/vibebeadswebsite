@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candles - Vibe Beads</title>
+    <link rel="stylesheet" href="../../src/main/styles/home.css">
+    <link rel="stylesheet" href="/public/pages/css/candles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="../../public/index.html" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="../../public/index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="shop.html">Shop All</a></li>
+                        <li><a href="candles.html" class="active">Candles</a></li>
+                        <li><a href="diffusers.html">Diffusers</a></li>
+                        <li><a href="wax-melts.html">Wax Melts</a></li>
+                        <li><a href="jewelry.html">Jewelry</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="../../src/checkout/checkout.html" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Summer Collection SALE - 30% Off All Candles</strong>
+        </div>
+    </div>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+        <div class="container">
+            <h1 class="page-title fade-in">Premium Candles</h1>
+            <p class="page-subtitle fade-in">Hand-poured with love, crafted with premium soy wax and natural fragrances</p>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-category="all">All Candles</button>
+                <button class="filter-btn" data-category="signature">Signature Collection</button>
+                <button class="filter-btn" data-category="seasonal">Seasonal</button>
+                <button class="filter-btn" data-category="custom">Pick Your Scent</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="shop-section">
+        <div class="container">
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-product-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-product-title"></h2>
+                    <p class="modal-price" id="modal-product-price"></p>
+                    <div class="modal-description" id="modal-product-description"></div>
+
+                    <div class="product-options">
+                        <div class="size-options">
+                            <h4>Size:</h4>
+                            <div class="size-buttons">
+                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Candle - $45</button>
+                                <button class="size-btn" data-size="16oz" data-price="20">16oz Candle - $65</button>
+                            </div>
+                        </div>
+
+                        <div class="quantity-section">
+                            <label for="quantity">Quantity:</label>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" id="quantity" value="1" min="1" max="10">
+                                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart-btn" onclick="addToCart()">
+                        Add to Cart - $<span id="total-price">45.00</span>
+                    </button>
+
+                    <div class="product-details">
+                        <h4>Details:</h4>
+                        <ul>
+                            <li>Hand-poured premium soy wax</li>
+                            <li>Cotton wick for clean burning</li>
+                            <li>Phthalate-free fragrances</li>
+                            <li>45-90 hour burn time</li>
+                            <li>Reusable glass container</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Scent Modal -->
+    <div id="custom-scent-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <h2>Pick Your Scent</h2>
+                <p class="custom-description">Create your perfect candle by choosing from our collection of premium fragrances</p>
+
+                <div class="scent-categories">
+                    <div class="scent-category">
+                        <h3>Fresh & Fruity</h3>
+                        <div class="scent-options">
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Apple Ginger Spritz" data-price="45">
+                                <span>Apple Ginger Spritz</span>
+                            </label>
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Pink Watermelon Lemon" data-price="40">
+                                <span>Pink Watermelon Lemon</span>
+                            </label>
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Mango Papaya" data-price="38">
+                                <span>Mango Papaya</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="scent-category">
+                        <h3>Exotic & Bold</h3>
+                        <div class="scent-options">
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Blackberry Margarita" data-price="42">
+                                <span>Blackberry Margarita</span>
+                            </label>
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Sweet Jamaica" data-price="46">
+                                <span>Sweet Jamaica</span>
+                            </label>
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Egyptian Amber" data-price="50">
+                                <span>Egyptian Amber</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="scent-category">
+                        <h3>Ocean & Earth</h3>
+                        <div class="scent-options">
+                            <label class="scent-option">
+                                <input type="radio" name="scent" value="Black Coral Moss" data-price="48">
+                                <span>Black Coral Moss</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="custom-options">
+                    <div class="size-options">
+                        <h4>Size:</h4>
+                        <div class="size-buttons">
+                            <button class="size-btn active" data-size="8oz" data-extra="0">8oz Candle</button>
+                            <button class="size-btn" data-size="16oz" data-extra="20">16oz Candle (+$20)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-to-cart-btn" onclick="addCustomToCart()" disabled>
+                    Add Custom Candle to Cart - $<span id="custom-total-price">45.00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../../src/main/script/homepage.js"></script>
+    <script src="javascript/candles.js"></script>
+</body>
+</html>
