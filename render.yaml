@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: vibebeads-website
+    env: static
+    buildCommand: ""
+    staticPublishPath: ./public
+    headers:
+      - path: "**/*.css"
+        name: Content-Type
+        value: text/css
+      - path: "**/*.js"
+        name: Content-Type
+        value: application/javascript
+      - path: "**/*.html"
+        name: Content-Type
+        value: text/html; charset=utf-8
+      - path: "**/*.json"
+        name: Content-Type
+        value: application/json
+      - path: "**/*.png"
+        name: Content-Type
+        value: image/png
+      - path: "**/*.jpg"
+        name: Content-Type
+        value: image/jpeg
+      - path: "**/*.jpeg"
+        name: Content-Type
+        value: image/jpeg
+      - path: "**/*.gif"
+        name: Content-Type
+        value: image/gif
+      - path: "**/*.svg"
+        name: Content-Type
+        value: image/svg+xml
+      - path: "**/*.mp4"
+        name: Content-Type
+        value: video/mp4
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: /index.html
