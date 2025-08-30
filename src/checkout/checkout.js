@@ -1,32 +1,63 @@
-// Cart Items Data
-let cartItems = [
-    {
-        id: 1,
-        name: 'Vanilla Bean Candle',
-        price: 45.00,
-        quantity: 1,
-        image: './images/vanilla bean.jpg'
-    },
-    {
-        id: 2,
-        name: 'Sweet Tobacco Candle',
-        price: 38.00,
-        quantity: 1,
-        image: './images/sweet tobacco.jpg'
-    }
-];
+// Updated Checkout JavaScript with Cart Integration
+// File: src/checkout/checkout.js
 
 // State
 let isProcessing = false;
 let squareConfig = null;
+let cartItems = [];
 
 // Initialize checkout page
 document.addEventListener('DOMContentLoaded', function() {
     loadSquareConfig();
+    loadCartItems();
     renderCartItems();
     updateTotals();
     setupEventListeners();
 });
+
+// Load cart items from localStorage
+function loadCartItems() {
+    try {
+        const savedCart = localStorage.getItem('vibeBeadsCart');
+        cartItems = savedCart ? JSON.parse(savedCart) : [];
+
+        // Add demo items if cart is empty (for testing)
+        if (cartItems.length === 0) {
+            cartItems = [
+                {
+                    id: 'demo-1',
+                    name: 'Vanilla Bean Candle (8oz)',
+                    price: 45.00,
+                    quantity: 1,
+                    size: '8oz',
+                    image: '🕯️',
+                    isCustom: false
+                },
+                {
+                    id: 'demo-2',
+                    name: 'Sweet Tobacco Candle (8oz)',
+                    price: 38.00,
+                    quantity: 1,
+                    size: '8oz',
+                    image: '🌿',
+                    isCustom: false
+                }
+            ];
+        }
+    } catch (error) {
+        console.error('Error loading cart items:', error);
+        cartItems = [];
+    }
+}
+
+// Save cart items to localStorage
+function saveCartItems() {
+    try {
+        localStorage.setItem('vibeBeadsCart', JSON.stringify(cartItems));
+    } catch (error) {
+        console.error('Error saving cart items:', error);
+    }
+}
 
 // Load Square configuration
 async function loadSquareConfig() {
@@ -34,7 +65,7 @@ async function loadSquareConfig() {
         const response = await fetch('https://squareupapi.onrender.com/api/config');
         squareConfig = await response.json();
         console.log('Square Config loaded:', squareConfig);
-        
+
         const statusElement = document.getElementById('square-status');
         if (statusElement && squareConfig) {
             statusElement.textContent = `Connected to Square ${squareConfig.environment} environment`;
@@ -55,6 +86,14 @@ function setupEventListeners() {
     if (completeOrderBtn) {
         completeOrderBtn.addEventListener('click', handleSubmit);
     }
+
+    // Back to shopping link
+    const backToShoppingBtn = document.querySelector('.back-to-shopping');
+    if (backToShoppingBtn) {
+        backToShoppingBtn.addEventListener('click', function() {
+            window.location.href = '../../index.html';
+        });
+    }
 }
 
 // Render cart items
@@ -69,22 +108,27 @@ function renderCartItems() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <p>Your cart is empty</p>
+                <button class="back-to-shopping" onclick="window.location.href='../../index.html'">Continue Shopping</button>
             </div>
         `;
         return;
     }
 
-    cartContainer.innerHTML = cartItems.map(item => `
-        <div class="cart-item" data-id="${item.id}">
-            <div class="item-image">🕯️</div>
+    cartContainer.innerHTML = cartItems.map((item, index) => `
+        <div class="cart-item" data-index="${index}">
+            <div class="item-image">
+                ${typeof item.image === 'string' && item.image.length === 1 ? item.image : '🕯️'}
+            </div>
             <div class="item-details">
                 <div class="item-name">${item.name}</div>
                 <div class="item-price">$${item.price.toFixed(2)} each</div>
+                ${item.isCustom ? '<div class="item-custom">Custom Scent</div>' : ''}
+                ${item.scent ? `<div class="item-scent">Scent: ${item.scent}</div>` : ''}
                 <div class="quantity-controls">
-                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                    <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
                     <span class="quantity">${item.quantity}</span>
-                    <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
-                    <span class="remove-btn" onclick="removeItem(${item.id})">Remove</span>
+                    <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                    <span class="remove-btn" onclick="removeItem(${index})">Remove</span>
                 </div>
             </div>
             <div class="item-total">$${(item.price * item.quantity).toFixed(2)}</div>
@@ -93,24 +137,35 @@ function renderCartItems() {
 }
 
 // Update item quantity
-function updateQuantity(id, change) {
-    cartItems = cartItems.map(item => {
-        if (item.id === id) {
-            const newQuantity = Math.max(0, item.quantity + change);
-            return { ...item, quantity: newQuantity };
-        }
-        return item;
-    }).filter(item => item.quantity > 0);
+function updateQuantity(index, change) {
+    if (index < 0 || index >= cartItems.length) return;
 
-    renderCartItems();
-    updateTotals();
+    const newQuantity = Math.max(0, cartItems[index].quantity + change);
+
+    if (newQuantity === 0) {
+        removeItem(index);
+    } else {
+        cartItems[index].quantity = newQuantity;
+        saveCartItems();
+        renderCartItems();
+        updateTotals();
+    }
 }
 
 // Remove item from cart
-function removeItem(id) {
-    cartItems = cartItems.filter(item => item.id !== id);
+function removeItem(index) {
+    if (index < 0 || index >= cartItems.length) return;
+
+    cartItems.splice(index, 1);
+    saveCartItems();
     renderCartItems();
     updateTotals();
+
+    // Update cart manager if available
+    if (window.cartManager) {
+        window.cartManager.cart = cartItems;
+        window.cartManager.updateCartUI();
+    }
 }
 
 // Update totals
@@ -146,13 +201,13 @@ function updateTotals() {
 function getFormData() {
     const formData = {};
     const inputs = document.querySelectorAll('input, select');
-    
+
     inputs.forEach(input => {
         if (input.name) {
             formData[input.name] = input.value;
         }
     });
-    
+
     return formData;
 }
 
@@ -160,7 +215,7 @@ function getFormData() {
 function validateForm(formData) {
     const requiredFields = ['email', 'firstName', 'lastName', 'address', 'city', 'state', 'zipCode'];
     const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim() === '');
-    
+
     if (missingFields.length > 0) {
         return {
             valid: false,
@@ -184,11 +239,11 @@ function validateForm(formData) {
 function showError(message) {
     const errorElement = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
-    
+
     if (errorElement && errorText) {
         errorText.textContent = message;
         errorElement.style.display = 'block';
-        
+
         // Scroll to error message
         errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -218,12 +273,17 @@ async function processPayment(sourceId, total) {
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
             // Show success page
             showSuccessPage(result.paymentId);
             // Clear cart
             cartItems = [];
+            saveCartItems();
+            // Update cart manager if available
+            if (window.cartManager) {
+                window.cartManager.clearCart();
+            }
         } else {
             showError(result.error || 'Payment failed. Please try again.');
         }

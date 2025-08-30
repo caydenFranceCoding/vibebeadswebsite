@@ -1,4 +1,5 @@
-// Candles Page JavaScript - Fixed version
+// Updated Candles Page JavaScript with Cart Integration
+// File: public/pages/javascript/candles.js
 
 // Product data with emoji placeholders instead of broken image paths
 const candleProducts = [
@@ -6,7 +7,7 @@ const candleProducts = [
         id: 1,
         name: 'Apple Ginger Spritz',
         price: 45.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Crisp apple meets warming ginger with a bubbly spritz finish. Fresh, spicy, and invigorating - perfect for energizing any space.',
         burnTime: '45-50 hours',
@@ -17,7 +18,7 @@ const candleProducts = [
         id: 2,
         name: 'Blackberry Margarita',
         price: 42.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Sweet blackberries blended with zesty lime and a hint of salt. Like a summer cocktail in candle form.',
         burnTime: '45-50 hours',
@@ -28,7 +29,7 @@ const candleProducts = [
         id: 3,
         name: 'Black Coral Moss',
         price: 48.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Deep oceanic blend with earthy moss undertones. Mysterious and sophisticated, perfect for creating an elegant atmosphere.',
         burnTime: '45-50 hours',
@@ -39,7 +40,7 @@ const candleProducts = [
         id: 4,
         name: 'Egyptian Amber',
         price: 50.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Exotic and mysterious blend of amber resin, frankincense, and warm spices. Transport yourself to ancient lands.',
         burnTime: '45-50 hours',
@@ -50,7 +51,7 @@ const candleProducts = [
         id: 5,
         name: 'Mango Papaya',
         price: 38.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Tropical paradise with ripe mango and sweet papaya. Brings sunshine and summer vibes to any room.',
         burnTime: '45-50 hours',
@@ -61,7 +62,7 @@ const candleProducts = [
         id: 6,
         name: 'Pink Watermelon Lemon',
         price: 40.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Juicy pink watermelon with bright lemon zest. Refreshing and uplifting, perfect for summer gatherings.',
         burnTime: '45-50 hours',
@@ -72,7 +73,7 @@ const candleProducts = [
         id: 7,
         name: 'Sweet Jamaica',
         price: 46.00,
-        image: null, // Using emoji placeholder
+        image: null,
         category: 'signature',
         description: 'Island-inspired blend of coconut, tropical fruits, and warm vanilla. Escape to the Caribbean with every breath.',
         burnTime: '45-50 hours',
@@ -357,19 +358,34 @@ function updateCustomPrice() {
     }
 }
 
-// Add to cart functions
+// Add to cart functions - Updated with cart integration
 window.addToCart = function() {
     if (!currentProduct) return;
 
-    const total = (currentProduct.price + selectedSizePrice) * quantity;
+    const finalPrice = currentProduct.price + selectedSizePrice;
 
-    // Show success message (you can integrate with your cart system)
-    alert(`Added to cart!\n${currentProduct.name} (${selectedSize})\nQuantity: ${quantity}\nTotal: $${total.toFixed(2)}`);
+    // Create cart item
+    const cartItem = {
+        id: currentProduct.id,
+        name: `${currentProduct.name} (${selectedSize})`,
+        price: finalPrice,
+        quantity: quantity,
+        size: selectedSize,
+        scent: null,
+        image: currentProduct.emoji,
+        isCustom: false
+    };
+
+    // Add to cart using cart manager
+    if (window.cartManager) {
+        window.cartManager.addItem(cartItem);
+    } else {
+        // Fallback for demo
+        console.log('Added to cart:', cartItem);
+        alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: $${(finalPrice * quantity).toFixed(2)}`);
+    }
 
     closeModal();
-
-    // Update cart counter (example)
-    updateCartCounter();
 };
 
 window.addCustomToCart = function() {
@@ -377,22 +393,31 @@ window.addCustomToCart = function() {
     if (!selectedScent) return;
 
     const basePrice = parseInt(selectedScent.dataset.price);
-    const total = basePrice + selectedSizePrice;
+    const finalPrice = basePrice + selectedSizePrice;
 
-    alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: $${total.toFixed(2)}`);
+    // Create cart item for custom candle
+    const cartItem = {
+        id: `custom-${Date.now()}`,
+        name: `${selectedScent.value} (${selectedSize})`,
+        price: finalPrice,
+        quantity: 1,
+        size: selectedSize,
+        scent: selectedScent.value,
+        image: '✨',
+        isCustom: true
+    };
+
+    // Add to cart using cart manager
+    if (window.cartManager) {
+        window.cartManager.addItem(cartItem);
+    } else {
+        // Fallback for demo
+        console.log('Added custom candle to cart:', cartItem);
+        alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: $${finalPrice.toFixed(2)}`);
+    }
 
     closeModal();
-    updateCartCounter();
 };
-
-// Update cart counter
-function updateCartCounter() {
-    const cartIcon = document.querySelector('.cart-icon .cart-text');
-    if (cartIcon) {
-        const currentCount = parseInt(cartIcon.textContent.match(/\d+/)?.[0] || 0);
-        cartIcon.textContent = `Cart (${currentCount + 1})`;
-    }
-}
 
 // Initialize fade-in animations
 document.addEventListener('DOMContentLoaded', function() {
