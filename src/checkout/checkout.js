@@ -1,10 +1,12 @@
-// Updated Checkout JavaScript with proper cart integration
+// Updated Checkout JavaScript with proper Square Web Payments SDK integration
 // File: src/checkout/checkout.js
 
 // State
 let isProcessing = false;
 let squareConfig = null;
 let cartItems = [];
+let payments = null;
+let card = null;
 
 // Initialize checkout page
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCartItems();
     updateTotals();
     setupEventListeners();
+    initializeSquarePayments();
 
     // Listen for cart updates from other pages
     window.addEventListener('cartUpdated', function(event) {
@@ -21,6 +24,148 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals();
     });
 });
+
+// Load Square configuration and initialize Web Payments SDK
+async function loadSquareConfig() {
+    try {
+        const response = await fetch('https://squareupapi.onrender.com/api/config');
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        squareConfig = await response.json();
+        console.log('Square Config loaded:', {
+            environment: squareConfig.environment,
+            applicationId: squareConfig.applicationId ? 'present' : 'missing',
+            locationId: squareConfig.locationId ? 'present' : 'missing'
+        });
+
+        const statusElement = document.getElementById('square-status');
+        if (statusElement && squareConfig) {
+            statusElement.textContent = `Loading Square ${squareConfig.environment} environment...`;
+            statusElement.style.color = '#6b7280';
+        }
+
+        return squareConfig;
+    } catch (error) {
+        console.error('Failed to load Square configuration:', error);
+        const statusElement = document.getElementById('square-status');
+        if (statusElement) {
+            statusElement.textContent = 'Error loading Square configuration - using demo mode';
+            statusElement.style.color = '#dc2626';
+        }
+        throw error;
+    }
+}
+
+// Load Square Web Payments SDK dynamically based on environment
+async function loadSquareSDK(environment) {
+    return new Promise((resolve, reject) => {
+        if (window.Square) {
+            resolve();
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.type = 'application/javascript';
+
+        // Use the correct SDK URL based on environment
+        if (environment === 'sandbox') {
+            script.src = 'https://sandbox.web.squarecdn.com/v1/square.js';
+        } else {
+            script.src = 'https://web.squarecdn.com/v1/square.js';
+        }
+
+        script.onload = () => {
+            console.log(`Square ${environment} SDK loaded successfully`);
+            resolve();
+        };
+
+        script.onerror = () => {
+            reject(new Error(`Failed to load Square ${environment} SDK`));
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+// Initialize Square Web Payments SDK
+async function initializeSquarePayments() {
+    try {
+        // Wait for config to load
+        if (!squareConfig) {
+            await loadSquareConfig();
+        }
+
+        // Load the correct Square SDK based on environment
+        await loadSquareSDK(squareConfig.environment);
+
+        if (!window.Square) {
+            console.error('Square Web Payments SDK not loaded');
+            return;
+        }
+
+        console.log('Initializing Square payments with:', {
+            environment: squareConfig.environment,
+            applicationId: squareConfig.applicationId,
+            locationId: squareConfig.locationId
+        });
+
+        // Initialize payments object
+        payments = window.Square.payments(squareConfig.applicationId, squareConfig.locationId);
+
+        // Initialize card payment method
+        try {
+            card = await payments.card({
+                style: {
+                    input: {
+                        fontSize: '16px',
+                        fontFamily: 'Arial, sans-serif',
+                        color: '#2c2c2c'
+                    },
+                    'input::placeholder': {
+                        color: '#999999'
+                    },
+                    '.input-container': {
+                        borderColor: '#d1d5db',
+                        borderRadius: '8px'
+                    },
+                    '.input-container.is-focus': {
+                        borderColor: '#8B7355'
+                    },
+                    '.input-container.is-error': {
+                        borderColor: '#dc2626'
+                    }
+                }
+            });
+            await card.attach('#card-container');
+            console.log('Square card form attached successfully');
+
+            // Update status
+            const statusElement = document.getElementById('square-status');
+            if (statusElement) {
+                statusElement.textContent = `Square ${squareConfig.environment} environment ready`;
+                statusElement.style.color = '#059669';
+            }
+        } catch (e) {
+            console.error('Failed to initialize Square card form:', e);
+            const statusElement = document.getElementById('square-status');
+            if (statusElement) {
+                statusElement.textContent = `Error: ${e.message}`;
+                statusElement.style.color = '#dc2626';
+            }
+        }
+
+    } catch (error) {
+        console.error('Error initializing Square payments:', error);
+        const statusElement = document.getElementById('square-status');
+        if (statusElement) {
+            statusElement.textContent = `Error: ${error.message}`;
+            statusElement.style.color = '#dc2626';
+        }
+    }
+}
 
 // Load cart items from localStorage or cart manager
 function loadCartItems() {
@@ -59,27 +204,6 @@ function saveCartItems() {
         }
     } catch (error) {
         console.error('Error saving cart items:', error);
-    }
-}
-
-// Load Square configuration
-async function loadSquareConfig() {
-    try {
-        const response = await fetch('https://squareupapi.onrender.com/api/config');
-        squareConfig = await response.json();
-        console.log('Square Config loaded:', squareConfig);
-
-        const statusElement = document.getElementById('square-status');
-        if (statusElement && squareConfig) {
-            statusElement.textContent = `Connected to Square ${squareConfig.environment} environment`;
-        }
-    } catch (error) {
-        console.error('Failed to load Square configuration:', error);
-        const statusElement = document.getElementById('square-status');
-        if (statusElement) {
-            statusElement.textContent = 'Demo mode - no real payments processed';
-            statusElement.style.color = '#6b7280';
-        }
     }
 }
 
@@ -260,16 +384,48 @@ function hideError() {
     }
 }
 
-// Process payment
-async function processPayment(sourceId, total) {
-    try {
-        // For demo purposes, simulate payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
+// Tokenize payment method with Square
+async function tokenizePayment() {
+    if (!card) {
+        throw new Error('Card form not initialized');
+    }
 
-        const result = {
-            success: true,
-            paymentId: 'demo-payment-' + Date.now()
-        };
+    const result = await card.tokenize();
+
+    if (result.status === 'OK') {
+        return result.token;
+    } else {
+        let errorMessage = 'Payment information is invalid';
+        if (result.errors) {
+            errorMessage = result.errors.map(error => error.message).join(', ');
+        }
+        throw new Error(errorMessage);
+    }
+}
+
+// Process payment with Square
+async function processPayment(sourceId, total, orderData) {
+    try {
+        const response = await fetch('https://squareupapi.onrender.com/api/payments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                sourceId: sourceId,
+                amount: total, // Send amount in dollars (your backend will convert to cents)
+                currency: 'USD',
+                orderData: orderData,
+                idempotencyKey: generateIdempotencyKey()
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Payment failed');
+        }
+
+        const result = await response.json();
 
         if (result.success) {
             // Show success page
@@ -283,12 +439,17 @@ async function processPayment(sourceId, total) {
                 window.cartManager.clearCart();
             }
         } else {
-            showError('Payment failed. Please try again.');
+            throw new Error(result.error || 'Payment failed');
         }
     } catch (error) {
         console.error('Payment error:', error);
-        showError('Network error. Please check your connection and try again.');
+        throw error;
     }
+}
+
+// Generate idempotency key for Square API
+function generateIdempotencyKey() {
+    return Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 // Show success page
@@ -334,14 +495,20 @@ async function handleSubmit(event) {
     try {
         const totals = updateTotals();
 
-        // For demo purposes, create a test source ID
-        const testSourceId = 'test-card-' + Date.now();
+        // Tokenize the payment method
+        const token = await tokenizePayment();
+        console.log('Payment tokenized successfully');
 
-        await processPayment(testSourceId, totals.total);
+        // Process the payment
+        await processPayment(token, totals.total, {
+            items: cartItems,
+            shipping: formData,
+            totals: totals
+        });
 
     } catch (error) {
         console.error('Checkout error:', error);
-        showError('An error occurred during checkout. Please try again.');
+        showError(error.message || 'An error occurred during checkout. Please try again.');
     } finally {
         // Reset processing state
         isProcessing = false;

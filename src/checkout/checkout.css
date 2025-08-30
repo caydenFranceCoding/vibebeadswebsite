@@ -222,6 +222,34 @@ body {
     border-radius: 8px;
 }
 
+/* Square Card Container Styles */
+#card-container {
+    min-height: 60px;
+    padding: 1rem 0;
+}
+
+/* Square Card Form Field Styling */
+#card-container .sq-card-iframe-container {
+    margin-bottom: 1rem;
+}
+
+#card-container .sq-card-iframe-container:last-child {
+    margin-bottom: 0;
+}
+
+/* Custom styling for Square fields */
+.sq-card-iframe-container iframe {
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.sq-card-iframe-container iframe:focus {
+    border-color: #8B7355 !important;
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1) !important;
+}
+
+/* Demo notice for old card form */
 .demo-notice {
     background: #eff6ff;
     border: 1px solid #bfdbfe;

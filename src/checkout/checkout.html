@@ -6,6 +6,8 @@
     <title>Checkout - Vibe Beads</title>
     <link rel="stylesheet" href="./checkout.css">
     <link rel="stylesheet" href="../main/styles/home.css">
+
+    <!-- Square Web Payments SDK will be loaded dynamically based on environment -->
 </head>
 <body>
     <!-- Header -->
@@ -107,27 +109,13 @@
                         <h3>Payment Method</h3>
                         <div class="payment-option">
                             <input type="radio" id="card" name="payment-method" value="card" checked>
-                            <label for="card">Credit Card (Demo Mode)</label>
+                            <label for="card">Credit or Debit Card</label>
                         </div>
 
+                        <!-- Square Card Form Container -->
                         <div class="card-form">
-                            <div class="demo-notice">
-                                <strong>Demo Mode:</strong> This is a demonstration checkout. No real payment will be processed.
-                                Fill out the form and click "Complete Order" to test the integration.
-                            </div>
-                            <div class="form-group">
-                                <label for="cardNumber">Card Number (Demo)</label>
-                                <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="expiryDate">Expiry Date</label>
-                                    <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY">
-                                </div>
-                                <div class="form-group">
-                                    <label for="cvc">CVC</label>
-                                    <input type="text" id="cvc" name="cvc" placeholder="123">
-                                </div>
+                            <div id="card-container">
+                                <!-- Square card form will be injected here -->
                             </div>
                         </div>
                     </div>
@@ -187,8 +175,9 @@
         </div>
     </div>
 
+    <!-- Load scripts -->
+    <script src="../main/script/cart.js"></script>
     <script src="./checkout.js"></script>
     <script src="../main/script/homepage.js"></script>
-
 </body>
 </html>
