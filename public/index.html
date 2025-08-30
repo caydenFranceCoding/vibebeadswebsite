@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="../src/main/styles/products.css">
     <link rel="stylesheet" href="../src/checkout/checkout.css">
     <link rel="stylesheet" href="../public/pages/css/candles.css">
-
 </head>
 <body>
     <header>
@@ -66,7 +65,6 @@
             </div>
         </div>
     </section>
-
 
     <!-- Customer Reviews Section -->
     <section class="reviews-section">
@@ -142,43 +140,47 @@
             <p class="section-subtitle fade-in">Discover our most beloved pieces</p>
 
             <div class="products-grid">
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('vanilla-bean', 'Vanilla Bean', 45.00, '🕯️')">
                     <div class="product-image">
                         <img src="./images/vanilla bean.jpg" alt="vanilla bean">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Vanilla Bean</h3>
                         <p class="product-price"><span class="from">From</span> $45.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('vanilla-bean', 'Vanilla Bean', 45.00, '🕯️')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('sweet-tobacco', 'Sweet Tobacco', 38.00, '🌿')">
                     <div class="product-image">
                         <img src="./images/sweet tobacco.jpg" alt="sweet tobacco">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Sweet Tobacco</h3>
                         <p class="product-price"><span class="from">From</span> $38.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('sweet-tobacco', 'Sweet Tobacco', 38.00, '🌿')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('golden-hour', 'Golden Hour', 52.00, '☀️')">
                     <div class="product-image">
                         <img src="./images/golden hour.jpg" alt="golden hour">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Golden Hour</h3>
                         <p class="product-price"><span class="from">From</span> $52.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('golden-hour', 'Golden Hour', 52.00, '☀️')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('grapefruit-mint', 'Grapefruit and Mint', 41.00, '🍊')">
                     <div class="product-image">
                         <img src="./images/grapefruit and min.jpg" alt="grapefruit and mint">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Grapefruit and Mint</h3>
                         <p class="product-price"><span class="from">From</span> $41.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('grapefruit-mint', 'Grapefruit and Mint', 41.00, '🍊')">Add to Cart</button>
                     </div>
                 </div>
             </div>
@@ -196,39 +198,43 @@
             <p class="section-subtitle fade-in">Hand-poured with premium soy wax and natural fragrances</p>
 
             <div class="collection-grid">
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('fall-leaves', 'Fall Leaves', 28.00, '🍂')">
                     <div class="product-image">
                         <img src="./images/fall leaves sticks.jpg" alt="Fragrance sticks">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Fall Leaves</h3>
                         <p class="product-price">$28.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('fall-leaves', 'Fall Leaves', 28.00, '🍂')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('egyptian-amber', 'Egyptian Amber', 32.00, '🏺')">
                     <div class="product-image">
                         <img src="./images/egyptian amber room spray.jpg" alt="egyptian amber room spray">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Egyptian Amber</h3>
                         <p class="product-price"><span class="from">From</span> $32.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('egyptian-amber', 'Egyptian Amber', 32.00, '🏺')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('golden-hour-2', 'Golden Hour Diffuser', 35.00, '☀️')">
                     <div class="product-image">☀️</div>
                     <div class="product-info">
                         <h3 class="product-title">Golden Hour</h3>
                         <p class="product-price">$35.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('golden-hour-2', 'Golden Hour Diffuser', 35.00, '☀️')">Add to Cart</button>
                     </div>
                 </div>
 
-                <div class="product-card fade-in">
+                <div class="product-card fade-in" onclick="addQuickProduct('tropical-escape', 'Tropical Escape', 30.00, '🌺')">
                     <div class="product-image">🌺</div>
                     <div class="product-info">
                         <h3 class="product-title">Tropical Escape</h3>
                         <p class="product-price">$30.00 USD</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('tropical-escape', 'Tropical Escape', 30.00, '🌺')">Add to Cart</button>
                     </div>
                 </div>
             </div>
@@ -318,7 +324,31 @@
         </div>
     </footer>
 
+    <!-- Load cart manager first, then other scripts -->
+    <script src="/src/main/script/cart.js"></script>
     <script src="/src/main/script/homepage.js"></script>
     <script src="/public/pages/javascript/candles.js"></script>
+
+    <!-- Quick add to cart function for homepage -->
+    <script>
+        function addQuickProduct(id, name, price, emoji) {
+            if (window.cartManager) {
+                const product = {
+                    id: id,
+                    name: name + ' (8oz)',
+                    price: price,
+                    quantity: 1,
+                    size: '8oz',
+                    scent: null,
+                    image: emoji,
+                    isCustom: false
+                };
+
+                window.cartManager.addItem(product);
+            } else {
+                alert(`Added ${name} to cart! (Cart manager not loaded)`);
+            }
+        }
+    </script>
 </body>
 </html>

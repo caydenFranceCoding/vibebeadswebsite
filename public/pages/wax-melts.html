@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wax Melts - Vibe Beads</title>
+    <link rel="stylesheet" href="../../src/main/styles/home.css">
+    <link rel="stylesheet" href="css/wax-melts.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="../../public/index.html" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="../../public/index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="shop.html">Shop All</a></li>
+                        <li><a href="candles.html">Candles</a></li>
+                        <li><a href="diffusers.html">Diffusers</a></li>
+                        <li><a href="wax-melts.html" class="active">Wax Melts</a></li>
+                        <li><a href="jewelry.html">Jewelry</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="../../src/checkout/checkout.html" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width-2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Wax Melt Special - Buy 3 Get 1 Free on All Scents</strong>
+        </div>
+    </div>
+
+    <!-- Video Hero Section -->
+    <section class="hero wax-melts-hero">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="../../public/video/premium.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h1>Premium Wax Melts</h1>
+                <p class="hero-tagline">
+                    Discover our collection of handcrafted wax melts made from premium soy wax. Perfect for any wax warmer, each melt provides hours of beautiful fragrance to transform your space instantly.
+                </p>
+                <a href="#products" class="cta-button">Shop Wax Melts</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-category="all">All Wax Melts</button>
+                <button class="filter-btn" data-category="signature">Signature Collection</button>
+                <button class="filter-btn" data-category="seasonal">Seasonal</button>
+                <button class="filter-btn" data-category="multipacks">Multi-Packs</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="shop-section" id="products">
+        <div class="container">
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-product-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-product-title"></h2>
+                    <p class="modal-price" id="modal-product-price"></p>
+                    <div class="modal-description" id="modal-product-description"></div>
+
+                    <div class="product-options">
+                        <div class="pack-options">
+                            <h4>Pack Size:</h4>
+                            <div class="pack-buttons">
+                                <button class="pack-btn active" data-pack="single" data-price="0">Single Pack - $8</button>
+                                <button class="pack-btn" data-pack="3pack" data-price="8">3-Pack Bundle - $16</button>
+                                <button class="pack-btn" data-pack="6pack" data-price="18">6-Pack Bundle - $26</button>
+                            </div>
+                        </div>
+
+                        <div class="quantity-section">
+                            <label for="quantity">Quantity:</label>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" id="quantity" value="1" min="1" max="10">
+                                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart-btn" onclick="addToCart()">
+                        Add to Cart - $<span id="total-price">8.00</span>
+                    </button>
+
+                    <div class="product-details">
+                        <h4>Details:</h4>
+                        <ul>
+                            <li>Made with premium soy wax</li>
+                            <li>Phthalate-free fragrance oils</li>
+                            <li>6 cubes per single pack</li>
+                            <li>Each cube lasts 8-12 hours</li>
+                            <li>Compatible with any wax warmer</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Pack Builder Modal -->
+    <div id="multipack-modal" class="modal">
+        <div class="modal-content multipack-modal">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <h2>Build Your Multi-Pack</h2>
+                <p class="multipack-description">Mix and match your favorite scents for the perfect collection</p>
+
+                <div class="multipack-builder">
+                    <div class="pack-size-selector">
+                        <h3>Choose Pack Size:</h3>
+                        <div class="multipack-size-buttons">
+                            <button class="multipack-size-btn active" data-size="3" data-price="22">
+                                3-Pack Mix - $22
+                                <small>Save $2</small>
+                            </button>
+                            <button class="multipack-size-btn" data-size="6" data-price="40">
+                                6-Pack Mix - $40
+                                <small>Save $8</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="scent-selection">
+                        <h3>Select Your Scents (<span id="selected-count">0</span>/<span id="max-count">3</span>):</h3>
+                        <div class="scent-categories">
+                            <div class="scent-category">
+                                <h4>Fresh & Fruity</h4>
+                                <div class="scent-grid">
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Citrus Burst" data-emoji="🍊">
+                                        <span class="scent-name">🍊 Citrus Burst</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Berry Bliss" data-emoji="🫐">
+                                        <span class="scent-name">🫐 Berry Bliss</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Green Apple" data-emoji="🍏">
+                                        <span class="scent-name">🍏 Green Apple</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="scent-category">
+                                <h4>Warm & Cozy</h4>
+                                <div class="scent-grid">
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Vanilla Cream" data-emoji="🤍">
+                                        <span class="scent-name">🤍 Vanilla Cream</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Cinnamon Spice" data-emoji="🍂">
+                                        <span class="scent-name">🍂 Cinnamon Spice</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Amber Woods" data-emoji="🌲">
+                                        <span class="scent-name">🌲 Amber Woods</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="scent-category">
+                                <h4>Floral & Fresh</h4>
+                                <div class="scent-grid">
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Lavender Fields" data-emoji="💜">
+                                        <span class="scent-name">💜 Lavender Fields</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Spring Rain" data-emoji="🌧️">
+                                        <span class="scent-name">🌧️ Spring Rain</span>
+                                    </label>
+                                    <label class="scent-checkbox">
+                                        <input type="checkbox" name="multipack-scents" value="Garden Mint" data-emoji="🌿">
+                                        <span class="scent-name">🌿 Garden Mint</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-to-cart-btn" onclick="addMultipackToCart()" disabled>
+                    Add Multi-Pack to Cart - $<span id="multipack-total-price">22.00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load scripts in correct order -->
+    <script src="../../src/main/script/cart.js"></script>
+    <script src="../../src/main/script/homepage.js"></script>
+    <script src="javascript/wax-melts.js"></script>
+</body>
+</html>

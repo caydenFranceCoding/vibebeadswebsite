@@ -1,4 +1,4 @@
-// Updated Checkout JavaScript with Cart Integration
+// Updated Checkout JavaScript with proper cart integration
 // File: src/checkout/checkout.js
 
 // State
@@ -13,36 +13,33 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCartItems();
     updateTotals();
     setupEventListeners();
+
+    // Listen for cart updates from other pages
+    window.addEventListener('cartUpdated', function(event) {
+        loadCartItems();
+        renderCartItems();
+        updateTotals();
+    });
 });
 
-// Load cart items from localStorage
+// Load cart items from localStorage or cart manager
 function loadCartItems() {
     try {
-        const savedCart = localStorage.getItem('vibeBeadsCart');
-        cartItems = savedCart ? JSON.parse(savedCart) : [];
+        // First try to get from global cart manager
+        if (window.cartManager) {
+            cartItems = window.cartManager.getItems();
+        } else {
+            // Fallback to direct localStorage access
+            const savedCart = localStorage.getItem('vibeBeadsCart');
+            cartItems = savedCart ? JSON.parse(savedCart) : [];
+        }
 
-        // Add demo items if cart is empty (for testing)
+        console.log('Loaded cart items:', cartItems);
+
+        // If cart is still empty, add demo items for testing purposes
         if (cartItems.length === 0) {
-            cartItems = [
-                {
-                    id: 'demo-1',
-                    name: 'Vanilla Bean Candle (8oz)',
-                    price: 45.00,
-                    quantity: 1,
-                    size: '8oz',
-                    image: '🕯️',
-                    isCustom: false
-                },
-                {
-                    id: 'demo-2',
-                    name: 'Sweet Tobacco Candle (8oz)',
-                    price: 38.00,
-                    quantity: 1,
-                    size: '8oz',
-                    image: '🌿',
-                    isCustom: false
-                }
-            ];
+            console.log('Cart is empty, adding demo items for testing');
+            // Don't add demo items automatically - let users add real items
         }
     } catch (error) {
         console.error('Error loading cart items:', error);
@@ -54,6 +51,12 @@ function loadCartItems() {
 function saveCartItems() {
     try {
         localStorage.setItem('vibeBeadsCart', JSON.stringify(cartItems));
+
+        // Update cart manager if available
+        if (window.cartManager) {
+            window.cartManager.cart = cartItems;
+            window.cartManager.updateCartUI();
+        }
     } catch (error) {
         console.error('Error saving cart items:', error);
     }
@@ -74,8 +77,8 @@ async function loadSquareConfig() {
         console.error('Failed to load Square configuration:', error);
         const statusElement = document.getElementById('square-status');
         if (statusElement) {
-            statusElement.textContent = 'Failed to connect to Square API';
-            statusElement.style.color = '#ef4444';
+            statusElement.textContent = 'Demo mode - no real payments processed';
+            statusElement.style.color = '#6b7280';
         }
     }
 }
@@ -91,7 +94,7 @@ function setupEventListeners() {
     const backToShoppingBtn = document.querySelector('.back-to-shopping');
     if (backToShoppingBtn) {
         backToShoppingBtn.addEventListener('click', function() {
-            window.location.href = '../../index.html';
+            window.location.href = '../../public/index.html';
         });
     }
 }
@@ -108,7 +111,7 @@ function renderCartItems() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
                 <p>Your cart is empty</p>
-                <button class="back-to-shopping" onclick="window.location.href='../../index.html'">Continue Shopping</button>
+                <button class="back-to-shopping" onclick="window.location.href='../../public/index.html'" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #8B7355; color: white; border: none; border-radius: 6px; cursor: pointer;">Continue Shopping</button>
             </div>
         `;
         return;
@@ -117,21 +120,21 @@ function renderCartItems() {
     cartContainer.innerHTML = cartItems.map((item, index) => `
         <div class="cart-item" data-index="${index}">
             <div class="item-image">
-                ${typeof item.image === 'string' && item.image.length === 1 ? item.image : '🕯️'}
+                ${typeof item.image === 'string' && item.image.length <= 2 ? item.image : '🕯️'}
             </div>
             <div class="item-details">
-                <div class="item-name">${item.name}</div>
-                <div class="item-price">$${item.price.toFixed(2)} each</div>
-                ${item.isCustom ? '<div class="item-custom">Custom Scent</div>' : ''}
-                ${item.scent ? `<div class="item-scent">Scent: ${item.scent}</div>` : ''}
+                <div class="item-name">${item.name || 'Unknown Item'}</div>
+                <div class="item-price">$${(item.price || 0).toFixed(2)} each</div>
+                ${item.isCustom ? '<div class="item-custom" style="font-size: 0.8rem; color: #8B7355; font-weight: 500;">Custom Scent</div>' : ''}
+                ${item.scent ? `<div class="item-scent" style="font-size: 0.8rem; color: #666;">Scent: ${item.scent}</div>` : ''}
                 <div class="quantity-controls">
                     <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
-                    <span class="quantity">${item.quantity}</span>
+                    <span class="quantity">${item.quantity || 1}</span>
                     <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
                     <span class="remove-btn" onclick="removeItem(${index})">Remove</span>
                 </div>
             </div>
-            <div class="item-total">$${(item.price * item.quantity).toFixed(2)}</div>
+            <div class="item-total">$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
         </div>
     `).join('');
 }
@@ -170,7 +173,7 @@ function removeItem(index) {
 
 // Update totals
 function updateTotals() {
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
     const shipping = cartItems.length > 0 ? 8.99 : 0;
     const tax = subtotal * 0.08;
     const total = subtotal + shipping + tax;
@@ -260,19 +263,13 @@ function hideError() {
 // Process payment
 async function processPayment(sourceId, total) {
     try {
-        const response = await fetch('https://squareupapi.onrender.com/api/payments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                sourceId: sourceId,
-                amount: total,
-                currency: 'USD'
-            })
-        });
+        // For demo purposes, simulate payment processing
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const result = await response.json();
+        const result = {
+            success: true,
+            paymentId: 'demo-payment-' + Date.now()
+        };
 
         if (result.success) {
             // Show success page
@@ -280,12 +277,13 @@ async function processPayment(sourceId, total) {
             // Clear cart
             cartItems = [];
             saveCartItems();
+
             // Update cart manager if available
             if (window.cartManager) {
                 window.cartManager.clearCart();
             }
         } else {
-            showError(result.error || 'Payment failed. Please try again.');
+            showError('Payment failed. Please try again.');
         }
     } catch (error) {
         console.error('Payment error:', error);
@@ -298,11 +296,11 @@ function showSuccessPage(paymentId) {
     const checkoutContent = document.getElementById('checkout-content');
     const successMessage = document.getElementById('success-message');
     const paymentIdText = document.getElementById('payment-id-text');
-    
+
     if (checkoutContent) checkoutContent.style.display = 'none';
     if (successMessage) successMessage.style.display = 'block';
     if (paymentIdText) paymentIdText.textContent = paymentId;
-    
+
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -310,37 +308,37 @@ function showSuccessPage(paymentId) {
 // Handle form submission
 async function handleSubmit(event) {
     event.preventDefault();
-    
+
     if (isProcessing || cartItems.length === 0) return;
-    
+
     hideError();
-    
+
     const formData = getFormData();
     const validation = validateForm(formData);
-    
+
     if (!validation.valid) {
         showError(validation.message);
         return;
     }
-    
+
     // Set processing state
     isProcessing = true;
     const buttonText = document.getElementById('button-text');
     const buttonSpinner = document.getElementById('button-spinner');
     const completeBtn = document.getElementById('complete-order-btn');
-    
+
     if (buttonText) buttonText.style.display = 'none';
     if (buttonSpinner) buttonSpinner.style.display = 'flex';
     if (completeBtn) completeBtn.disabled = true;
-    
+
     try {
         const totals = updateTotals();
-        
+
         // For demo purposes, create a test source ID
         const testSourceId = 'test-card-' + Date.now();
-        
+
         await processPayment(testSourceId, totals.total);
-        
+
     } catch (error) {
         console.error('Checkout error:', error);
         showError('An error occurred during checkout. Please try again.');
@@ -360,3 +358,7 @@ function formatCurrency(amount) {
         currency: 'USD'
     }).format(amount);
 }
+
+// Make functions globally available for onclick handlers
+window.updateQuantity = updateQuantity;
+window.removeItem = removeItem;

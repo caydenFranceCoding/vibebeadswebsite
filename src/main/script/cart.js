@@ -1,4 +1,6 @@
-// Cart state management using localStorage
+// Enhanced Cart Manager with better integration
+// File: src/main/script/cart.js
+
 class CartManager {
     constructor() {
         this.storageKey = 'vibeBeadsCart';
@@ -22,6 +24,7 @@ class CartManager {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.cart));
             this.updateCartUI();
+            console.log('Cart saved:', this.cart); // Debug log
         } catch (error) {
             console.error('Error saving cart:', error);
         }
@@ -29,57 +32,85 @@ class CartManager {
 
     // Add item to cart
     addItem(product) {
+        // Create unique identifier for cart item comparison
+        const itemId = this.createItemId(product);
+
         const existingItemIndex = this.cart.findIndex(item =>
-            item.id === product.id &&
-            item.size === product.size &&
-            item.scent === product.scent
+            this.createItemId(item) === itemId
         );
 
         if (existingItemIndex > -1) {
             // Update quantity if item already exists
-            this.cart[existingItemIndex].quantity += product.quantity;
+            this.cart[existingItemIndex].quantity += product.quantity || 1;
         } else {
             // Add new item
-            this.cart.push({
+            const newItem = {
                 id: product.id || `custom-${Date.now()}`,
                 name: product.name,
-                price: product.price,
-                quantity: product.quantity,
+                price: parseFloat(product.price),
+                quantity: product.quantity || 1,
                 size: product.size || '8oz',
                 scent: product.scent || null,
                 image: product.image || product.emoji || '🕯️',
                 isCustom: product.isCustom || false
-            });
+            };
+
+            this.cart.push(newItem);
         }
 
         this.saveCart();
         this.showAddToCartNotification(product);
+
+        // Trigger custom event for other parts of the app to listen to
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: {
+                cart: this.cart,
+                action: 'add',
+                item: product
+            }
+        }));
+    }
+
+    // Create unique identifier for cart items
+    createItemId(item) {
+        return `${item.id}-${item.size || '8oz'}-${item.scent || 'none'}`;
     }
 
     // Remove item from cart
     removeItem(itemId, size, scent) {
-        this.cart = this.cart.filter(item => !(
-            item.id === itemId &&
-            item.size === size &&
-            item.scent === scent
-        ));
-        this.saveCart();
+        const targetId = this.createItemId({ id: itemId, size, scent });
+        const initialLength = this.cart.length;
+
+        this.cart = this.cart.filter(item => this.createItemId(item) !== targetId);
+
+        if (this.cart.length < initialLength) {
+            this.saveCart();
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: {
+                    cart: this.cart,
+                    action: 'remove'
+                }
+            }));
+        }
     }
 
     // Update item quantity
     updateQuantity(itemId, size, scent, newQuantity) {
-        const item = this.cart.find(item =>
-            item.id === itemId &&
-            item.size === size &&
-            item.scent === scent
-        );
+        const targetId = this.createItemId({ id: itemId, size, scent });
+        const item = this.cart.find(item => this.createItemId(item) === targetId);
 
         if (item) {
             if (newQuantity <= 0) {
                 this.removeItem(itemId, size, scent);
             } else {
-                item.quantity = newQuantity;
+                item.quantity = parseInt(newQuantity);
                 this.saveCart();
+                window.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: {
+                        cart: this.cart,
+                        action: 'update'
+                    }
+                }));
             }
         }
     }
@@ -88,11 +119,17 @@ class CartManager {
     clearCart() {
         this.cart = [];
         this.saveCart();
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: {
+                cart: this.cart,
+                action: 'clear'
+            }
+        }));
     }
 
     // Get cart items
     getItems() {
-        return this.cart;
+        return [...this.cart]; // Return copy to prevent direct mutation
     }
 
     // Get total items count
@@ -124,10 +161,20 @@ class CartManager {
             cartBadge.textContent = totalItems;
             cartBadge.style.display = totalItems > 0 ? 'block' : 'none';
         }
+
+        // Update cart icon text
+        const cartIcon = document.querySelector('.cart-icon .cart-text');
+        if (cartIcon) {
+            cartIcon.textContent = `Cart (${totalItems})`;
+        }
     }
 
     // Show notification when item is added
     showAddToCartNotification(product) {
+        // Remove any existing notifications
+        const existingNotifications = document.querySelectorAll('.cart-notification');
+        existingNotifications.forEach(notification => notification.remove());
+
         // Create notification element
         const notification = document.createElement('div');
         notification.className = 'cart-notification';
@@ -135,7 +182,7 @@ class CartManager {
             <div class="notification-content">
                 <span class="notification-icon">✓</span>
                 <span class="notification-text">Added ${product.name} to cart!</span>
-                <button class="view-cart-btn" onclick="window.location.href='./src/checkout/checkout.html'">View Cart</button>
+                <button class="view-cart-btn" onclick="window.location.href='${this.getCheckoutPath()}'">View Cart</button>
             </div>
         `;
 
@@ -152,6 +199,7 @@ class CartManager {
             z-index: 10000;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            max-width: 320px;
         `;
 
         // Add to document
@@ -172,13 +220,29 @@ class CartManager {
             }, 300);
         }, 4000);
     }
+
+    // Get correct checkout path based on current location
+    getCheckoutPath() {
+        const currentPath = window.location.pathname;
+
+        if (currentPath.includes('/public/pages/')) {
+            return '../../src/checkout/checkout.html';
+        } else if (currentPath.includes('/public/')) {
+            return './src/checkout/checkout.html';
+        } else {
+            return './src/checkout/checkout.html';
+        }
+    }
 }
 
-// Initialize cart manager
+// Initialize cart manager and make it globally available
 let cartManager;
 
 document.addEventListener('DOMContentLoaded', function() {
     cartManager = new CartManager();
+    window.cartManager = cartManager; // Make globally accessible
+
+    console.log('Cart Manager initialized with', cartManager.getTotalItems(), 'items');
 });
 
 // CSS for cart notification (add to head)
@@ -197,12 +261,14 @@ notificationStyles.textContent = `
     .notification-icon {
         font-size: 1.2rem;
         font-weight: bold;
+        color: white;
     }
     
     .notification-text {
         flex: 1;
         font-size: 0.9rem;
         font-weight: 500;
+        color: white;
     }
     
     .view-cart-btn {
@@ -214,6 +280,8 @@ notificationStyles.textContent = `
         font-size: 0.8rem;
         cursor: pointer;
         transition: background 0.2s ease;
+        text-decoration: none;
+        white-space: nowrap;
     }
     
     .view-cart-btn:hover {

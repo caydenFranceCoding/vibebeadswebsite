@@ -1,7 +1,7 @@
-// Updated Candles Page JavaScript with Cart Integration
+// Updated Candles Page JavaScript with proper Cart Integration
 // File: public/pages/javascript/candles.js
 
-// Product data with emoji placeholders instead of broken image paths
+// Product data with emoji placeholders
 const candleProducts = [
     {
         id: 1,
@@ -91,10 +91,13 @@ let quantity = 1;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    renderProducts();
-    setupEventListeners();
-    setupModalEvents();
-    setupFilterButtons();
+    // Wait for cart manager to be ready
+    setTimeout(() => {
+        renderProducts();
+        setupEventListeners();
+        setupModalEvents();
+        setupFilterButtons();
+    }, 100);
 });
 
 // Render products based on current filter
@@ -145,12 +148,38 @@ function createProductCard(product) {
         </div>
         <div class="product-info">
             <h3 class="product-title">${product.name}</h3>
-            <p class="product-price">From $${product.price.toFixed(2)} USD</p>
+            <p class="product-price">From ${product.price.toFixed(2)} USD</p>
             <p class="product-description">${product.description.substring(0, 100)}...</p>
+            <button class="add-to-cart-btn" onclick="event.stopPropagation(); quickAddToCart(${product.id})">Quick Add to Cart</button>
         </div>
     `;
 
     return card;
+}
+
+// Quick add to cart function
+function quickAddToCart(productId) {
+    const product = candleProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    if (window.cartManager) {
+        const cartItem = {
+            id: product.id,
+            name: `${product.name} (8oz)`,
+            price: product.price,
+            quantity: 1,
+            size: '8oz',
+            scent: null,
+            image: product.emoji,
+            isCustom: false
+        };
+
+        window.cartManager.addItem(cartItem);
+    } else {
+        // Fallback for demo
+        console.log('Added to cart:', product.name);
+        alert(`Added ${product.name} to cart!`);
+    }
 }
 
 // Create custom scent card
@@ -167,6 +196,7 @@ function createCustomScentCard() {
             <h3 class="product-title">Pick Your Scent</h3>
             <p class="product-price">From $38.00 USD</p>
             <p class="product-description">Create your perfect custom candle by choosing from our collection of premium fragrances</p>
+            <button class="add-to-cart-btn" onclick="event.stopPropagation(); openCustomScentModal()">Customize Candle</button>
         </div>
     `;
 
@@ -180,7 +210,7 @@ function openProductModal(product) {
 
     // Update modal content
     document.getElementById('modal-product-title').textContent = product.name;
-    document.getElementById('modal-product-price').textContent = `$${product.price.toFixed(2)} USD`;
+    document.getElementById('modal-product-price').textContent = `${product.price.toFixed(2)} USD`;
     document.getElementById('modal-product-description').innerHTML = `
         <p>${product.description}</p>
         <p><strong>Burn Time:</strong> ${product.burnTime}</p>
@@ -204,10 +234,10 @@ function openProductModal(product) {
         }
         // Update prices based on current product
         if (btn.dataset.size === '8oz') {
-            btn.textContent = `8oz Candle - $${product.price.toFixed(2)}`;
+            btn.textContent = `8oz Candle - ${product.price.toFixed(2)}`;
             btn.dataset.price = '0';
         } else {
-            btn.textContent = `16oz Candle - $${(product.price + 20).toFixed(2)}`;
+            btn.textContent = `16oz Candle - ${(product.price + 20).toFixed(2)}`;
             btn.dataset.price = '20';
         }
     });
@@ -358,7 +388,7 @@ function updateCustomPrice() {
     }
 }
 
-// Add to cart functions - Updated with cart integration
+// Add to cart functions - Updated with proper cart integration
 window.addToCart = function() {
     if (!currentProduct) return;
 
@@ -379,10 +409,11 @@ window.addToCart = function() {
     // Add to cart using cart manager
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
+        console.log('Added to cart via cart manager:', cartItem);
     } else {
         // Fallback for demo
-        console.log('Added to cart:', cartItem);
-        alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: $${(finalPrice * quantity).toFixed(2)}`);
+        console.log('Added to cart (fallback):', cartItem);
+        alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: ${(finalPrice * quantity).toFixed(2)}`);
     }
 
     closeModal();
@@ -410,10 +441,11 @@ window.addCustomToCart = function() {
     // Add to cart using cart manager
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
+        console.log('Added custom candle to cart via cart manager:', cartItem);
     } else {
         // Fallback for demo
-        console.log('Added custom candle to cart:', cartItem);
-        alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: $${finalPrice.toFixed(2)}`);
+        console.log('Added custom candle to cart (fallback):', cartItem);
+        alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: ${finalPrice.toFixed(2)}`);
     }
 
     closeModal();
