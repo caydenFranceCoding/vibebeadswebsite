@@ -1,43 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Beads - Where Luxury Meets Craftsmanship</title>
+    <link rel="stylesheet" href="/src/main/styles/home.css">
+    <link rel="stylesheet" href="/src/main/styles/products.css">
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/pages/shop.html">Shop All</a></li>
+                        <li><a href="/pages/summer-collection.html">Summer Collection</a></li>
+                        <li><a href="/pages/signature-collection.html">Signature Collection</a></li>
+                        <li><a href="/pages/M&D-collection.html">M&D Collection</a></li>
+                        <li><a href="/pages/diffusers.html">Diffusers</a></li>
+                        <li><a href="/pages/jewelry.html">Jewelry</a></li>
+                        <li><a href="/pages/fragrances.html">Fragrances</a></li>
+                        <li><a href="/pages/room-sprays.html">Room Sprays</a></li>
+                        <li><a href="/pages/apparel.html">Apparel</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="#" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Summer Collection SALE - 30% Off All Items</strong>
+        </div>
+    </div>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+    <section class="hero">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="./video/lux.mp4" type="video/mp4">
+                <!-- Fallback for browsers that don't support video -->
+                Your browser does not support the video tag.
+            </video>
+            <!-- Optional overlay for better text readability -->
+            <div class="hero-overlay"></div>
+        </div>
+
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h1>Where Luxury Meets Craftsmanship</h1>
+                <p class="hero-tagline">
+                    Our handcrafted beaded jewelry, premium apparel, artisan candles, and home fragrances are made with the highest quality materials, creating unique pieces that become treasured parts of your lifestyle.
+                </p>
+                <a href="#featured" class="cta-button">Shop the Collection</a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Customer Reviews Section -->
+    <section class="reviews-section">
+        <div class="container">
+            <h2 class="section-title fade-in">What Our Customers Say</h2>
+            <div class="reviews-container fade-in">
+                <div class="reviews-scroll">
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Absolutely love my moonstone bracelet! The quality is incredible and it goes with everything. Will definitely be ordering more pieces."</p>
+                        <div class="reviewer-info">
+                            <strong>Sarah M.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"The candles smell amazing and burn for hours. The containers are so beautiful I use them for decoration even after they're done!"</p>
+                        <div class="reviewer-info">
+                            <strong>Jessica L.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Best jewelry store I've found! Each piece feels special and unique. The customer service is outstanding too."</p>
+                        <div class="reviewer-info">
+                            <strong>Amanda K.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"My daughter loves her rose quartz necklace. It's her new favorite piece and she wears it every day!"</p>
+                        <div class="reviewer-info">
+                            <strong>Maria D.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"The room sprays are incredible! My whole house smells like a spa. Highly recommend the ocean breeze scent."</p>
+                        <div class="reviewer-info">
+                            <strong>Rachel T.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-stars">★★★★★</div>
+                        <p class="review-text">"Quality products and fast shipping. The packaging is beautiful too - feels like getting a gift every time!"</p>
+                        <div class="reviewer-info">
+                            <strong>Lauren P.</strong>
+                            <span>Verified Customer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation arrows -->
+                <button class="scroll-arrow scroll-left" id="scrollLeft">‹</button>
+                <button class="scroll-arrow scroll-right" id="scrollRight">›</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="featured-section" id="featured">
+        <div class="container">
+            <h2 class="section-title fade-in">Featured Collection</h2>
+            <p class="section-subtitle fade-in">Discover our most beloved pieces</p>
+
+            <div class="products-grid">
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/vanilla bean.jpg" alt="vanilla bean">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Vanilla Bean</h3>
+                        <p class="product-price"><span class="from">From</span> $45.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/sweet tobacco.jpg" alt="sweet tobacco">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Sweet Tobacco</h3>
+                        <p class="product-price"><span class="from">From</span> $38.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/golden hour.jpg" alt="golden hour">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Golden Hour</h3>
+                        <p class="product-price"><span class="from">From</span> $52.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/grapefruit and min.jpg" alt="grapefruit and mint">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Grapefruit and Mint</h3>
+                        <p class="product-price"><span class="from">From</span> $41.00 USD</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View All Button -->
+            <div class="view-all-section fade-in">
+                <a href="/pages/shop.html" class="view-all-btn">View All Products</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="collection-section">
+        <div class="container">
+            <h2 class="section-title fade-in">NEW! Artisan Scents Collection</h2>
+            <p class="section-subtitle fade-in">Hand-poured with premium soy wax and natural fragrances</p>
+
+            <div class="collection-grid">
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/fall leaves sticks.jpg" alt="Fragrance sticks">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Fall Leaves</h3>
+                        <p class="product-price">$28.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">
+                        <img src="./images/egyptian amber room spray.jpg" alt="egyptian amber room spray">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Egyptian Amber</h3>
+                        <p class="product-price"><span class="from">From</span> $32.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">☀️</div>
+                    <div class="product-info">
+                        <h3 class="product-title">Golden Hour</h3>
+                        <p class="product-price">$35.00 USD</p>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in">
+                    <div class="product-image">🌺</div>
+                    <div class="product-info">
+                        <h3 class="product-title">Tropical Escape</h3>
+                        <p class="product-price">$30.00 USD</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="container">
+            <h2 class="section-title fade-in">Frequently Asked Questions</h2>
+
+            <div class="faq-item fade-in">
+                <div class="faq-question">
+                    What makes Vibe Beads jewelry special?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Every piece in our collection is carefully handcrafted using premium gemstones and materials. We source our beads from ethical suppliers and ensure each piece is unique, with slight variations that make your jewelry truly one-of-a-kind. Our jewelry is designed to be both beautiful and meaningful, incorporating stones with healing properties and positive energy.
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-question">
+                    How long do your candles burn?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Our candles are made with premium soy wax that burns cleanly and slowly. A standard 8oz candle will burn for approximately 45-50 hours, while our larger 16oz candles can burn for up to 90 hours. We recommend trimming the wick to 1/4 inch before each use for optimal burn time and performance.
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-question">
+                    What can I do with finished candle containers?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Our candle containers are designed to be repurposed! Once your candle is finished, clean out the remaining wax with hot water and use the beautiful glass containers as planters for small succulents, storage for jewelry or office supplies, or decorative vases. We also offer candle refills for local customers who want to reuse their favorite containers.
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-question">
+                    Are your products safe and non-toxic?
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    Absolutely! Our candles are made with 100% soy wax, which burns cleanly without releasing harmful toxins. We use cotton wicks and phthalate-free fragrances. Our jewelry uses hypoallergenic materials and nickel-free components. All our products are cruelty-free and environmentally conscious.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Size Guide</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                    <p><a href="#">Wholesale</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/src/main/script/homepage.js"></script>
+</body>
 </html>

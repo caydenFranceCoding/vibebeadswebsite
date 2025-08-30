@@ -1,0 +1,96 @@
+/* Products CSS - Product Card Styles */
+
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+/* Product Card Container */
+.product-card {
+    width: 300px;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 20px;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Product Image Container */
+.product-image {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background-color: #f8f8f8;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+/* Product Info Section */
+.product-info {
+    padding: 20px;
+}
+
+.product-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333333;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.product-price {
+    font-size: 1.1rem;
+    color: #2c5aa0;
+    font-weight: 500;
+    margin: 0;
+}
+
+.product-price .from {
+    font-size: 0.9rem;
+    color: #666666;
+    font-weight: normal;
+    margin-right: 4px;
+}
+
+/* Fade-in Animation */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.8s ease-forward forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .product-card {
+        width: 100%;
+        max-width: 350px;
+        margin: 10px auto;
+    }
+}
