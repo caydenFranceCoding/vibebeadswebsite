@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Candles - Vibe Beads</title>
     <link rel="stylesheet" href="../../src/main/styles/home.css">
-    <link rel="stylesheet" href="/public/pages/css/candles.css">
+    <link rel="stylesheet" href="css/candles.css">
 </head>
 <body>
     <header>
@@ -42,11 +42,27 @@
         </div>
     </div>
 
-    <!-- Page Hero -->
-    <section class="page-hero">
+    <!-- Video Hero Section -->
+    <section class="hero candles-hero">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="../../public/video/premium.mp4" type="video/mp4">
+                <!-- Add your candle video file path here -->
+                <!-- Fallback for browsers that don't support video -->
+                Your browser does not support the video tag.
+            </video>
+            <!-- Optional overlay for better text readability -->
+            <div class="hero-overlay"></div>
+        </div>
+
         <div class="container">
-            <h1 class="page-title fade-in">Premium Candles</h1>
-            <p class="page-subtitle fade-in">Hand-poured with love, crafted with premium soy wax and natural fragrances</p>
+            <div class="hero-content fade-in">
+                <h1>Premium Handcrafted Candles</h1>
+                <p class="hero-tagline">
+                    Discover our collection of artisan candles, hand-poured with premium soy wax and natural fragrances. Each candle is carefully crafted to create the perfect ambiance for your special moments.
+                </p>
+                <a href="#products" class="cta-button">Shop Candles</a>
+            </div>
         </div>
     </section>
 
@@ -63,7 +79,7 @@
     </section>
 
     <!-- Products Section -->
-    <section class="shop-section">
+    <section class="shop-section" id="products">
         <div class="container">
             <div class="products-grid" id="products-grid">
                 <!-- Products will be populated by JavaScript -->

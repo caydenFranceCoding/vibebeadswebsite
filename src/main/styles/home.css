@@ -1,3 +1,8 @@
+/* Premium Typography Updates for home.css */
+
+/* Import premium Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Inter:wght@200;300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -5,10 +10,14 @@
 }
 
 body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.6;
     color: #2c2c2c;
     background-color: #ffffff;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
@@ -34,25 +43,30 @@ nav {
 }
 
 .logo {
-    font-size: 1.8rem;
-    font-weight: 300;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 500;
     color: #2c2c2c;
     text-decoration: none;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .nav-links {
     display: flex;
     list-style: none;
-    gap: 2rem;
+    gap: 2.5rem;
 }
 
 .nav-links a {
     color: #2c2c2c;
     text-decoration: none;
-    font-weight: 300;
+    font-weight: 400;
     font-size: 0.95rem;
     transition: color 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
 }
 
 .nav-links a:hover {
@@ -63,14 +77,16 @@ nav {
     background: transparent;
     color: #2c2c2c;
     border: 1px solid #2c2c2c;
-    padding: 8px 16px;
+    padding: 10px 18px;
     text-decoration: none;
-    font-weight: 300;
+    font-weight: 400;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .cart-icon:hover {
@@ -93,13 +109,14 @@ nav {
     background: transparent;
     color: #2c2c2c;
     border: 2px solid #2c2c2c;
-    padding: 15px 40px;
+    padding: 18px 45px;
     text-decoration: none;
     font-weight: 400;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .view-all-btn:hover {
@@ -156,11 +173,13 @@ nav {
 }
 
 .review-text {
-    font-size: 1rem;
-    line-height: 1.6;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    line-height: 1.7;
     color: #555;
     margin-bottom: 1.5rem;
     font-style: italic;
+    font-weight: 400;
 }
 
 .reviewer-info {
@@ -172,12 +191,16 @@ nav {
 .reviewer-info strong {
     color: #2c2c2c;
     font-size: 1rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
 }
 
 .reviewer-info span {
     color: #8B7355;
     font-size: 0.85rem;
-    font-weight: 300;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .scroll-arrow {
@@ -225,7 +248,7 @@ nav {
 }
 
 .dropdown-arrow {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     transition: transform 0.3s ease;
 }
 
@@ -266,10 +289,12 @@ nav {
     padding: 0.8rem 1.5rem;
     color: #2c2c2c;
     text-decoration: none;
-    font-weight: 300;
-    font-size: 0.9rem;
+    font-weight: 400;
+    font-size: 0.85rem;
     transition: all 0.3s ease;
     border-bottom: 1px solid #f5f5f5;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .dropdown-menu a:hover {
@@ -290,19 +315,24 @@ nav {
 }
 
 .page-title {
-    font-size: 3rem;
-    font-weight: 200;
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 400;
     margin-bottom: 1rem;
     color: #2c2c2c;
     letter-spacing: -0.02em;
+    line-height: 1.2;
 }
 
 .page-subtitle {
-    font-size: 1.2rem;
-    font-weight: 300;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
     color: #666;
     max-width: 600px;
     margin: 0 auto;
+    line-height: 1.6;
+    font-style: italic;
 }
 
 .filter-section {
@@ -321,12 +351,16 @@ nav {
 .filter-btn {
     background: transparent;
     border: 1px solid #e8e8e8;
-    padding: 0.8rem 1.5rem;
+    padding: 0.8rem 1.8rem;
     color: #666;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-weight: 300;
+    font-weight: 400;
     border-radius: 25px;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
 }
 
 .filter-btn:hover,
@@ -347,12 +381,13 @@ nav {
     color: white;
     border: none;
     padding: 0.8rem;
-    font-size: 0.9rem;
-    font-weight: 400;
+    font-size: 0.85rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
 }
 
 .add-to-cart-btn:hover {
@@ -362,7 +397,7 @@ nav {
 
 .nav-links a.active {
     color: #8B7355;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 .sale-banner {
@@ -370,8 +405,10 @@ nav {
     color: white;
     text-align: center;
     padding: 1rem 0;
-    font-weight: 400;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
 }
 
 .hero {
@@ -424,41 +461,45 @@ nav {
 }
 
 .hero-content h1 {
-    font-size: 3.5rem;
-    font-weight: 200;
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 700;
     margin-bottom: 1.5rem;
     color: white;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.1;
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .hero-tagline {
-    font-size: 1.3rem;
-    font-weight: 300;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
     color: rgba(255, 255, 255, 0.95);
     margin-bottom: 3rem;
-    max-width: 600px;
+    max-width: 650px;
     margin-left: auto;
     margin-right: auto;
     line-height: 1.6;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+    font-style: italic;
 }
 
 .cta-button {
     display: inline-block;
     background: #8B7355;
     color: white;
-    padding: 15px 40px;
+    padding: 18px 45px;
     text-decoration: none;
-    font-weight: 400;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    letter-spacing: 1px;
     transition: all 0.3s ease;
     border: none;
     cursor: pointer;
     text-transform: uppercase;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    font-family: 'Inter', sans-serif;
 }
 
 .cta-button:hover {
@@ -474,8 +515,9 @@ nav {
 
 .section-title {
     text-align: center;
-    font-size: 2.5rem;
-    font-weight: 200;
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 400;
     margin-bottom: 1rem;
     color: #2c2c2c;
     letter-spacing: -0.01em;
@@ -483,13 +525,16 @@ nav {
 
 .section-subtitle {
     text-align: center;
-    font-size: 1.1rem;
-    font-weight: 300;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
     color: #666;
     margin-bottom: 4rem;
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
+    line-height: 1.6;
+    font-style: italic;
 }
 
 .products-grid {
@@ -548,21 +593,26 @@ nav {
 }
 
 .product-title {
-    font-size: 1.2rem;
-    font-weight: 400;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
     margin-bottom: 0.5rem;
     color: #2c2c2c;
 }
 
 .product-price {
     font-size: 1rem;
-    font-weight: 300;
+    font-weight: 400;
     color: #666;
     margin-bottom: 1rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .product-price .from {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .collection-section {
@@ -589,8 +639,9 @@ nav {
 }
 
 .faq-question {
-    font-size: 1.3rem;
-    font-weight: 400;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 500;
     color: #2c2c2c;
     margin-bottom: 1rem;
     cursor: pointer;
@@ -600,8 +651,9 @@ nav {
 }
 
 .faq-answer {
-    font-size: 1rem;
-    font-weight: 300;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
     color: #666;
     line-height: 1.7;
     display: none;
@@ -615,6 +667,7 @@ nav {
     font-size: 1.2rem;
     color: #8B7355;
     transition: transform 0.3s ease;
+    font-family: 'Inter', sans-serif;
 }
 
 .faq-toggle.active {
@@ -637,7 +690,10 @@ footer {
 .footer-section h3 {
     margin-bottom: 1rem;
     font-size: 1.1rem;
-    font-weight: 400;
+    font-weight: 500;
+    font-family: 'Playfair Display', serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .footer-section p, .footer-section a {
@@ -646,6 +702,7 @@ footer {
     line-height: 1.8;
     font-weight: 300;
     font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
 }
 
 .footer-section a:hover {
@@ -658,6 +715,8 @@ footer {
     text-align: center;
     color: #999;
     font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
 }
 
 .fade-in {
@@ -723,7 +782,20 @@ footer {
     }
 
     .page-title {
-        font-size: 2rem;
+        font-size: 2.5rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2.8rem;
+    }
+
+    .hero-tagline {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 2.2rem;
     }
 
     .filter-tabs {
@@ -738,7 +810,7 @@ footer {
     }
 
     .cart-icon {
-        padding: 6px 12px;
+        padding: 8px 14px;
         font-size: 0.8rem;
     }
 
@@ -752,8 +824,8 @@ footer {
     }
 
     .view-all-btn {
-        padding: 12px 30px;
-        font-size: 0.85rem;
+        padding: 14px 32px;
+        font-size: 0.8rem;
     }
 
     .review-card {
@@ -788,31 +860,35 @@ footer {
         background: rgba(0, 0, 0, 0.5);
     }
 
-    .hero-content h1 {
-        font-size: 2.5rem;
-    }
-
-    .hero-tagline {
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-
     .hero .container {
         padding: 4rem 20px;
     }
 }
 
 @media (max-width: 480px) {
+    .logo {
+        font-size: 1.6rem;
+        letter-spacing: 1px;
+    }
+
     .hero-content h1 {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .hero-tagline {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 
     .cta-button {
-        padding: 12px 30px;
-        font-size: 0.85rem;
+        padding: 14px 32px;
+        font-size: 0.8rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
     }
 }

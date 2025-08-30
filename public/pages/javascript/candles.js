@@ -1,65 +1,71 @@
-// Candles Page JavaScript
+// Candles Page JavaScript - Fixed version
 
-// Product data
+// Product data with emoji placeholders instead of broken image paths
 const candleProducts = [
     {
         id: 1,
         name: 'Apple Ginger Spritz',
         price: 45.00,
-        image: '../images/vanilla bean.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Crisp apple meets warming ginger with a bubbly spritz finish. Fresh, spicy, and invigorating - perfect for energizing any space.',
         burnTime: '45-50 hours',
+        emoji: '🍎',
         featured: true
     },
     {
         id: 2,
         name: 'Blackberry Margarita',
         price: 42.00,
-        image: '../images/sweet tobacco.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Sweet blackberries blended with zesty lime and a hint of salt. Like a summer cocktail in candle form.',
         burnTime: '45-50 hours',
+        emoji: '🫐',
         featured: true
     },
     {
         id: 3,
         name: 'Black Coral Moss',
         price: 48.00,
-        image: '../images/golden hour.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Deep oceanic blend with earthy moss undertones. Mysterious and sophisticated, perfect for creating an elegant atmosphere.',
         burnTime: '45-50 hours',
+        emoji: '🌊',
         featured: true
     },
     {
         id: 4,
         name: 'Egyptian Amber',
         price: 50.00,
-        image: '../images/egyptian amber room spray.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Exotic and mysterious blend of amber resin, frankincense, and warm spices. Transport yourself to ancient lands.',
         burnTime: '45-50 hours',
+        emoji: '🏺',
         featured: true
     },
     {
         id: 5,
         name: 'Mango Papaya',
         price: 38.00,
-        image: '../images/grapefruit and min.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Tropical paradise with ripe mango and sweet papaya. Brings sunshine and summer vibes to any room.',
         burnTime: '45-50 hours',
+        emoji: '🥭',
         featured: false
     },
     {
         id: 6,
         name: 'Pink Watermelon Lemon',
         price: 40.00,
-        image: '../images/fall leaves sticks.jpg', // Fixed path
+        image: null, // Using emoji placeholder
         category: 'signature',
         description: 'Juicy pink watermelon with bright lemon zest. Refreshing and uplifting, perfect for summer gatherings.',
         burnTime: '45-50 hours',
+        emoji: '🍉',
         featured: false
     },
     {
@@ -129,9 +135,8 @@ function createProductCard(product) {
     card.setAttribute('data-product-id', product.id);
     card.onclick = () => openProductModal(product);
 
-    const imageContent = product.image
-        ? `<img src="${product.image}" alt="${product.name}">`
-        : `<span style="font-size: 3rem;">${product.emoji || '🕯️'}</span>`;
+    // Always use emoji placeholder since images don't exist
+    const imageContent = `<span style="font-size: 3rem;">${product.emoji || '🕯️'}</span>`;
 
     card.innerHTML = `
         <div class="product-image">
@@ -158,7 +163,6 @@ function createCustomScentCard() {
             <span style="font-size: 4rem;">✨</span>
         </div>
         <div class="product-info">
-        <div class="product-info">
             <h3 class="product-title">Pick Your Scent</h3>
             <p class="product-price">From $38.00 USD</p>
             <p class="product-description">Create your perfect custom candle by choosing from our collection of premium fragrances</p>
@@ -175,22 +179,16 @@ function openProductModal(product) {
 
     // Update modal content
     document.getElementById('modal-product-title').textContent = product.name;
-    document.getElementById('modal-product-price').textContent = `${product.price.toFixed(2)} USD`;
+    document.getElementById('modal-product-price').textContent = `$${product.price.toFixed(2)} USD`;
     document.getElementById('modal-product-description').innerHTML = `
         <p>${product.description}</p>
         <p><strong>Burn Time:</strong> ${product.burnTime}</p>
     `;
 
-    // Update image
+    // Update image - always use emoji placeholder
     const modalImage = document.getElementById('modal-product-image');
-    if (product.image) {
-        modalImage.src = product.image;
-        modalImage.alt = product.name;
-        modalImage.style.display = 'block';
-    } else {
-        modalImage.style.display = 'none';
-        modalImage.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f8f6f3, #e8e6e0); border-radius: 8px;">${product.emoji || '🕯️'}</div>`;
-    }
+    modalImage.style.display = 'none';
+    modalImage.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f8f6f3, #e8e6e0); border-radius: 8px;">${product.emoji || '🕯️'}</div>`;
 
     // Reset options
     selectedSize = '8oz';
@@ -205,10 +203,10 @@ function openProductModal(product) {
         }
         // Update prices based on current product
         if (btn.dataset.size === '8oz') {
-            btn.textContent = `8oz Candle - ${product.price.toFixed(2)}`;
+            btn.textContent = `8oz Candle - $${product.price.toFixed(2)}`;
             btn.dataset.price = '0';
         } else {
-            btn.textContent = `16oz Candle - ${(product.price + 20).toFixed(2)}`;
+            btn.textContent = `16oz Candle - $${(product.price + 20).toFixed(2)}`;
             btn.dataset.price = '20';
         }
     });
@@ -366,7 +364,7 @@ window.addToCart = function() {
     const total = (currentProduct.price + selectedSizePrice) * quantity;
 
     // Show success message (you can integrate with your cart system)
-    alert(`Added to cart!\n${currentProduct.name} (${selectedSize})\nQuantity: ${quantity}\nTotal: ${total.toFixed(2)}`);
+    alert(`Added to cart!\n${currentProduct.name} (${selectedSize})\nQuantity: ${quantity}\nTotal: $${total.toFixed(2)}`);
 
     closeModal();
 
@@ -381,7 +379,7 @@ window.addCustomToCart = function() {
     const basePrice = parseInt(selectedScent.dataset.price);
     const total = basePrice + selectedSizePrice;
 
-    alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: ${total.toFixed(2)}`);
+    alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: $${total.toFixed(2)}`);
 
     closeModal();
     updateCartCounter();
