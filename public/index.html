@@ -9,6 +9,182 @@
     <link rel="stylesheet" href="./styles/checkout.css">
     <link rel="stylesheet" href="./pages/css/candles.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- Category Navigation Styles -->
+    <style>
+        /* Category Navigation Section */
+        .category-navigation {
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #f8f6f3 0%, #f0ede8 100%);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 115, 85, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .category-card:hover::before {
+            left: 100%;
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border: 1px solid rgba(139, 115, 85, 0.2);
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            filter: grayscale(0);
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover .category-icon {
+            transform: scale(1.1);
+            filter: brightness(1.1);
+        }
+
+        .category-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #2c2c2c;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .category-card:hover .category-name {
+            color: #8B7355;
+        }
+
+        .category-description {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .category-count {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #8B7355;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .category-card:hover .category-count {
+            opacity: 1;
+        }
+
+        /* Featured category styling */
+        .category-card.featured {
+            background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
+            color: white;
+        }
+
+        .category-card.featured .category-name,
+        .category-card.featured .category-description {
+            color: white;
+        }
+
+        .category-card.featured:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(139, 115, 85, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .category-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                padding: 0 15px;
+            }
+
+            .category-card {
+                padding: 1.5rem 0.8rem;
+            }
+
+            .category-icon {
+                font-size: 2.5rem;
+            }
+
+            .category-name {
+                font-size: 1rem;
+            }
+
+            .category-description {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.8rem;
+            }
+
+            .category-card {
+                padding: 1.2rem 0.6rem;
+            }
+
+            .category-icon {
+                font-size: 2rem;
+            }
+
+            .category-name {
+                font-size: 0.9rem;
+            }
+
+            .category-description {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -194,6 +370,58 @@
         </div>
     </section>
 
+    <!-- Category Navigation Section -->
+    <section class="category-navigation">
+        <div class="container">
+            <h2 class="section-title fade-in">Explore Our Collections</h2>
+            <p class="section-subtitle fade-in">Discover handcrafted luxury across our complete range of premium products</p>
+
+            <div class="category-grid">
+                <a href="./pages/shop-all.html" class="category-card featured fade-in">
+                    <span class="category-count">All</span>
+                    <span class="category-icon">✨</span>
+                    <h3 class="category-name">Shop All</h3>
+                    <p class="category-description">Complete collection of luxury items</p>
+                </a>
+
+                <a href="./pages/candles.html" class="category-card fade-in">
+                    <span class="category-count">15+</span>
+                    <span class="category-icon">🕯️</span>
+                    <h3 class="category-name">Candles</h3>
+                    <p class="category-description">Hand-poured soy wax candles</p>
+                </a>
+
+                <a href="./pages/wax-melts.html" class="category-card fade-in">
+                    <span class="category-count">12+</span>
+                    <span class="category-icon">🧩</span>
+                    <h3 class="category-name">Wax Melts</h3>
+                    <p class="category-description">Premium fragrance cubes</p>
+                </a>
+
+                <a href="./pages/room-sprays.html" class="category-card fade-in">
+                    <span class="category-count">8+</span>
+                    <span class="category-icon">🌬️</span>
+                    <h3 class="category-name">Room Sprays</h3>
+                    <p class="category-description">Instant home fragrance</p>
+                </a>
+
+                <a href="./pages/diffusers.html" class="category-card fade-in">
+                    <span class="category-count">10+</span>
+                    <span class="category-icon">🌿</span>
+                    <h3 class="category-name">Diffusers</h3>
+                    <p class="category-description">Elegant reed diffusers</p>
+                </a>
+
+                <a href="./pages/jewelry.html" class="category-card fade-in">
+                    <span class="category-count">20+</span>
+                    <span class="category-icon">💎</span>
+                    <h3 class="category-name">Jewelry</h3>
+                    <p class="category-description">Handcrafted beaded jewelry</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <section class="collection-section">
         <div class="container">
             <h2 class="section-title fade-in">NEW! Artisan Scents Collection</h2>
@@ -351,6 +579,42 @@
                 alert(`Added ${name} to cart! (Cart manager not loaded)`);
             }
         }
+
+        // Enhanced reviews scroll functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollContainer = document.querySelector('.reviews-scroll');
+            const scrollLeft = document.getElementById('scrollLeft');
+            const scrollRight = document.getElementById('scrollRight');
+
+            if (scrollContainer && scrollLeft && scrollRight) {
+                scrollLeft.addEventListener('click', () => {
+                    scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
+                });
+
+                scrollRight.addEventListener('click', () => {
+                    scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
+                });
+            }
+
+            // Category cards staggered animation
+            const categoryCards = document.querySelectorAll('.category-card');
+            const categoryObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('visible');
+                        }, index * 100);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+
+            categoryCards.forEach(card => {
+                categoryObserver.observe(card);
+            });
+        });
     </script>
 </body>
 </html>
