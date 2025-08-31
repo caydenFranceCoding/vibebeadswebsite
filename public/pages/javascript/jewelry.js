@@ -1,7 +1,7 @@
-// Jewelry Page JavaScript with Real Images and Cart Integration
+// Jewelry Page JavaScript - Bracelets Only
 // File: public/pages/javascript/jewelry.js
 
-// Product data for jewelry with names matching image files
+// Product data for bracelets only
 const jewelryProducts = [
     {
         id: 301,
@@ -13,18 +13,6 @@ const jewelryProducts = [
         gemstone: 'Faceted Mixed Stones',
         properties: 'Elegance & Light',
         emoji: '✨',
-        featured: true
-    },
-    {
-        id: 302,
-        name: 'Iridescent Gemstone & Metallic Spacer Necklace',
-        price: 65.00,
-        image: '../images/jewelry/iridecent  gemstone & metallic spacer.jpeg',
-        category: 'necklaces',
-        description: 'Stunning iridescent gemstones shimmer with rainbow colors, complemented by sleek metallic spacers. A mesmerizing piece that changes with the light.',
-        gemstone: 'Iridescent Stone',
-        properties: 'Magic & Transformation',
-        emoji: '🌈',
         featured: true
     },
     {
@@ -64,18 +52,6 @@ const jewelryProducts = [
         featured: false
     },
     {
-        id: 306,
-        name: 'Multicolored Jasper Statement Necklace',
-        price: 62.00,
-        image: '../images/jewelry/multicolored jasper.jpeg',
-        category: 'necklaces',
-        description: 'Vibrant multicolored jasper stones create a stunning rainbow effect. Each stone is unique, bringing together earth energies in perfect harmony.',
-        gemstone: 'Multicolored Jasper',
-        properties: 'Harmony & Grounding',
-        emoji: '🌈',
-        featured: false
-    },
-    {
         id: 307,
         name: 'Mystery Stone Discovery Bracelet',
         price: 20.00,
@@ -85,18 +61,6 @@ const jewelryProducts = [
         gemstone: 'Mixed Mystery Stones',
         properties: 'Discovery & Wonder',
         emoji: '❓',
-        featured: false
-    },
-    {
-        id: 308,
-        name: 'Green Jade Healing Necklace',
-        price: 55.00,
-        image: '../images/jewelry/green jade.jpeg',
-        category: 'necklaces',
-        description: 'Classic green jade beads in their natural beauty. Revered for centuries for heart healing, good health, and attracting prosperity.',
-        gemstone: 'Green Jade',
-        properties: 'Health & Prosperity',
-        emoji: '💚',
         featured: false
     },
     {
@@ -136,18 +100,6 @@ const jewelryProducts = [
         featured: false
     },
     {
-        id: 312,
-        name: 'Garnet & Gold Spacer Passion Necklace',
-        price: 68.00,
-        image: '../images/jewelry/garnet stone with gold spacer.jpeg',
-        category: 'necklaces',
-        description: 'Rich red garnet stones accented with elegant gold spacers. Classic combination that symbolizes love, passion, and commitment.',
-        gemstone: 'Garnet',
-        properties: 'Passion & Love',
-        emoji: '❤️',
-        featured: false
-    },
-    {
         id: 313,
         name: 'Mahogany Obsidian Cowboy Hat Bracelet',
         price: 20.00,
@@ -169,18 +121,6 @@ const jewelryProducts = [
         gemstone: 'Map Jasper',
         properties: 'Journey & Discovery',
         emoji: '🥾',
-        featured: false
-    },
-    {
-        id: 315,
-        name: 'Multicolored Kyanite Harmony Necklace',
-        price: 59.00,
-        image: '../images/jewelry/multicolored stone (kyanite).jpeg',
-        category: 'necklaces',
-        description: 'Beautiful kyanite in multiple natural colors creates perfect energetic harmony. Known for aligning all chakras and promoting tranquility.',
-        gemstone: 'Multicolored Kyanite',
-        properties: 'Alignment & Tranquility',
-        emoji: '🌸',
         featured: false
     },
     {
@@ -228,14 +168,6 @@ let selectedSize = 'single';
 let selectedSizePrice = 0;
 let quantity = 1;
 
-// Custom design state
-let selectedStyle = null;
-let selectedGemstone = null;
-let selectedAccents = [];
-let styleBasePrice = 0;
-let gemstonePrice = 0;
-let accentsPrice = 0;
-
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for cart manager to be ready
@@ -244,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         setupModalEvents();
         setupFilterButtons();
-        setupCustomDesignBuilder();
     }, 100);
 });
 
@@ -253,7 +184,7 @@ function renderProducts() {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
 
-    // Filter products
+    // Filter products - only bracelets now, but keeping filter logic for consistency
     let filteredProducts = jewelryProducts;
     if (currentFilter !== 'all') {
         filteredProducts = jewelryProducts.filter(product => product.category === currentFilter);
@@ -261,12 +192,6 @@ function renderProducts() {
 
     // Clear grid
     productsGrid.innerHTML = '';
-
-    // Add custom design card if showing all or custom filter
-    if (currentFilter === 'all' || currentFilter === 'custom') {
-        const customCard = createCustomDesignCard();
-        productsGrid.appendChild(customCard);
-    }
 
     // Add product cards
     filteredProducts.forEach(product => {
@@ -280,7 +205,7 @@ function renderProducts() {
     });
 }
 
-// UPDATED: Create product card with real images
+// Create product card
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
@@ -317,15 +242,12 @@ function quickAddToCart(productId) {
     if (!product) return;
 
     if (window.cartManager) {
-        // For bracelets, use default single wrap pricing
-        let sizeName = product.category === 'bracelets' ? 'Single Wrap' : 'Standard Size';
-
         const cartItem = {
             id: product.id,
-            name: `${product.name} (${sizeName})`,
+            name: `${product.name} (Single Wrap)`,
             price: product.price,
             quantity: 1,
-            size: sizeName,
+            size: 'Single Wrap',
             scent: null,
             image: product.emoji,
             isCustom: false
@@ -339,56 +261,7 @@ function quickAddToCart(productId) {
     }
 }
 
-// Create custom design card
-function createCustomDesignCard() {
-    const card = document.createElement('div');
-    card.className = 'product-card fade-in custom-design-card';
-    card.onclick = () => openCustomDesignModal();
-
-    card.innerHTML = `
-        <div class="product-image">
-            <span style="font-size: 4rem;">✨</span>
-        </div>
-        <div class="product-info">
-            <h3 class="product-title">Custom Jewelry Design</h3>
-            <div class="gemstone-properties">Personalized Creation</div>
-            <p class="product-price">From $20.00 USD</p>
-            <p class="product-description">Create your perfect piece by choosing gemstones, style, and personal touches. Each custom design is handcrafted specifically for you.</p>
-            <button class="add-to-cart-btn" onclick="event.stopPropagation(); openCustomDesignModal()">Design Your Piece</button>
-        </div>
-    `;
-
-    return card;
-}
-
-// Function to get size options based on product category
-function getSizeOptions(product) {
-    if (product.category === 'bracelets') {
-        return `
-            <div class="size-options">
-                <h4>Wrap Style (One Size Fits All):</h4>
-                <div class="size-buttons">
-                    <button class="size-btn active" data-size="single" data-price="0">Single Wrap - $20</button>
-                    <button class="size-btn" data-size="double" data-price="15">Double Wrap - $35</button>
-                    <button class="size-btn" data-size="triple" data-price="30">Triple Wrap - $50</button>
-                </div>
-            </div>
-        `;
-    } else {
-        // For necklaces and earrings, keep standard sizing
-        return `
-            <div class="size-options">
-                <h4>Size:</h4>
-                <div class="size-buttons">
-                    <button class="size-btn active" data-size="standard" data-price="0">Standard Size</button>
-                    <button class="size-btn" data-size="custom" data-price="15">Custom Size (+$15)</button>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// UPDATED: Open product modal with real images and dynamic sizing
+// Open product modal
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
@@ -402,7 +275,7 @@ function openProductModal(product) {
         <p>${product.description}</p>
     `;
 
-    // UPDATED: Use real image in modal
+    // Use real image in modal
     const modalImageContainer = document.querySelector('#product-modal .modal-image');
     if (product.image) {
         modalImageContainer.innerHTML = `<img id="modal-product-image" src="${product.image}" alt="${product.name}">`;
@@ -410,19 +283,20 @@ function openProductModal(product) {
         modalImageContainer.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f8f6f3, #e8e6e0); border-radius: 8px;">${product.emoji || '💎'}</div>`;
     }
 
-    // Update size options based on product category
+    // Update size options for bracelets
     const sizeOptionsContainer = document.querySelector('#product-modal .size-options');
-    sizeOptionsContainer.outerHTML = getSizeOptions(product);
+    sizeOptionsContainer.innerHTML = `
+        <h4>Wrap Style (One Size Fits All):</h4>
+        <div class="size-buttons">
+            <button class="size-btn active" data-size="single" data-price="0">Single Wrap - $20</button>
+            <button class="size-btn" data-size="double" data-price="15">Double Wrap - $35</button>
+            <button class="size-btn" data-size="triple" data-price="30">Triple Wrap - $50</button>
+        </div>
+    `;
 
-    // Reset options based on product type
-    if (product.category === 'bracelets') {
-        selectedSize = 'single';
-        selectedSizePrice = 0;
-    } else {
-        selectedSize = 'standard';
-        selectedSizePrice = 0;
-    }
-
+    // Reset options
+    selectedSize = 'single';
+    selectedSizePrice = 0;
     quantity = 1;
 
     // Re-setup size button event listeners
@@ -450,93 +324,6 @@ function setupSizeButtons() {
             updateTotalPrice();
         });
     });
-}
-
-// Open custom design modal
-function openCustomDesignModal() {
-    const modal = document.getElementById('custom-design-modal');
-
-    // Reset all selections
-    selectedStyle = null;
-    selectedGemstone = null;
-    selectedAccents = [];
-    styleBasePrice = 0;
-    gemstonePrice = 0;
-    accentsPrice = 0;
-
-    // Reset form inputs
-    document.querySelectorAll('input[name="style"]').forEach(input => {
-        input.checked = false;
-    });
-    document.querySelectorAll('input[name="gemstone"]').forEach(input => {
-        input.checked = false;
-    });
-    document.querySelectorAll('input[name="accents"]').forEach(input => {
-        input.checked = false;
-    });
-    document.getElementById('special-requests').value = '';
-
-    updateCustomPrice();
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-
-// Setup custom design builder functionality
-function setupCustomDesignBuilder() {
-    // Style selection - updated pricing for bracelets
-    document.querySelectorAll('input[name="style"]').forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.checked) {
-                selectedStyle = this.value;
-                // Updated pricing: bracelet $20, necklace $65, earrings $35
-                if (this.value === 'bracelet') {
-                    styleBasePrice = 20;
-                } else {
-                    styleBasePrice = parseInt(this.dataset.basePrice);
-                }
-                updateCustomPrice();
-            }
-        });
-    });
-
-    // Gemstone selection
-    document.querySelectorAll('input[name="gemstone"]').forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.checked) {
-                selectedGemstone = this.value;
-                gemstonePrice = parseInt(this.dataset.price);
-                updateCustomPrice();
-            }
-        });
-    });
-
-    // Accent stones selection
-    document.querySelectorAll('input[name="accents"]').forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.checked) {
-                selectedAccents.push({
-                    name: this.value,
-                    price: parseInt(this.dataset.price)
-                });
-            } else {
-                selectedAccents = selectedAccents.filter(accent => accent.name !== this.value);
-            }
-
-            // Calculate total accents price
-            accentsPrice = selectedAccents.reduce((total, accent) => total + accent.price, 0);
-            updateCustomPrice();
-        });
-    });
-}
-
-// Update custom design price
-function updateCustomPrice() {
-    const totalPrice = styleBasePrice + gemstonePrice + accentsPrice;
-    const addButton = document.querySelector('#custom-design-modal .add-to-cart-btn');
-    const priceSpan = document.getElementById('custom-total-price');
-
-    priceSpan.textContent = totalPrice.toFixed(2);
-    addButton.disabled = !selectedStyle || !selectedGemstone;
 }
 
 // Close modals
@@ -615,25 +402,21 @@ function updateTotalPrice() {
 }
 
 // Get size display name for cart
-function getSizeDisplayName(product, sizeType) {
-    if (product.category === 'bracelets') {
-        switch(sizeType) {
-            case 'single': return 'Single Wrap';
-            case 'double': return 'Double Wrap';
-            case 'triple': return 'Triple Wrap';
-            default: return 'Single Wrap';
-        }
-    } else {
-        return sizeType === 'standard' ? 'Standard Size' : 'Custom Size';
+function getSizeDisplayName(sizeType) {
+    switch(sizeType) {
+        case 'single': return 'Single Wrap';
+        case 'double': return 'Double Wrap';
+        case 'triple': return 'Triple Wrap';
+        default: return 'Single Wrap';
     }
 }
 
-// Add to cart functions with proper cart integration
+// Add to cart function
 window.addToCart = function() {
     if (!currentProduct) return;
 
     const finalPrice = currentProduct.price + selectedSizePrice;
-    const sizeName = getSizeDisplayName(currentProduct, selectedSize);
+    const sizeName = getSizeDisplayName(selectedSize);
 
     // Create cart item
     const cartItem = {
@@ -655,43 +438,6 @@ window.addToCart = function() {
         // Fallback for demo
         console.log('Added to cart (fallback):', cartItem);
         alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: $${(finalPrice * quantity).toFixed(2)}`);
-    }
-
-    closeModal();
-};
-
-window.addCustomToCart = function() {
-    if (!selectedStyle || !selectedGemstone) return;
-
-    const totalPrice = styleBasePrice + gemstonePrice + accentsPrice;
-    const specialRequests = document.getElementById('special-requests').value;
-
-    // Build custom item name
-    let itemName = `Custom ${selectedStyle} - ${selectedGemstone}`;
-    if (selectedAccents.length > 0) {
-        itemName += ` with ${selectedAccents.map(accent => accent.name).join(', ')}`;
-    }
-
-    // Create cart item for custom jewelry
-    const cartItem = {
-        id: `custom-jewelry-${Date.now()}`,
-        name: itemName,
-        price: totalPrice,
-        quantity: 1,
-        size: selectedStyle === 'bracelet' ? 'Single Wrap (Custom)' : 'Custom Made',
-        scent: specialRequests || null,
-        image: '✨',
-        isCustom: true
-    };
-
-    // Add to cart using cart manager
-    if (window.cartManager) {
-        window.cartManager.addItem(cartItem);
-        console.log('Added custom jewelry to cart via cart manager:', cartItem);
-    } else {
-        // Fallback for demo
-        console.log('Added custom jewelry to cart (fallback):', cartItem);
-        alert(`Added custom jewelry to cart!\nDesign: ${itemName}\nTotal: $${totalPrice.toFixed(2)}`);
     }
 
     closeModal();
