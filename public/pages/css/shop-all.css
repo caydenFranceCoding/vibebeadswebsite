@@ -1,0 +1,429 @@
+/* Shop All Page Specific Styles */
+
+/* Page Hero */
+.page-hero {
+    background: linear-gradient(135deg, #f8f6f3 0%, #f0ede8 100%);
+    text-align: center;
+    padding: 4rem 0;
+    margin-bottom: 0;
+}
+
+.page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 400;
+    margin-bottom: 1rem;
+    color: #2c2c2c;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.page-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: #666;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+/* Quick Navigation */
+.quick-nav {
+    background: white;
+    padding: 2rem 0;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 70px;
+    z-index: 50;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    background: transparent;
+    border: 2px solid #e8e8e8;
+    color: #666;
+    padding: 0.8rem 2rem;
+    text-decoration: none;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+}
+
+.nav-btn:hover {
+    background: #8B7355;
+    color: white;
+    border-color: #8B7355;
+    transform: translateY(-2px);
+}
+
+/* Product Sections */
+.product-section {
+    padding: 4rem 0;
+    background: white;
+}
+
+.product-section.alt-bg {
+    background: #fafafa;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.section-header .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    margin-bottom: 1rem;
+    color: #2c2c2c;
+    letter-spacing: -0.01em;
+}
+
+.section-header .section-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #666;
+    margin-bottom: 2rem;
+    font-style: italic;
+}
+
+.view-category-btn {
+    display: inline-block;
+    background: transparent;
+    color: #8B7355;
+    border: 2px solid #8B7355;
+    padding: 12px 30px;
+    text-decoration: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border-radius: 25px;
+    font-family: 'Inter', sans-serif;
+}
+
+.view-category-btn:hover {
+    background: #8B7355;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(139, 115, 85, 0.2);
+}
+
+/* Enhanced Product Grid */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Enhanced Product Cards */
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    cursor: pointer;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.product-image {
+    width: 100%;
+    height: 280px;
+    background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #8B7355;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+.product-info {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.product-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #2c2c2c;
+    line-height: 1.3;
+}
+
+.product-price {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #8B7355;
+    margin-bottom: 0.8rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-description {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    font-style: italic;
+    min-height: 2.8rem;
+}
+
+/* Gemstone Properties for Jewelry */
+.gemstone-properties {
+    font-size: 0.8rem;
+    color: #8B7355;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+}
+
+/* Add to Cart Button */
+.add-to-cart-btn {
+    width: 100%;
+    background: #8B7355;
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.add-to-cart-btn:hover {
+    background: #6d5a42;
+    transform: translateY(-2px);
+}
+
+/* Newsletter Section */
+.newsletter-section {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
+    color: white;
+    text-align: center;
+}
+
+.newsletter-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.newsletter-section .section-title {
+    color: white;
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+}
+
+.newsletter-section .section-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+}
+
+.newsletter-form {
+    display: flex;
+    max-width: 400px;
+    margin: 0 auto;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.newsletter-form input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: none;
+    font-size: 1rem;
+    outline: none;
+    background: white;
+    color: #2c2c2c;
+    font-family: 'Inter', sans-serif;
+}
+
+.newsletter-form input::placeholder {
+    color: #999;
+}
+
+.newsletter-form button {
+    background: #2c2c2c;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.newsletter-form button:hover {
+    background: #1a1a1a;
+}
+
+/* Section Spacing */
+.product-section:first-of-type {
+    padding-top: 3rem;
+}
+
+.product-section:last-of-type {
+    padding-bottom: 4rem;
+}
+
+/* Fade-in Enhancement */
+.fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s ease;
+}
+
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Smooth scrolling for anchor links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Section anchor offset for sticky header */
+.product-section {
+    scroll-margin-top: 100px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        padding: 0 1rem;
+    }
+
+    .nav-buttons {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .nav-btn {
+        white-space: nowrap;
+        min-width: auto;
+        padding: 0.6rem 1.5rem;
+        font-size: 0.8rem;
+    }
+
+    .section-header .section-title {
+        font-size: 2rem;
+    }
+
+    .section-header .section-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .product-card {
+        margin: 0 auto;
+        max-width: 300px;
+    }
+
+    .newsletter-form {
+        flex-direction: column;
+        border-radius: 0;
+    }
+
+    .newsletter-form input,
+    .newsletter-form button {
+        border-radius: 6px;
+    }
+
+    .newsletter-form input {
+        margin-bottom: 1rem;
+    }
+
+    .quick-nav {
+        position: static;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .section-header .section-title {
+        font-size: 1.8rem;
+    }
+
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+
+    .product-card {
+        max-width: 100%;
+    }
+
+    .nav-buttons {
+        padding: 0 1rem;
+    }
+
+    .view-category-btn {
+        padding: 10px 25px;
+        font-size: 0.75rem;
+    }
+}

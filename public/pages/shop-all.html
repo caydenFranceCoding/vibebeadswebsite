@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop All - Vibe Beads</title>
+    <link rel="stylesheet" href="../styles/home.css">
+    <link rel="stylesheet" href="../styles/products.css">
+    <link rel="stylesheet" href="css/shop-all.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="../index.html" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="shop-all.html" class="active">Shop All</a></li>
+                        <li><a href="candles.html">Candles</a></li>
+                        <li><a href="diffusers.html">Diffusers</a></li>
+                        <li><a href="wax-melts.html">Wax Melts</a></li>
+                        <li><a href="room-sprays.html">Room Sprays</a></li>
+                        <li><a href="jewelry.html">Jewelry</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="../checkout/checkout.html" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Shop All Collections - Free Shipping on Orders Over $75</strong>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="page-hero">
+        <div class="container">
+            <h1 class="page-title fade-in">Complete Collection</h1>
+            <p class="page-subtitle fade-in">Discover our entire range of handcrafted candles, premium wax melts, elegant diffusers, room sprays, and artisan jewelry</p>
+        </div>
+    </section>
+
+    <!-- Quick Navigation -->
+    <section class="quick-nav">
+        <div class="container">
+            <div class="nav-buttons">
+                <a href="#candles" class="nav-btn">Candles</a>
+                <a href="#wax-melts" class="nav-btn">Wax Melts</a>
+                <a href="#room-sprays" class="nav-btn">Room Sprays</a>
+                <a href="#diffusers" class="nav-btn">Diffusers</a>
+                <a href="#jewelry" class="nav-btn">Jewelry</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Candles Section -->
+    <section class="product-section" id="candles">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title fade-in">Artisan Candles</h2>
+                <p class="section-subtitle fade-in">Hand-poured with premium soy wax and natural fragrances</p>
+                <a href="candles.html" class="view-category-btn">View All Candles</a>
+            </div>
+
+            <div class="products-grid">
+                <div class="product-card fade-in" onclick="addQuickProduct('apple-ginger-spritz', 'Apple Ginger Spritz', 45.00, '🍎')">
+                    <div class="product-image">
+                        <img src="../images/candles/apple ginger spritz.jpeg" alt="Apple Ginger Spritz Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Apple Ginger Spritz</h3>
+                        <p class="product-price">From $45.00 USD</p>
+                        <p class="product-description">Crisp apple meets warming ginger with a bubbly spritz finish</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('apple-ginger-spritz', 'Apple Ginger Spritz', 45.00, '🍎')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('blackberry-margarita', 'Blackberry Margarita', 42.00, '🫐')">
+                    <div class="product-image">
+                        <img src="../images/candles/black berry margarita.jpeg" alt="Blackberry Margarita Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Blackberry Margarita</h3>
+                        <p class="product-price">From $42.00 USD</p>
+                        <p class="product-description">Sweet blackberries blended with zesty lime and a hint of salt</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('blackberry-margarita', 'Blackberry Margarita', 42.00, '🫐')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('black-coral-moss', 'Black Coral Moss', 48.00, '🌊')">
+                    <div class="product-image">
+                        <img src="../images/candles/black coral & moss.jpeg" alt="Black Coral Moss Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Black Coral Moss</h3>
+                        <p class="product-price">From $48.00 USD</p>
+                        <p class="product-description">Deep oceanic blend with earthy moss undertones</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('black-coral-moss', 'Black Coral Moss', 48.00, '🌊')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('egyptian-amber', 'Egyptian Amber', 50.00, '🏺')">
+                    <div class="product-image">
+                        <img src="../images/candles/egyption amber.jpeg" alt="Egyptian Amber Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Egyptian Amber</h3>
+                        <p class="product-price">From $50.00 USD</p>
+                        <p class="product-description">Exotic blend of amber resin, frankincense, and warm spices</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('egyptian-amber', 'Egyptian Amber', 50.00, '🏺')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('vanilla-bean', 'Vanilla Bean', 42.00, '🤍')">
+                    <div class="product-image">
+                        <img src="../images/candles/vanilla bean.jpeg" alt="Vanilla Bean Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Vanilla Bean</h3>
+                        <p class="product-price">From $42.00 USD</p>
+                        <p class="product-description">Rich, creamy vanilla bean with warm undertones</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('vanilla-bean', 'Vanilla Bean', 42.00, '🤍')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('grapefruit-mint', 'Grapefruit & Mint', 41.00, '🍊')">
+                    <div class="product-image">
+                        <img src="../images/candles/grapefruit & mint.jpeg" alt="Grapefruit & Mint Candle" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Grapefruit & Mint</h3>
+                        <p class="product-price">From $41.00 USD</p>
+                        <p class="product-description">Fresh grapefruit with cooling mint</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('grapefruit-mint', 'Grapefruit & Mint', 41.00, '🍊')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Wax Melts Section -->
+    <section class="product-section alt-bg" id="wax-melts">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title fade-in">Premium Wax Melts</h2>
+                <p class="section-subtitle fade-in">Long-lasting fragrance cubes for any wax warmer</p>
+                <a href="wax-melts.html" class="view-category-btn">View All Wax Melts</a>
+            </div>
+
+            <div class="products-grid">
+                <div class="product-card fade-in" onclick="addQuickProduct('apple-ginger-melt', 'Apple Ginger Spritz Wax Melt', 8.00, '🍊')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/apple ginger spritz.jpeg" alt="Apple Ginger Spritz Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Apple Ginger Spritz</h3>
+                        <p class="product-price">From $8.00 USD</p>
+                        <p class="product-description">6 cubes per pack, 8-12 hours each</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('apple-ginger-melt', 'Apple Ginger Spritz Wax Melt', 8.00, '🍊')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('ginger-spice-melt', 'Ginger & Spice Wax Melt', 8.00, '🧡')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/ginger & spice.jpeg" alt="Ginger & Spice Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Ginger & Spice</h3>
+                        <p class="product-price">From $8.00 USD</p>
+                        <p class="product-description">Warm ginger root with aromatic spices</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('ginger-spice-melt', 'Ginger & Spice Wax Melt', 8.00, '🧡')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('hot-apple-pie-melt', 'Hot Apple Pie Wax Melt', 8.00, '🥧')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/hot apple pie.jpeg" alt="Hot Apple Pie Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Hot Apple Pie</h3>
+                        <p class="product-price">From $8.00 USD</p>
+                        <p class="product-description">Warm baked apples with cinnamon and buttery crust</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('hot-apple-pie-melt', 'Hot Apple Pie Wax Melt', 8.00, '🥧')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('maple-walnut-melt', 'Maple Walnut Pancakes Wax Melt', 9.00, '🥞')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/maple walnut pancakes.jpeg" alt="Maple Walnut Pancakes Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Maple Walnut Pancakes</h3>
+                        <p class="product-price">From $9.00 USD</p>
+                        <p class="product-description">Rich maple syrup with toasted walnuts</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('maple-walnut-melt', 'Maple Walnut Pancakes Wax Melt', 9.00, '🥞')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('sweet-jamaica-melt', 'Sweet Jamaica Wax Melt', 10.00, '🏝️')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/sweet jamaica.jpeg" alt="Sweet Jamaica Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Sweet Jamaica</h3>
+                        <p class="product-price">From $10.00 USD</p>
+                        <p class="product-description">Tropical blend of coconut, pineapple, and vanilla</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('sweet-jamaica-melt', 'Sweet Jamaica Wax Melt', 10.00, '🏝️')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('almond-macaron-melt', 'Almond Macaron Wax Melt', 8.00, '🍰')">
+                    <div class="product-image">
+                        <img src="../images/wax melts/almond macaron.jpeg" alt="Almond Macaron Wax Melt" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Almond Macaron</h3>
+                        <p class="product-price">From $8.00 USD</p>
+                        <p class="product-description">Sweet almond with delicate vanilla cream</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('almond-macaron-melt', 'Almond Macaron Wax Melt', 8.00, '🍰')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Room Sprays Section -->
+    <section class="product-section" id="room-sprays">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title fade-in">Room Sprays</h2>
+                <p class="section-subtitle fade-in">Instant fragrance for home, office, and car</p>
+                <a href="room-sprays.html" class="view-category-btn">View All Room Sprays</a>
+            </div>
+
+            <div class="products-grid">
+                <div class="product-card fade-in" onclick="addQuickProduct('clean-cotton-spray', 'Clean Cotton Room Spray', 12.00, '☁️')">
+                    <div class="product-image">
+                        <img src="../images/room sprays/clean cotton room spray.jpeg" alt="Clean Cotton Room Spray" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Clean Cotton</h3>
+                        <p class="product-price">From $12.00 USD</p>
+                        <p class="product-description">Fresh, crisp scent of clean laundry</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('clean-cotton-spray', 'Clean Cotton Room Spray', 12.00, '☁️')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('egyptian-amber-spray', 'Egyptian Amber Room Spray', 14.00, '🏺')">
+                    <div class="product-image">
+                        <img src="../images/room sprays/egyption amber room spray.jpeg" alt="Egyptian Amber Room Spray" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Egyptian Amber</h3>
+                        <p class="product-price">From $14.00 USD</p>
+                        <p class="product-description">Rich, exotic amber with warm spices</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('egyptian-amber-spray', 'Egyptian Amber Room Spray', 14.00, '🏺')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('grapefruit-mint-spray', 'Grapefruit & Mint Room Spray', 12.00, '🍊')">
+                    <div class="product-image">
+                        <img src="../images/room sprays/grape fruit and mint.jpeg" alt="Grapefruit & Mint Room Spray" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Grapefruit & Mint</h3>
+                        <p class="product-price">From $12.00 USD</p>
+                        <p class="product-description">Energizing citrus with cooling mint</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('grapefruit-mint-spray', 'Grapefruit & Mint Room Spray', 12.00, '🍊')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('vanilla-orchid-spray', 'Vanilla Orchid Room Spray', 13.00, '🌺')">
+                    <div class="product-image">
+                        <img src="../images/room sprays/vanilla orchid.jpeg" alt="Vanilla Orchid Room Spray" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Vanilla Orchid</h3>
+                        <p class="product-price">From $13.00 USD</p>
+                        <p class="product-description">Delicate vanilla with exotic orchid blooms</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('vanilla-orchid-spray', 'Vanilla Orchid Room Spray', 13.00, '🌺')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diffusers Section -->
+    <section class="product-section alt-bg" id="diffusers">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title fade-in">Reed Diffusers</h2>
+                <p class="section-subtitle fade-in">Continuous fragrance for 2-3 months</p>
+                <a href="diffusers.html" class="view-category-btn">View All Diffusers</a>
+            </div>
+
+            <div class="products-grid">
+                <div class="product-card fade-in" onclick="addQuickProduct('alpine-balsam-diff', 'Alpine Balsam Diffuser', 35.00, '🌲')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #4A90E2;">🌲</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Alpine Balsam</h3>
+                        <p class="product-price">From $35.00 USD</p>
+                        <p class="product-description">Fresh mountain air with crisp balsam fir</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('alpine-balsam-diff', 'Alpine Balsam Diffuser', 35.00, '🌲')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('blackcurrant-jasmine-diff', 'Black Currant Jasmine Diffuser', 42.00, '🫐')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #4A90E2;">🫐</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Black Currant Jasmine</h3>
+                        <p class="product-price">From $42.00 USD</p>
+                        <p class="product-description">Rich berries with exotic jasmine flowers</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('blackcurrant-jasmine-diff', 'Black Currant Jasmine Diffuser', 42.00, '🫐')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('cool-citrus-basil-diff', 'Cool Citrus Basil Diffuser', 36.00, '🍋')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #4A90E2;">🍋</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Cool Citrus Basil</h3>
+                        <p class="product-price">From $36.00 USD</p>
+                        <p class="product-description">Refreshing citrus with aromatic basil</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('cool-citrus-basil-diff', 'Cool Citrus Basil Diffuser', 36.00, '🍋')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('honeysuckle-jasmine-diff', 'Honeysuckle Jasmine Diffuser', 40.00, '🌸')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #4A90E2;">🌸</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Honeysuckle Jasmine</h3>
+                        <p class="product-price">From $40.00 USD</p>
+                        <p class="product-description">Sweet honeysuckle with delicate jasmine</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('honeysuckle-jasmine-diff', 'Honeysuckle Jasmine Diffuser', 40.00, '🌸')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jewelry Section -->
+    <section class="product-section" id="jewelry">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title fade-in">Handcrafted Jewelry</h2>
+                <p class="section-subtitle fade-in">Genuine gemstones with healing properties</p>
+                <a href="jewelry.html" class="view-category-btn">View All Jewelry</a>
+            </div>
+
+            <div class="products-grid">
+                <div class="product-card fade-in" onclick="addQuickProduct('rose-quartz-bracelet', 'Rose Quartz Serenity Bracelet', 45.00, '💖')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #8B7355;">💖</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Rose Quartz Serenity</h3>
+                        <div class="gemstone-properties">Love & Healing</div>
+                        <p class="product-price">$45.00 USD</p>
+                        <p class="product-description">Handcrafted bracelet promoting love and healing</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('rose-quartz-bracelet', 'Rose Quartz Serenity Bracelet', 45.00, '💖')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('amethyst-necklace', 'Amethyst Clarity Necklace', 65.00, '💜')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #8B7355;">💜</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Amethyst Clarity</h3>
+                        <div class="gemstone-properties">Clarity & Peace</div>
+                        <p class="product-price">$65.00 USD</p>
+                        <p class="product-description">Beautiful necklace enhancing clarity and peace</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('amethyst-necklace', 'Amethyst Clarity Necklace', 65.00, '💜')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('moonstone-earrings', 'Moonstone Intuition Earrings', 35.00, '✨')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #8B7355;">✨</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Moonstone Intuition</h3>
+                        <div class="gemstone-properties">Intuition & Balance</div>
+                        <p class="product-price">$35.00 USD</p>
+                        <p class="product-description">Delicate earrings enhancing intuition</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('moonstone-earrings', 'Moonstone Intuition Earrings', 35.00, '✨')">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="product-card fade-in" onclick="addQuickProduct('black-tourmaline-bracelet', 'Black Tourmaline Protection Bracelet', 52.00, '🖤')">
+                    <div class="product-image">
+                        <span style="font-size: 4rem; color: #8B7355;">🖤</span>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">Black Tourmaline Protection</h3>
+                        <div class="gemstone-properties">Protection & Grounding</div>
+                        <p class="product-price">$52.00 USD</p>
+                        <p class="product-description">Powerful protection from negative energy</p>
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('black-tourmaline-bracelet', 'Black Tourmaline Protection Bracelet', 52.00, '🖤')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Signup -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2 class="section-title fade-in">Stay Connected</h2>
+                <p class="section-subtitle fade-in">Get notified about new collections, exclusive offers, and seasonal sales</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Enter your email address" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Size Guide</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                    <p><a href="#">Wholesale</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load scripts in correct order -->
+    <script src="../script/cart.js"></script>
+    <script src="../script/homepage.js"></script>
+    <script src="javascript/shop-all.js"></script>
+
+    <!-- Quick add to cart function for shop-all page -->
+    <script>
+        function addQuickProduct(id, name, price, emoji) {
+            if (window.cartManager) {
+                const product = {
+                    id: id,
+                    name: name + ' (Standard)',
+                    price: price,
+                    quantity: 1,
+                    size: 'Standard',
+                    scent: null,
+                    image: emoji,
+                    isCustom: false
+                };
+
+                window.cartManager.addItem(product);
+            } else {
+                alert(`Added ${name} to cart!`);
+            }
+        }
+    </script>
+</body>
+</html>
