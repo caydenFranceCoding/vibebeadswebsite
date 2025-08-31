@@ -583,14 +583,10 @@
     border-color: #8B7355;
 }
 
-/* Filter Section Enhancement */
 .filter-section {
     padding: 2rem 0;
     background: white;
     border-bottom: 1px solid #e8e8e8;
-    position: sticky;
-    top: 70px;
-    z-index: 50;
 }
 
 .filter-btn:hover,

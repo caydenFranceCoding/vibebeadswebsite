@@ -1,13 +1,13 @@
-// Diffusers Page JavaScript with Cart Integration
+// Updated Diffusers Page JavaScript with Product Images and $5 Refills
 // File: public/pages/javascript/diffusers.js
 
-// Product data for diffusers
+// Product data for diffusers with your actual images
 const diffuserProducts = [
     {
         id: 101,
         name: 'Alpine Balsam',
         price: 35.00,
-        image: null,
+        image: '../images/diffusers/alpine balsam.jpeg',
         category: 'signature',
         description: 'Fresh mountain air with crisp balsam fir and cedar notes. Transport yourself to a peaceful alpine forest with this invigorating, woodsy fragrance.',
         duration: '2-3 months',
@@ -16,9 +16,20 @@ const diffuserProducts = [
     },
     {
         id: 102,
-        name: 'Black Currant Jasmine',
+        name: 'Beach Linen',
+        price: 38.00,
+        image: '../images/diffusers/beach linen.jpeg',
+        category: 'signature',
+        description: 'Fresh ocean breeze meets clean linen sheets. Crisp and airy scent that brings the relaxing feeling of a coastal getaway to your home.',
+        duration: '2-3 months',
+        emoji: '🏖️',
+        featured: true
+    },
+    {
+        id: 103,
+        name: 'Black Currant & Jasmine',
         price: 42.00,
-        image: null,
+        image: '../images/diffusers/black current & jasmine.jpeg',
         category: 'signature',
         description: 'Rich black currant berries blended with exotic jasmine flowers. A sophisticated floral-fruity scent perfect for elegant spaces.',
         duration: '2-3 months',
@@ -26,10 +37,10 @@ const diffuserProducts = [
         featured: true
     },
     {
-        id: 103,
+        id: 104,
         name: 'Blueberry Cheesecake',
         price: 38.00,
-        image: null,
+        image: '../images/diffusers/blueberry cheesecake.jpeg',
         category: 'signature',
         description: 'Delicious blueberry cheesecake with vanilla cream and graham cracker crust. Sweet and comforting, like your favorite dessert.',
         duration: '2-3 months',
@@ -37,21 +48,21 @@ const diffuserProducts = [
         featured: true
     },
     {
-        id: 104,
+        id: 105,
         name: 'Cool Citrus Basil',
         price: 36.00,
-        image: null,
+        image: '../images/diffusers/cool citrus basil.jpeg',
         category: 'signature',
         description: 'Refreshing citrus zest balanced with aromatic basil leaves. Clean and energizing, perfect for kitchens and workspaces.',
         duration: '2-3 months',
         emoji: '🍋',
-        featured: true
+        featured: false
     },
     {
-        id: 105,
+        id: 106,
         name: 'Frosted Juniper',
         price: 34.00,
-        image: null,
+        image: '../images/diffusers/frosted juniper.jpeg',
         category: 'seasonal',
         description: 'Crisp juniper berries with a touch of winter frost. Cool and refreshing, bringing the essence of winter evergreens indoors.',
         duration: '2-3 months',
@@ -59,10 +70,10 @@ const diffuserProducts = [
         featured: false
     },
     {
-        id: 106,
+        id: 107,
         name: 'Honeysuckle Jasmine',
         price: 40.00,
-        image: null,
+        image: '../images/diffusers/honeysuckle jasmine.jpeg',
         category: 'signature',
         description: 'Sweet honeysuckle nectar paired with delicate jasmine blooms. Romantic and floral, perfect for creating a garden-like atmosphere.',
         duration: '2-3 months',
@@ -121,15 +132,20 @@ function renderProducts() {
     });
 }
 
-// Create product card
+// Create product card with real images
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
     card.setAttribute('data-product-id', product.id);
     card.onclick = () => openProductModal(product);
 
-    // Always use emoji placeholder
-    const imageContent = `<span style="font-size: 3rem;">${product.emoji || '💨'}</span>`;
+    // Use real image if available, fall back to emoji
+    let imageContent;
+    if (product.image) {
+        imageContent = `<img src="${product.image}" alt="${product.name}" loading="lazy">`;
+    } else {
+        imageContent = `<span style="font-size: 3rem;">${product.emoji || '💨'}</span>`;
+    }
 
     card.innerHTML = `
         <div class="product-image">
@@ -171,7 +187,7 @@ function quickAddToCart(productId) {
     }
 }
 
-// Create refill oils card
+// Create refill oils card - UPDATED PRICE TO $5
 function createRefillCard() {
     const card = document.createElement('div');
     card.className = 'product-card fade-in refill-oils-card';
@@ -183,7 +199,7 @@ function createRefillCard() {
         </div>
         <div class="product-info">
             <h3 class="product-title">Refill Oils</h3>
-            <p class="product-price">From $18.00 USD</p>
+            <p class="product-price">From $5.00 USD</p>
             <p class="product-description">Extend the life of your diffuser with our premium refill oils in a variety of scents</p>
             <button class="add-to-cart-btn" onclick="event.stopPropagation(); openRefillModal()">Browse Refills</button>
         </div>
@@ -192,7 +208,7 @@ function createRefillCard() {
     return card;
 }
 
-// Open product modal
+// Open product modal with real images
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
@@ -205,10 +221,13 @@ function openProductModal(product) {
         <p><strong>Duration:</strong> ${product.duration}</p>
     `;
 
-    // Update image - always use emoji placeholder
-    const modalImage = document.getElementById('modal-product-image');
-    modalImage.style.display = 'none';
-    modalImage.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f0f6ff, #e0f0ff); border-radius: 8px;">${product.emoji || '💨'}</div>`;
+    // Use real image in modal if available
+    const modalImageContainer = document.querySelector('#product-modal .modal-image');
+    if (product.image) {
+        modalImageContainer.innerHTML = `<img id="modal-product-image" src="${product.image}" alt="${product.name}">`;
+    } else {
+        modalImageContainer.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f0f6ff, #e0f0ff); border-radius: 8px;">${product.emoji || '💨'}</div>`;
+    }
 
     // Reset options
     selectedSize = '100ml';
@@ -239,7 +258,7 @@ function openProductModal(product) {
     document.body.style.overflow = 'hidden';
 }
 
-// Open refill modal
+// Open refill modal with UPDATED $5 PRICING
 function openRefillModal() {
     const modal = document.getElementById('refill-modal');
 
@@ -359,14 +378,15 @@ function updateTotalPrice() {
     document.getElementById('total-price').textContent = total.toFixed(2);
 }
 
-// Update refill oil price
+// Update refill oil price - UPDATED WITH $5 BASE PRICES
 function updateRefillPrice() {
     const selectedRefill = document.querySelector('input[name="refill"]:checked');
     const addButton = document.querySelector('#refill-modal .add-to-cart-btn');
     const priceSpan = document.getElementById('refill-total-price');
 
     if (selectedRefill) {
-        const basePrice = parseInt(selectedRefill.dataset.price);
+        // All refills now start at $5 instead of varying prices
+        const basePrice = 5; // Base price is now $5 for all refills
         const total = basePrice + selectedSizePrice;
 
         priceSpan.textContent = total.toFixed(2);
@@ -408,11 +428,12 @@ window.addToCart = function() {
     closeModal();
 };
 
+// UPDATED: Add refill to cart with $5 base price
 window.addRefillToCart = function() {
     const selectedRefill = document.querySelector('input[name="refill"]:checked');
     if (!selectedRefill) return;
 
-    const basePrice = parseInt(selectedRefill.dataset.price);
+    const basePrice = 5; // Now $5 for all refills
     const finalPrice = basePrice + selectedSizePrice;
 
     // Create cart item for refill oil
