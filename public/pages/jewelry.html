@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewelry - Vibe Beads</title>
+    <link rel="stylesheet" href="../styles/home.css">
+    <link rel="stylesheet" href="css/jewelry.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="../index.html" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="shop.html">Shop All</a></li>
+                        <li><a href="candles.html">Candles</a></li>
+                        <li><a href="diffusers.html">Diffusers</a></li>
+                        <li><a href="wax-melts.html">Wax Melts</a></li>
+                        <li><a href="room-sprays.html">Room Sprays</a></li>
+                        <li><a href="jewelry.html" class="active">Jewelry</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="../checkout/checkout.html" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Jewelry Collection - Free Shipping on Orders Over $75</strong>
+        </div>
+    </div>
+
+    <!-- Video Hero Section -->
+    <section class="hero jewelry-hero">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="../../public/video/lux.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h1>Handcrafted Beaded Jewelry</h1>
+                <p class="hero-tagline">
+                    Discover our collection of premium beaded jewelry, handcrafted with genuine gemstones and natural materials. Each piece is unique, designed to enhance your personal style while bringing positive energy to your life.
+                </p>
+                <a href="#products" class="cta-button">Shop Jewelry</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-category="all">All Jewelry</button>
+                <button class="filter-btn" data-category="bracelets">Bracelets</button>
+                <button class="filter-btn" data-category="necklaces">Necklaces</button>
+                <button class="filter-btn" data-category="earrings">Earrings</button>
+                <button class="filter-btn" data-category="custom">Custom Design</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="shop-section" id="products">
+        <div class="container">
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-product-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-product-title"></h2>
+                    <p class="modal-price" id="modal-product-price"></p>
+                    <div class="modal-description" id="modal-product-description"></div>
+
+                    <div class="product-options">
+                        <div class="size-options">
+                            <h4>Size:</h4>
+                            <div class="size-buttons">
+                                <button class="size-btn active" data-size="standard" data-price="0">Standard Size</button>
+                                <button class="size-btn" data-size="custom" data-price="15">Custom Size (+$15)</button>
+                            </div>
+                        </div>
+
+                        <div class="quantity-section">
+                            <label for="quantity">Quantity:</label>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" id="quantity" value="1" min="1" max="10">
+                                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart-btn" onclick="addToCart()">
+                        Add to Cart - $<span id="total-price">45.00</span>
+                    </button>
+
+                    <div class="product-details">
+                        <h4>Details:</h4>
+                        <ul>
+                            <li>Handcrafted with genuine gemstones</li>
+                            <li>Hypoallergenic materials</li>
+                            <li>Adjustable sizing available</li>
+                            <li>Comes with care instructions</li>
+                            <li>Ethically sourced materials</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Design Modal -->
+    <div id="custom-design-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <h2>Custom Jewelry Design</h2>
+                <p class="custom-description">Create your perfect piece by selecting gemstones, size, and design elements</p>
+
+                <div class="custom-options">
+                    <div class="option-section">
+                        <h3>Choose Your Style</h3>
+                        <div class="style-options">
+                            <label class="style-option">
+                                <input type="radio" name="style" value="bracelet" data-base-price="45">
+                                <span>Beaded Bracelet - $45</span>
+                            </label>
+                            <label class="style-option">
+                                <input type="radio" name="style" value="necklace" data-base-price="65">
+                                <span>Beaded Necklace - $65</span>
+                            </label>
+                            <label class="style-option">
+                                <input type="radio" name="style" value="earrings" data-base-price="35">
+                                <span>Drop Earrings - $35</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h3>Primary Gemstone</h3>
+                        <div class="gemstone-options">
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Rose Quartz" data-price="0">
+                                <span>💖 Rose Quartz (Love & Healing)</span>
+                            </label>
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Amethyst" data-price="10">
+                                <span>💜 Amethyst (Clarity & Peace) +$10</span>
+                            </label>
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Moonstone" data-price="15">
+                                <span>✨ Moonstone (Intuition & Balance) +$15</span>
+                            </label>
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Black Tourmaline" data-price="12">
+                                <span>🖤 Black Tourmaline (Protection) +$12</span>
+                            </label>
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Citrine" data-price="8">
+                                <span>💛 Citrine (Abundance & Joy) +$8</span>
+                            </label>
+                            <label class="gemstone-option">
+                                <input type="radio" name="gemstone" value="Labradorite" data-price="18">
+                                <span>🌈 Labradorite (Transformation) +$18</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h3>Accent Stones (Optional)</h3>
+                        <div class="accent-options">
+                            <label class="accent-option">
+                                <input type="checkbox" name="accents" value="Gold Hematite" data-price="5">
+                                <span>✨ Gold Hematite +$5</span>
+                            </label>
+                            <label class="accent-option">
+                                <input type="checkbox" name="accents" value="Clear Quartz" data-price="3">
+                                <span>🤍 Clear Quartz +$3</span>
+                            </label>
+                            <label class="accent-option">
+                                <input type="checkbox" name="accents" value="Silver Spacers" data-price="4">
+                                <span>🪙 Silver Spacers +$4</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="option-section">
+                        <h3>Special Requests</h3>
+                        <textarea id="special-requests" placeholder="Any special sizing, color preferences, or design notes..."></textarea>
+                    </div>
+                </div>
+
+                <button class="add-to-cart-btn" onclick="addCustomToCart()" disabled>
+                    Add Custom Design to Cart - $<span id="custom-total-price">45.00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Size Guide</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                    <p><a href="#">Wholesale</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load scripts in correct order -->
+    <script src="../script/cart.js"></script>
+    <script src="../script/homepage.js"></script>
+    <script src="javascript/jewelry.js"></script>
+</body>
+</html>

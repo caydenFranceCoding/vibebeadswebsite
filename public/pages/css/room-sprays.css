@@ -1,0 +1,736 @@
+/* Room Sprays Page Specific Styles */
+
+/* Video Hero Section for Room Sprays Page */
+.room-sprays-hero {
+    min-height: 70vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.room-sprays-hero .hero-video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+.room-sprays-hero .hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.room-sprays-hero .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+}
+
+.room-sprays-hero .container {
+    position: relative;
+    z-index: 1;
+    padding: 4rem 20px;
+}
+
+.room-sprays-hero .hero-content {
+    text-align: center;
+}
+
+.room-sprays-hero .hero-content h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: white;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.room-sprays-hero .hero-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 2.5rem;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+    font-style: italic;
+}
+
+.room-sprays-hero .cta-button {
+    display: inline-block;
+    background: #8B7355;
+    color: white;
+    padding: 18px 45px;
+    text-decoration: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-radius: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.room-sprays-hero .cta-button:hover {
+    background: #6d5a42;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Product Grid Enhancement */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    cursor: pointer;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.product-card.bundle-builder {
+    background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
+    color: white;
+    border: 2px solid #8B7355;
+}
+
+.product-card.bundle-builder .product-info {
+    color: white;
+}
+
+.product-card.bundle-builder .product-title {
+    color: white;
+}
+
+.product-card.bundle-builder .product-price {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.product-image {
+    width: 100%;
+    height: 280px;
+    background: linear-gradient(45deg, #f0f8ff, #e6f3ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #4A90E2;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+.product-info {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.product-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #2c2c2c;
+}
+
+.product-price {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #4A90E2;
+    margin-bottom: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-description {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+/* Usage instructions */
+.usage-tip {
+    font-size: 0.8rem;
+    color: #4A90E2;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+/* Bundle Builder Card Styles */
+.bundle-builder-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.bundle-builder-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(139, 115, 85, 0.1), rgba(109, 90, 66, 0.1));
+    z-index: 1;
+}
+
+.bundle-builder-card .product-image {
+    background: linear-gradient(135deg, #8B7355, #6d5a42);
+    color: white;
+    font-size: 4rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideIn 0.3s ease;
+}
+
+.bundle-modal {
+    max-width: 800px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.close:hover {
+    background: #4A90E2;
+    color: white;
+}
+
+.modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 2rem;
+    margin-top: 20px;
+}
+
+.bundle-modal .modal-body {
+    grid-template-columns: 1fr;
+    padding: 2rem;
+}
+
+.modal-image {
+    width: 100%;
+}
+
+.modal-image img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.modal-info h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: #2c2c2c;
+    margin-bottom: 1rem;
+}
+
+.modal-price {
+    font-size: 1.6rem;
+    color: #4A90E2;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.modal-description {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.product-options {
+    margin-bottom: 2rem;
+}
+
+.size-options h4,
+.quantity-section label {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #2c2c2c;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.size-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.size-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e5e5e5;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+}
+
+.size-btn:hover,
+.size-btn.active {
+    border-color: #4A90E2;
+    background: #4A90E2;
+    color: white;
+}
+
+.quantity-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.qty-btn:hover {
+    background: #4A90E2;
+    color: white;
+    border-color: #4A90E2;
+}
+
+#quantity {
+    width: 80px;
+    height: 40px;
+    border: 1px solid #ddd;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.add-to-cart-btn {
+    width: 100%;
+    background: #4A90E2;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+}
+
+.add-to-cart-btn:hover:not(:disabled) {
+    background: #357ABD;
+    transform: translateY(-2px);
+}
+
+.add-to-cart-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.product-details h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #2c2c2c;
+    margin-bottom: 0.5rem;
+}
+
+.product-details ul {
+    list-style: none;
+    padding: 0;
+}
+
+.product-details li {
+    padding: 0.25rem 0;
+    color: #666;
+    font-size: 0.9rem;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+.product-details li::before {
+    content: "✓";
+    color: #4A90E2;
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+/* Bundle Builder Modal Styles */
+.bundle-description {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.bundle-builder {
+    margin-bottom: 2rem;
+}
+
+.bundle-size-selector {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.bundle-size-selector h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: #2c2c2c;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.bundle-size-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.bundle-size-btn {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid #e5e5e5;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    text-align: center;
+}
+
+.bundle-size-btn:hover,
+.bundle-size-btn.active {
+    border-color: #4A90E2;
+    background: #4A90E2;
+    color: white;
+}
+
+.bundle-size-btn small {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 400;
+    margin-top: 0.25rem;
+    opacity: 0.8;
+}
+
+.scent-selection h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: #2c2c2c;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.scent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.scent-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.scent-checkbox:hover {
+    border-color: #4A90E2;
+    background: #f0f8ff;
+}
+
+.scent-checkbox input[type="checkbox"] {
+    margin-right: 0.75rem;
+    accent-color: #4A90E2;
+    transform: scale(1.2);
+}
+
+.scent-checkbox input[type="checkbox"]:checked + .scent-name {
+    font-weight: 500;
+    color: #4A90E2;
+}
+
+.scent-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: #2c2c2c;
+    transition: all 0.3s ease;
+}
+
+/* Filter Section Enhancement */
+.filter-section {
+    padding: 2rem 0;
+    background: white;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 70px;
+    z-index: 50;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: #4A90E2;
+    border-color: #4A90E2;
+}
+
+/* Savings badge */
+.savings-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #4A90E2;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1.1rem;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+/* Empty State */
+.empty-products {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.empty-products h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .room-sprays-hero {
+        min-height: 60vh;
+    }
+
+    .room-sprays-hero .hero-content h1 {
+        font-size: 2.4rem;
+    }
+
+    .room-sprays-hero .hero-tagline {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+
+    .room-sprays-hero .container {
+        padding: 3rem 20px;
+    }
+
+    .modal-body {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1.5rem;
+    }
+
+    .modal-image img {
+        height: 300px;
+    }
+
+    .modal-info h2 {
+        font-size: 1.8rem;
+    }
+
+    .size-buttons {
+        flex-direction: column;
+    }
+
+    .quantity-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .bundle-size-buttons {
+        flex-direction: column;
+    }
+
+    .scent-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bundle-modal .modal-body {
+        padding: 1rem;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-sprays-hero .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .room-sprays-hero .hero-tagline {
+        font-size: 1rem;
+    }
+
+    .room-sprays-hero .cta-button {
+        padding: 14px 32px;
+        font-size: 0.8rem;
+    }
+
+    .product-title {
+        font-size: 1.2rem;
+    }
+
+    .modal-info h2 {
+        font-size: 1.5rem;
+    }
+}

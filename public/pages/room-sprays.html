@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Sprays - Vibe Beads</title>
+    <link rel="stylesheet" href="../styles/home.css">
+    <link rel="stylesheet" href="css/room-sprays.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="../index.html" class="logo">VIBE BEADS</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="shop.html">Shop All</a></li>
+                        <li><a href="candles.html">Candles</a></li>
+                        <li><a href="diffusers.html">Diffusers</a></li>
+                        <li><a href="wax-melts.html">Wax Melts</a></li>
+                        <li><a href="room-sprays.html" class="active">Room Sprays</a></li>
+                        <li><a href="jewelry.html">Jewelry</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+            <a href="../checkout/checkout.html" class="cart-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cart-text">Cart (0)</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="sale-banner">
+        <div class="container">
+            <strong>Room Spray Collection - Buy 2 Get 1 Free</strong>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero room-sprays-hero">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="../../public/video/premium.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h1>Instant Room Transformation</h1>
+                <p class="hero-tagline">
+                    Transform any space instantly with our premium room sprays. Long-lasting fragrances that eliminate odors while creating the perfect ambiance for your home, office, or car.
+                </p>
+                <a href="#products" class="cta-button">Shop Room Sprays</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-category="all">All Room Sprays</button>
+                <button class="filter-btn" data-category="signature">Signature Collection</button>
+                <button class="filter-btn" data-category="fresh">Fresh & Clean</button>
+                <button class="filter-btn" data-category="bundle">Bundle Deals</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="shop-section" id="products">
+        <div class="container">
+            <div class="products-grid" id="products-grid">
+                <!-- Products will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-product-image" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modal-product-title"></h2>
+                    <p class="modal-price" id="modal-product-price"></p>
+                    <div class="modal-description" id="modal-product-description"></div>
+
+                    <div class="product-options">
+                        <div class="size-options">
+                            <h4>Size:</h4>
+                            <div class="size-buttons">
+                                <button class="size-btn active" data-size="4oz" data-price="0">4oz Spray - $12</button>
+                                <button class="size-btn" data-size="8oz" data-price="8">8oz Spray - $20</button>
+                            </div>
+                        </div>
+
+                        <div class="quantity-section">
+                            <label for="quantity">Quantity:</label>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" id="quantity" value="1" min="1" max="10">
+                                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="add-to-cart-btn" onclick="addToCart()">
+                        Add to Cart - $<span id="total-price">12.00</span>
+                    </button>
+
+                    <div class="product-details">
+                        <h4>Details:</h4>
+                        <ul>
+                            <li>Long-lasting fragrance up to 4 hours</li>
+                            <li>Odor eliminating formula</li>
+                            <li>Safe for fabrics and surfaces</li>
+                            <li>Non-toxic and eco-friendly</li>
+                            <li>Perfect for home, office, and car</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bundle Builder Modal -->
+    <div id="bundle-modal" class="modal">
+        <div class="modal-content bundle-modal">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <h2>Build Your Bundle</h2>
+                <p class="bundle-description">Mix and match your favorite scents and save up to 25%</p>
+
+                <div class="bundle-builder">
+                    <div class="bundle-size-selector">
+                        <h3>Choose Bundle Size:</h3>
+                        <div class="bundle-size-buttons">
+                            <button class="bundle-size-btn active" data-size="3" data-price="30">
+                                3-Pack Bundle - $30
+                                <small>Save $6</small>
+                            </button>
+                            <button class="bundle-size-btn" data-size="5" data-price="45">
+                                5-Pack Bundle - $45
+                                <small>Save $15</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="scent-selection">
+                        <h3>Select Your Scents (<span id="selected-count">0</span>/<span id="max-count">3</span>):</h3>
+                        <div class="scent-grid">
+                            <label class="scent-checkbox">
+                                <input type="checkbox" name="bundle-scents" value="Clean Cotton">
+                                <span class="scent-name">Clean Cotton</span>
+                            </label>
+                            <label class="scent-checkbox">
+                                <input type="checkbox" name="bundle-scents" value="Egyptian Amber">
+                                <span class="scent-name">Egyptian Amber</span>
+                            </label>
+                            <label class="scent-checkbox">
+                                <input type="checkbox" name="bundle-scents" value="Grape Fruit and Mint">
+                                <span class="scent-name">Grapefruit & Mint</span>
+                            </label>
+                            <label class="scent-checkbox">
+                                <input type="checkbox" name="bundle-scents" value="Vanilla Orchid">
+                                <span class="scent-name">Vanilla Orchid</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-to-cart-btn" onclick="addBundleToCart()" disabled>
+                    Add Bundle to Cart - $<span id="bundle-total-price">30.00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>Email: hello@vibebeads.com</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Hours: Mon-Fri 9AM-6PM EST</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Follow Us</h3>
+                    <p><a href="#">Instagram</a></p>
+                    <p><a href="#">Facebook</a></p>
+                    <p><a href="#">Pinterest</a></p>
+                    <p><a href="#">TikTok</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Customer Care</h3>
+                    <p><a href="#">Shipping Info</a></p>
+                    <p><a href="#">Returns & Exchanges</a></p>
+                    <p><a href="#">Care Instructions</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p><a href="#">About Us</a></p>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vibe Beads. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load scripts in correct order -->
+    <script src="../script/cart.js"></script>
+    <script src="../script/homepage.js"></script>
+    <script src="javascript/room-sprays.js"></script>
+</body>
+</html>

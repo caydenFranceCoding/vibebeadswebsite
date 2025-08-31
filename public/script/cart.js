@@ -1,5 +1,5 @@
-// Enhanced Cart Manager with better integration
-// File: src/main/script/cart.js
+// Enhanced Cart Manager with FIXED PATHS
+// File: public/script/cart.js
 
 class CartManager {
     constructor() {
@@ -24,7 +24,7 @@ class CartManager {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.cart));
             this.updateCartUI();
-            console.log('Cart saved:', this.cart); // Debug log
+            console.log('Cart saved:', this.cart);
         } catch (error) {
             console.error('Error saving cart:', error);
         }
@@ -221,16 +221,25 @@ class CartManager {
         }, 4000);
     }
 
-    // Get correct checkout path based on current location
+    // FIXED: Get correct checkout path based on current location
     getCheckoutPath() {
         const currentPath = window.location.pathname;
+        const currentDir = window.location.href;
 
-        if (currentPath.includes('/public/pages/')) {
-            return '../../src/checkout/checkout.html';
-        } else if (currentPath.includes('/public/')) {
-            return './src/checkout/checkout.html';
-        } else {
-            return './src/checkout/checkout.html';
+        console.log('Current path:', currentPath);
+        console.log('Current dir:', currentDir);
+
+        // Check if we're on a pages subdirectory (candles.html, diffusers.html, etc.)
+        if (currentPath.includes('/pages/') || currentDir.includes('/pages/')) {
+            return '../checkout/checkout.html';
+        }
+        // Check if we're on the main index page
+        else if (currentPath.endsWith('index.html') || currentPath === '/' || currentPath.endsWith('/')) {
+            return './checkout/checkout.html';
+        }
+        // Default fallback
+        else {
+            return './checkout/checkout.html';
         }
     }
 }

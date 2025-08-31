@@ -1,138 +1,94 @@
-// Wax Melts Page JavaScript with Cart Integration
+// Wax Melts Page JavaScript with YOUR ACTUAL IMAGES
 // File: public/pages/javascript/wax-melts.js
 
-// Product data for wax melts
+// Product data with your real image paths
 const waxMeltProducts = [
     {
         id: 201,
-        name: 'Citrus Burst',
+        name: 'Apple Ginger Spritz',
         price: 8.00,
-        image: null,
+        image: '../images/wax melts/apple ginger spritz.jpeg',
         category: 'signature',
-        description: 'Energizing blend of orange, lemon, and grapefruit. Each cube delivers 8-12 hours of bright, uplifting fragrance perfect for morning motivation.',
+        description: 'Energizing blend of crisp apple and warming ginger with a bubbly spritz finish. Each cube delivers 8-12 hours of bright, uplifting fragrance perfect for morning motivation.',
         cubesPerPack: 6,
         emoji: '🍊',
         featured: true
     },
     {
         id: 202,
-        name: 'Vanilla Cream',
+        name: 'Ginger & Spice',
         price: 8.00,
-        image: null,
+        image: '../images/wax melts/ginger & spice.jpeg',
         category: 'signature',
-        description: 'Rich, creamy vanilla with hints of sweet caramel. Warm and comforting scent that creates a cozy atmosphere in any room.',
+        description: 'Warm ginger root with aromatic spices including cinnamon and clove. Creates a cozy, inviting atmosphere perfect for cool evenings.',
         cubesPerPack: 6,
-        emoji: '🤍',
+        emoji: '🧡',
         featured: true
     },
     {
         id: 203,
-        name: 'Lavender Fields',
+        name: 'Grapefruit & Mint',
         price: 9.00,
-        image: null,
+        image: '../images/wax melts/grapefruit & mint.jpeg',
         category: 'signature',
-        description: 'Pure French lavender with subtle herbal undertones. Perfect for relaxation and creating a peaceful, spa-like environment.',
+        description: 'Fresh pink grapefruit paired with cooling mint leaves. Refreshing and energizing scent that awakens the senses.',
         cubesPerPack: 6,
-        emoji: '💜',
+        emoji: '💚',
         featured: true
     },
     {
         id: 204,
-        name: 'Cinnamon Spice',
+        name: 'Hot Apple Pie',
         price: 8.00,
-        image: null,
+        image: '../images/wax melts/hot apple pie.jpeg',
         category: 'signature',
-        description: 'Warm cinnamon bark with touches of clove and nutmeg. Brings the cozy feeling of autumn to your home year-round.',
+        description: 'Warm baked apples with cinnamon, nutmeg, and buttery pie crust. Brings the cozy feeling of home baking to any space.',
         cubesPerPack: 6,
-        emoji: '🍂',
+        emoji: '🥧',
         featured: true
     },
     {
         id: 205,
-        name: 'Berry Bliss',
+        name: 'Maple Walnut Pancakes',
         price: 9.00,
-        image: null,
+        image: '../images/wax melts/maple walnut pancakes.jpeg',
         category: 'signature',
-        description: 'Sweet mix of strawberries, blueberries, and blackberries. Fresh and fruity scent that brightens any space instantly.',
+        description: 'Rich maple syrup with toasted walnuts and fluffy pancakes. Sweet and comforting breakfast scent that makes any day special.',
         cubesPerPack: 6,
-        emoji: '🫐',
+        emoji: '🥞',
         featured: false
     },
     {
         id: 206,
-        name: 'Green Apple',
+        name: 'Moonflower Nectar',
         price: 8.00,
-        image: null,
+        image: '../images/wax melts/moonflower nectar.jpeg',
         category: 'signature',
-        description: 'Crisp Granny Smith apples with a fresh, clean finish. Refreshing scent that energizes and revitalizes your home.',
+        description: 'Exotic moonflower blooms with sweet nectar notes. Mysterious and enchanting floral scent perfect for evening relaxation.',
         cubesPerPack: 6,
-        emoji: '🍏',
+        emoji: '🌙',
         featured: false
     },
     {
         id: 207,
-        name: 'Amber Woods',
+        name: 'Sweet Jamaica',
         price: 10.00,
-        image: null,
+        image: '../images/wax melts/sweet jamaica.jpeg',
         category: 'signature',
-        description: 'Rich amber resin blended with sandalwood and cedar. Sophisticated, masculine scent perfect for evening relaxation.',
+        description: 'Tropical blend of coconut, pineapple, and warm vanilla with island spices. Escape to the Caribbean with this exotic fragrance.',
         cubesPerPack: 6,
-        emoji: '🌲',
+        emoji: '🏝️',
         featured: false
     },
     {
         id: 208,
-        name: 'Spring Rain',
+        name: 'Almond Macaron',
         price: 8.00,
-        image: null,
+        image: '../images/wax melts/almond macaron.jpeg',
         category: 'signature',
-        description: 'Fresh petrichor scent of spring rain on earth. Clean, airy fragrance that brings the outdoors inside.',
+        description: 'Sweet almond with delicate vanilla cream filling. Sophisticated French patisserie scent that adds elegance to any room.',
         cubesPerPack: 6,
-        emoji: '🌧️',
-        featured: false
-    },
-    {
-        id: 209,
-        name: 'Garden Mint',
-        price: 8.00,
-        image: null,
-        category: 'signature',
-        description: 'Cool spearmint and peppermint leaves. Invigorating scent that refreshes and awakens the senses naturally.',
-        cubesPerPack: 6,
-        emoji: '🌿',
-        featured: false
-    },
-    {
-        id: 210,
-        name: 'Pumpkin Spice',
-        price: 9.00,
-        image: null,
-        category: 'seasonal',
-        description: 'Classic fall blend of pumpkin, cinnamon, and warm spices. The perfect autumn fragrance for cozy evenings at home.',
-        cubesPerPack: 6,
-        emoji: '🎃',
-        featured: false
-    },
-    {
-        id: 211,
-        name: 'Fresh Pine',
-        price: 8.00,
-        image: null,
-        category: 'seasonal',
-        description: 'Crisp pine needles with hints of winter air. Brings the fresh scent of Christmas trees into your home.',
-        cubesPerPack: 6,
-        emoji: '🌲',
-        featured: false
-    },
-    {
-        id: 212,
-        name: 'Summer Breeze',
-        price: 8.00,
-        image: null,
-        category: 'seasonal',
-        description: 'Light, airy scent of ocean breeze and beach florals. Perfect for bringing summer vibes indoors.',
-        cubesPerPack: 6,
-        emoji: '🌊',
+        emoji: '🍰',
         featured: false
     }
 ];
@@ -152,7 +108,6 @@ let maxScents = 3;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait for cart manager to be ready
     setTimeout(() => {
         renderProducts();
         setupEventListeners();
@@ -167,42 +122,42 @@ function renderProducts() {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
 
-    // Filter products
     let filteredProducts = waxMeltProducts;
     if (currentFilter !== 'all') {
         filteredProducts = waxMeltProducts.filter(product => product.category === currentFilter);
     }
 
-    // Clear grid
     productsGrid.innerHTML = '';
 
-    // Add multi-pack builder if showing all or multipacks filter
     if (currentFilter === 'all' || currentFilter === 'multipacks') {
         const multipackCard = createMultipackCard();
         productsGrid.appendChild(multipackCard);
     }
 
-    // Add product cards
     filteredProducts.forEach(product => {
         const productCard = createProductCard(product);
         productsGrid.appendChild(productCard);
     });
 
-    // Initialize fade-in animations
     document.querySelectorAll('.fade-in').forEach(el => {
         el.classList.add('visible');
     });
 }
 
-// Create product card
+// UPDATED: Create product card with real images
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
     card.setAttribute('data-product-id', product.id);
     card.onclick = () => openProductModal(product);
 
-    // Always use emoji placeholder
-    const imageContent = `<span style="font-size: 3rem;">${product.emoji || '🧩'}</span>`;
+    // Use real image if available, fall back to emoji
+    let imageContent;
+    if (product.image) {
+        imageContent = `<img src="${product.image}" alt="${product.name}" loading="lazy">`;
+    } else {
+        imageContent = `<span style="font-size: 3rem;">${product.emoji || '🧩'}</span>`;
+    }
 
     card.innerHTML = `
         <div class="product-image">
@@ -238,7 +193,6 @@ function quickAddToCart(productId) {
 
         window.cartManager.addItem(cartItem);
     } else {
-        // Fallback for demo
         console.log('Added to cart:', product.name);
         alert(`Added ${product.name} Wax Melts to cart!`);
     }
@@ -265,12 +219,11 @@ function createMultipackCard() {
     return card;
 }
 
-// Open product modal
+// UPDATED: Open product modal with real images
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
 
-    // Update modal content
     document.getElementById('modal-product-title').textContent = product.name;
     document.getElementById('modal-product-price').textContent = `$${product.price.toFixed(2)} USD`;
     document.getElementById('modal-product-description').innerHTML = `
@@ -279,23 +232,23 @@ function openProductModal(product) {
         <p><strong>Burn Time:</strong> 8-12 hours per cube</p>
     `;
 
-    // Update image - always use emoji placeholder
-    const modalImage = document.getElementById('modal-product-image');
-    modalImage.style.display = 'none';
-    modalImage.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f9f3ff, #f0e6ff); border-radius: 8px;">${product.emoji || '🧩'}</div>`;
+    // UPDATED: Use real image in modal
+    const modalImageContainer = document.querySelector('#product-modal .modal-image');
+    if (product.image) {
+        modalImageContainer.innerHTML = `<img id="modal-product-image" src="${product.image}" alt="${product.name}">`;
+    } else {
+        modalImageContainer.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 400px; font-size: 6rem; background: linear-gradient(45deg, #f9f3ff, #f0e6ff); border-radius: 8px;">${product.emoji || '🧩'}</div>`;
+    }
 
-    // Reset options
     selectedPackSize = 'single';
     selectedPackPrice = 0;
     quantity = 1;
 
-    // Update pack buttons
     document.querySelectorAll('#product-modal .pack-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.pack === 'single') {
             btn.classList.add('active');
         }
-        // Update prices based on current product
         if (btn.dataset.pack === 'single') {
             btn.textContent = `Single Pack - $${product.price.toFixed(2)}`;
             btn.dataset.price = '0';
@@ -310,7 +263,6 @@ function openProductModal(product) {
         }
     });
 
-    // Update quantity and total
     document.getElementById('quantity').value = quantity;
     updateTotalPrice();
 
@@ -322,18 +274,15 @@ function openProductModal(product) {
 function openMultipackModal() {
     const modal = document.getElementById('multipack-modal');
 
-    // Reset selections
     selectedScents = [];
     selectedMultipackSize = 3;
     selectedMultipackPrice = 22;
     maxScents = 3;
 
-    // Reset checkboxes
     document.querySelectorAll('input[name="multipack-scents"]').forEach(input => {
         input.checked = false;
     });
 
-    // Reset size buttons
     document.querySelectorAll('#multipack-modal .multipack-size-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.size === '3') {
@@ -348,7 +297,6 @@ function openMultipackModal() {
 
 // Setup multi-pack builder functionality
 function setupMultipackBuilder() {
-    // Size selection
     document.querySelectorAll('.multipack-size-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.multipack-size-btn').forEach(b => b.classList.remove('active'));
@@ -358,7 +306,6 @@ function setupMultipackBuilder() {
             selectedMultipackPrice = parseInt(this.dataset.price);
             maxScents = selectedMultipackSize;
 
-            // Reset selections if over new limit
             if (selectedScents.length > maxScents) {
                 selectedScents = selectedScents.slice(0, maxScents);
                 document.querySelectorAll('input[name="multipack-scents"]').forEach((input, index) => {
@@ -370,7 +317,6 @@ function setupMultipackBuilder() {
         });
     });
 
-    // Scent selection
     document.querySelectorAll('input[name="multipack-scents"]').forEach(input => {
         input.addEventListener('change', function() {
             if (this.checked) {
@@ -408,10 +354,8 @@ function closeModal() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Pack button clicks
     document.querySelectorAll('.pack-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Remove active from siblings
             this.parentElement.querySelectorAll('.pack-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
@@ -422,7 +366,6 @@ function setupEventListeners() {
         });
     });
 
-    // Quantity controls
     window.changeQuantity = function(change) {
         const quantityInput = document.getElementById('quantity');
         const newQuantity = Math.max(1, Math.min(10, quantity + change));
@@ -440,12 +383,10 @@ function setupEventListeners() {
 
 // Setup modal events
 function setupModalEvents() {
-    // Close button clicks
     document.querySelectorAll('.close').forEach(closeBtn => {
         closeBtn.addEventListener('click', closeModal);
     });
 
-    // Click outside modal to close
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -454,7 +395,6 @@ function setupModalEvents() {
         });
     });
 
-    // Escape key to close
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeModal();
@@ -466,11 +406,9 @@ function setupModalEvents() {
 function setupFilterButtons() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Update active state
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            // Update filter
             currentFilter = this.dataset.category;
             renderProducts();
         });
@@ -508,7 +446,6 @@ window.addToCart = function() {
             packName = 'Single Pack';
     }
 
-    // Create cart item
     const cartItem = {
         id: `${currentProduct.id}-${selectedPackSize}`,
         name: `${currentProduct.name} Wax Melts (${packName})`,
@@ -520,12 +457,10 @@ window.addToCart = function() {
         isCustom: false
     };
 
-    // Add to cart using cart manager
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
         console.log('Added to cart via cart manager:', cartItem);
     } else {
-        // Fallback for demo
         console.log('Added to cart (fallback):', cartItem);
         alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: $${(finalPrice * quantity).toFixed(2)}`);
     }
@@ -536,7 +471,6 @@ window.addToCart = function() {
 window.addMultipackToCart = function() {
     if (selectedScents.length !== maxScents) return;
 
-    // Create cart item for multi-pack
     const cartItem = {
         id: `multipack-${Date.now()}`,
         name: `Custom ${selectedMultipackSize}-Pack Mix (${selectedScents.join(', ')})`,
@@ -548,12 +482,10 @@ window.addMultipackToCart = function() {
         isCustom: true
     };
 
-    // Add to cart using cart manager
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
         console.log('Added multi-pack to cart via cart manager:', cartItem);
     } else {
-        // Fallback for demo
         console.log('Added multi-pack to cart (fallback):', cartItem);
         alert(`Added custom multi-pack to cart!\nScents: ${selectedScents.join(', ')}\nTotal: $${selectedMultipackPrice.toFixed(2)}`);
     }
@@ -576,7 +508,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, observerOptions);
 
-    // Observe all fade-in elements
     document.querySelectorAll('.fade-in').forEach(el => {
         observer.observe(el);
     });
