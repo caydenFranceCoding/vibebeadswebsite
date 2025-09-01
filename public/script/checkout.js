@@ -136,7 +136,7 @@ class CheckoutManager {
         style: {
           input: {
             fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: 'Arial, sans-serif',
             color: '#2c2c2c'
           },
           'input::placeholder': {
@@ -148,8 +148,7 @@ class CheckoutManager {
             borderWidth: '1px'
           },
           '.input-container.is-focus': {
-            borderColor: '#059669',
-            boxShadow: '0 0 0 1px #059669'
+            borderColor: '#059669'
           },
           '.input-container.is-error': {
             borderColor: '#dc2626'
