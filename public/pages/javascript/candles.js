@@ -231,7 +231,6 @@ function quickAddToCart(productId) {
 
         window.cartManager.addItem(cartItem);
     } else {
-        console.log('Added to cart:', product.name);
         alert(`Added ${product.name} to cart!`);
     }
 }
@@ -454,9 +453,7 @@ window.addToCart = function() {
 
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
-        console.log('Added to cart via cart manager:', cartItem);
     } else {
-        console.log('Added to cart (fallback):', cartItem);
         alert(`Added ${cartItem.name} to cart!\nQuantity: ${quantity}\nTotal: $${(finalPrice * quantity).toFixed(2)}`);
     }
 
@@ -483,9 +480,7 @@ window.addCustomToCart = function() {
 
     if (window.cartManager) {
         window.cartManager.addItem(cartItem);
-        console.log('Added custom candle to cart via cart manager:', cartItem);
     } else {
-        console.log('Added custom candle to cart (fallback):', cartItem);
         alert(`Added custom candle to cart!\nScent: ${selectedScent.value} (${selectedSize})\nTotal: $${finalPrice.toFixed(2)}`);
     }
 

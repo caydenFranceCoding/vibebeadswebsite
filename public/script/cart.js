@@ -14,7 +14,6 @@ class CartManager {
             const savedCart = localStorage.getItem(this.storageKey);
             return savedCart ? JSON.parse(savedCart) : [];
         } catch (error) {
-            console.error('Error loading cart:', error);
             return [];
         }
     }
@@ -24,9 +23,8 @@ class CartManager {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.cart));
             this.updateCartUI();
-            console.log('Cart saved:', this.cart);
         } catch (error) {
-            console.error('Error saving cart:', error);
+            // Silent error handling
         }
     }
 
@@ -226,9 +224,6 @@ class CartManager {
         const currentPath = window.location.pathname;
         const currentDir = window.location.href;
 
-        console.log('Current path:', currentPath);
-        console.log('Current dir:', currentDir);
-
         // Check if we're on a pages subdirectory (candles.html, diffusers.html, etc.)
         if (currentPath.includes('/pages/') || currentDir.includes('/pages/')) {
             return '../checkout/checkout.html';
@@ -250,8 +245,6 @@ let cartManager;
 document.addEventListener('DOMContentLoaded', function() {
     cartManager = new CartManager();
     window.cartManager = cartManager; // Make globally accessible
-
-    console.log('Cart Manager initialized with', cartManager.getTotalItems(), 'items');
 });
 
 // CSS for cart notification (add to head)

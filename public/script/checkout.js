@@ -1,5 +1,5 @@
 // Enhanced Checkout JavaScript with Apple Pay & Google Pay
-// File: public/script/checkout.js (fixed version)
+// File: public/script/checkout.js (cleaned version)
 
 // State
 let isProcessing = false;
@@ -13,7 +13,6 @@ let isSquareInitialized = false;
 
 // Initialize checkout page
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Checkout page loaded, initializing...');
     loadCartItems();
     renderCartItems();
     updateTotals();
@@ -21,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Square payments with proper error handling
     initializeSquarePayments().catch(error => {
-        console.error('Failed to initialize Square payments:', error);
         showFallbackPaymentMethod();
     });
 
@@ -36,8 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Enhanced Square payments initialization with digital wallets
 async function initializeSquarePayments() {
     try {
-        console.log('Starting Square payments initialization...');
-
         // Wait for config to load
         if (!squareConfig) {
             await loadSquareConfig();
@@ -50,12 +46,6 @@ async function initializeSquarePayments() {
             throw new Error('Square Web Payments SDK not available');
         }
 
-        console.log('Initializing Square payments with:', {
-            environment: squareConfig.environment,
-            applicationId: squareConfig.applicationId,
-            locationId: squareConfig.locationId
-        });
-
         // Initialize payments object
         payments = window.Square.payments(squareConfig.applicationId, squareConfig.locationId);
 
@@ -66,7 +56,6 @@ async function initializeSquarePayments() {
             initializeGooglePay()
         ]);
 
-        console.log('Square payments initialized successfully');
         isSquareInitialized = true;
 
         // Update status
@@ -77,7 +66,6 @@ async function initializeSquarePayments() {
         }
 
     } catch (error) {
-        console.error('Error initializing Square payments:', error);
         const statusElement = document.getElementById('square-status');
         if (statusElement) {
             statusElement.textContent = `Error: ${error.message}`;
@@ -91,7 +79,6 @@ async function initializeSquarePayments() {
 // Initialize card payment method
 async function initializeCard() {
     try {
-        console.log('Creating Square card form...');
         card = await payments.card({
             style: {
                 input: {
@@ -115,11 +102,8 @@ async function initializeCard() {
             }
         });
 
-        console.log('Attaching Square card form to DOM...');
         await card.attach('#card-container');
-        console.log('Square card form attached successfully');
     } catch (error) {
-        console.error('Failed to initialize card form:', error);
         throw error;
     }
 }
@@ -137,10 +121,8 @@ async function initializeApplePay() {
             applePayButton.addEventListener('click', async () => {
                 await handleDigitalWalletPayment('applePay');
             });
-            console.log('Apple Pay initialized and button shown');
         }
     } catch (error) {
-        console.log('Apple Pay not available:', error.message);
         const applePayButton = document.getElementById('apple-pay-button');
         if (applePayButton) {
             applePayButton.style.display = 'none';
@@ -161,10 +143,8 @@ async function initializeGooglePay() {
             googlePayButton.addEventListener('click', async () => {
                 await handleDigitalWalletPayment('googlePay');
             });
-            console.log('Google Pay initialized and button shown');
         }
     } catch (error) {
-        console.log('Google Pay not available:', error.message);
         const googlePayButton = document.getElementById('google-pay-button');
         if (googlePayButton) {
             googlePayButton.style.display = 'none';
@@ -174,7 +154,6 @@ async function initializeGooglePay() {
 
 function buildPaymentRequestOptions() {
     const totals = updateTotals();
-    console.log('Totals for payment request:', totals);
 
     return {
         countryCode: 'US',
@@ -205,7 +184,6 @@ async function handleDigitalWalletPayment(walletType) {
             throw new Error(`${walletType} not available`);
         }
 
-        console.log(`Processing ${walletType} payment...`);
         const result = await paymentMethod.tokenize();
 
         if (result.status === 'OK') {
@@ -228,7 +206,6 @@ async function handleDigitalWalletPayment(walletType) {
             throw new Error(errorMessage);
         }
     } catch (error) {
-        console.error(`${walletType} payment error:`, error);
         showError(error.message || `${walletType} payment failed. Please try another payment method.`);
     } finally {
         setProcessingState(false);
@@ -242,11 +219,9 @@ async function tokenizePayment() {
     }
 
     try {
-        console.log('Tokenizing card payment...');
         const result = await card.tokenize();
 
         if (result.status === 'OK') {
-            console.log('Card payment tokenized successfully');
             return result.token;
         } else {
             let errorMessage = 'Card information is invalid';
@@ -256,7 +231,6 @@ async function tokenizePayment() {
             throw new Error(errorMessage);
         }
     } catch (error) {
-        console.error('Card tokenization error:', error);
         throw error;
     }
 }
@@ -301,7 +275,6 @@ async function handleSubmit(event) {
 
         if (isSquareInitialized && card) {
             // Process with Square card payment
-            console.log('Processing with Square card payment...');
             const token = await tokenizePayment();
             await processPayment(token, totals.total, {
                 items: cartItems,
@@ -311,7 +284,6 @@ async function handleSubmit(event) {
             });
         } else {
             // Process with demo mode
-            console.log('Processing with demo mode...');
             const result = await processDemoPayment(totals.total, {
                 items: cartItems,
                 shipping: formData,
@@ -330,7 +302,6 @@ async function handleSubmit(event) {
         }
 
     } catch (error) {
-        console.error('Checkout error:', error);
         showError(error.message || 'An error occurred during checkout. Please try again.');
     } finally {
         setProcessingState(false);
@@ -340,7 +311,6 @@ async function handleSubmit(event) {
 // Load Square configuration and initialize Web Payments SDK
 async function loadSquareConfig() {
     try {
-        console.log('Loading Square configuration...');
         const response = await fetch('https://squareupapi.onrender.com/api/config');
 
         if (!response.ok) {
@@ -354,14 +324,8 @@ async function loadSquareConfig() {
             squareConfig.locationId = 'L65X9J5C940J8';
         }
 
-        console.log('Square Config loaded:', {
-            environment: squareConfig.environment,
-            applicationId: squareConfig.applicationId ? 'present' : 'missing'
-        });
-
         return squareConfig;
     } catch (error) {
-        console.error('Failed to load Square configuration:', error);
         throw error;
     }
 }
@@ -370,7 +334,6 @@ async function loadSquareConfig() {
 async function loadSquareSDK(environment) {
     return new Promise((resolve, reject) => {
         if (window.Square) {
-            console.log('Square SDK already loaded');
             resolve();
             return;
         }
@@ -386,7 +349,6 @@ async function loadSquareSDK(environment) {
         }
 
         script.onload = () => {
-            console.log(`Square ${environment} SDK loaded successfully`);
             resolve();
         };
 
@@ -407,8 +369,6 @@ async function loadSquareSDK(environment) {
 // Process payment with Square
 async function processPayment(sourceId, total, orderData) {
     try {
-        console.log('Processing payment...', { total, paymentMethod: orderData.paymentMethod });
-
         const response = await fetch('https://squareupapi.onrender.com/api/payments', {
             method: 'POST',
             headers: {
@@ -443,7 +403,6 @@ async function processPayment(sourceId, total, orderData) {
             throw new Error(result.error || 'Payment failed');
         }
     } catch (error) {
-        console.error('Payment error:', error);
         throw error;
     }
 }
@@ -499,9 +458,7 @@ function loadCartItems() {
             const savedCart = localStorage.getItem('vibeBeadsCart');
             cartItems = savedCart ? JSON.parse(savedCart) : [];
         }
-        console.log('Loaded cart items:', cartItems);
     } catch (error) {
-        console.error('Error loading cart items:', error);
         cartItems = [];
     }
 }
@@ -514,7 +471,7 @@ function saveCartItems() {
             window.cartManager.updateCartUI();
         }
     } catch (error) {
-        console.error('Error saving cart items:', error);
+        // Silent error handling
     }
 }
 
