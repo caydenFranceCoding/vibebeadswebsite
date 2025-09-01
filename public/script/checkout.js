@@ -28,11 +28,14 @@ class CheckoutManager {
   }
 
   generateSessionId() {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `s_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 6)}`;
   }
 
   generateIdempotencyKey() {
-    return `${this.sessionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate key under 45 chars
+    const timestamp = Date.now().toString(36); // ~7 chars
+    const random = Math.random().toString(36).substr(2, 8); // 8 chars
+    return `${timestamp}_${random}`; // ~16 chars total
   }
 
   // FIXED: Helper method to truncate fields for Square API requirements
