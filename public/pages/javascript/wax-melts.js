@@ -1,12 +1,12 @@
-// Wax Melts Page JavaScript with YOUR ACTUAL IMAGES
+// Wax Melts Page JavaScript with UPDATED PRICING - $5.00 per container
 // File: public/pages/javascript/wax-melts.js
 
-// Product data with your real image paths
+// Product data with UPDATED PRICING - All wax melts now $5.00
 const waxMeltProducts = [
     {
         id: 201,
         name: 'Apple Ginger Spritz',
-        price: 8.00,
+        price: 5.00, // Updated: was 8.00
         image: '../images/wax melts/apple ginger spritz.jpeg',
         category: 'signature',
         description: 'Energizing blend of crisp apple and warming ginger with a bubbly spritz finish. Each cube delivers 8-12 hours of bright, uplifting fragrance perfect for morning motivation.',
@@ -17,7 +17,7 @@ const waxMeltProducts = [
     {
         id: 202,
         name: 'Ginger & Spice',
-        price: 8.00,
+        price: 5.00, // Updated: was 8.00
         image: '../images/wax melts/ginger & spice.jpeg',
         category: 'signature',
         description: 'Warm ginger root with aromatic spices including cinnamon and clove. Creates a cozy, inviting atmosphere perfect for cool evenings.',
@@ -28,7 +28,7 @@ const waxMeltProducts = [
     {
         id: 203,
         name: 'Grapefruit & Mint',
-        price: 9.00,
+        price: 5.00, // Updated: was 9.00
         image: '../images/wax melts/grapefruit & mint.jpeg',
         category: 'signature',
         description: 'Fresh pink grapefruit paired with cooling mint leaves. Refreshing and energizing scent that awakens the senses.',
@@ -39,7 +39,7 @@ const waxMeltProducts = [
     {
         id: 204,
         name: 'Hot Apple Pie',
-        price: 8.00,
+        price: 5.00, // Updated: was 8.00
         image: '../images/wax melts/hot apple pie.jpeg',
         category: 'signature',
         description: 'Warm baked apples with cinnamon, nutmeg, and buttery pie crust. Brings the cozy feeling of home baking to any space.',
@@ -50,7 +50,7 @@ const waxMeltProducts = [
     {
         id: 205,
         name: 'Maple Walnut Pancakes',
-        price: 9.00,
+        price: 5.00, // Updated: was 9.00
         image: '../images/wax melts/maple walnut pancakes.jpeg',
         category: 'signature',
         description: 'Rich maple syrup with toasted walnuts and fluffy pancakes. Sweet and comforting breakfast scent that makes any day special.',
@@ -61,7 +61,7 @@ const waxMeltProducts = [
     {
         id: 206,
         name: 'Moonflower Nectar',
-        price: 8.00,
+        price: 5.00, // Updated: was 8.00
         image: '../images/wax melts/moonflower nectar.jpeg',
         category: 'signature',
         description: 'Exotic moonflower blooms with sweet nectar notes. Mysterious and enchanting floral scent perfect for evening relaxation.',
@@ -72,7 +72,7 @@ const waxMeltProducts = [
     {
         id: 207,
         name: 'Sweet Jamaica',
-        price: 10.00,
+        price: 5.00, // Updated: was 10.00
         image: '../images/wax melts/sweet jamaica.jpeg',
         category: 'signature',
         description: 'Tropical blend of coconut, pineapple, and warm vanilla with island spices. Escape to the Caribbean with this exotic fragrance.',
@@ -83,7 +83,7 @@ const waxMeltProducts = [
     {
         id: 208,
         name: 'Almond Macaron',
-        price: 8.00,
+        price: 5.00, // Updated: was 8.00
         image: '../images/wax melts/almond macaron.jpeg',
         category: 'signature',
         description: 'Sweet almond with delicate vanilla cream filling. Sophisticated French patisserie scent that adds elegance to any room.',
@@ -100,9 +100,9 @@ let selectedPackSize = 'single';
 let selectedPackPrice = 0;
 let quantity = 1;
 
-// Multi-pack builder state
+// Multi-pack builder state - UPDATED PRICING
 let selectedMultipackSize = 3;
-let selectedMultipackPrice = 22;
+let selectedMultipackPrice = 13; // Updated: was 22 (now $13 for 3-pack)
 let selectedScents = [];
 let maxScents = 3;
 
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-// Render products based on current filter
 function renderProducts() {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
@@ -144,14 +143,12 @@ function renderProducts() {
     });
 }
 
-// UPDATED: Create product card with real images
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
     card.setAttribute('data-product-id', product.id);
     card.onclick = () => openProductModal(product);
 
-    // Use real image if available, fall back to emoji
     let imageContent;
     if (product.image) {
         imageContent = `<img src="${product.image}" alt="${product.name}" loading="lazy">`;
@@ -174,7 +171,6 @@ function createProductCard(product) {
     return card;
 }
 
-// Quick add to cart function
 function quickAddToCart(productId) {
     const product = waxMeltProducts.find(p => p.id === productId);
     if (!product) return;
@@ -198,7 +194,7 @@ function quickAddToCart(productId) {
     }
 }
 
-// Create multi-pack builder card
+// UPDATED: Multi-pack builder card with new pricing
 function createMultipackCard() {
     const card = document.createElement('div');
     card.className = 'product-card fade-in multipack-builder-card';
@@ -210,8 +206,8 @@ function createMultipackCard() {
         </div>
         <div class="product-info">
             <h3 class="product-title">Multi-Pack Builder</h3>
-            <p class="product-price">From $22.00 USD</p>
-            <p class="product-description">Mix and match your favorite scents for the perfect collection. Save up to $8 with our bundle deals!</p>
+            <p class="product-price">From $13.00 USD</p>
+            <p class="product-description">Mix and match your favorite scents for the perfect collection. Save money with our bundle deals!</p>
             <button class="add-to-cart-btn" onclick="event.stopPropagation(); openMultipackModal()">Build Your Pack</button>
         </div>
     `;
@@ -219,7 +215,7 @@ function createMultipackCard() {
     return card;
 }
 
-// UPDATED: Open product modal with real images
+// UPDATED: Open product modal with new pricing structure
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
@@ -232,7 +228,6 @@ function openProductModal(product) {
         <p><strong>Burn Time:</strong> 8-12 hours per cube</p>
     `;
 
-    // UPDATED: Use real image in modal
     const modalImageContainer = document.querySelector('#product-modal .modal-image');
     if (product.image) {
         modalImageContainer.innerHTML = `<img id="modal-product-image" src="${product.image}" alt="${product.name}">`;
@@ -244,6 +239,7 @@ function openProductModal(product) {
     selectedPackPrice = 0;
     quantity = 1;
 
+    // UPDATED: New pack pricing structure
     document.querySelectorAll('#product-modal .pack-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.pack === 'single') {
@@ -253,12 +249,12 @@ function openProductModal(product) {
             btn.textContent = `Single Pack - $${product.price.toFixed(2)}`;
             btn.dataset.price = '0';
         } else if (btn.dataset.pack === '3pack') {
-            const threePackPrice = (product.price * 2);
-            btn.textContent = `3-Pack Bundle - $${threePackPrice.toFixed(2)}`;
+            const threePackPrice = (product.price * 2.6); // About $13 for 3-pack instead of $15
+            btn.textContent = `3-Pack Bundle - $${threePackPrice.toFixed(2)} (Save $2)`;
             btn.dataset.price = (threePackPrice - product.price).toFixed(2);
         } else if (btn.dataset.pack === '6pack') {
-            const sixPackPrice = (product.price * 3.25);
-            btn.textContent = `6-Pack Bundle - $${sixPackPrice.toFixed(2)}`;
+            const sixPackPrice = (product.price * 4.8); // About $24 for 6-pack instead of $30
+            btn.textContent = `6-Pack Bundle - $${sixPackPrice.toFixed(2)} (Save $6)`;
             btn.dataset.price = (sixPackPrice - product.price).toFixed(2);
         }
     });
@@ -270,13 +266,13 @@ function openProductModal(product) {
     document.body.style.overflow = 'hidden';
 }
 
-// Open multi-pack modal
+// UPDATED: Multi-pack modal with new pricing
 function openMultipackModal() {
     const modal = document.getElementById('multipack-modal');
 
     selectedScents = [];
     selectedMultipackSize = 3;
-    selectedMultipackPrice = 22;
+    selectedMultipackPrice = 13; // Updated: was 22
     maxScents = 3;
 
     document.querySelectorAll('input[name="multipack-scents"]').forEach(input => {
@@ -295,7 +291,7 @@ function openMultipackModal() {
     document.body.style.overflow = 'hidden';
 }
 
-// Setup multi-pack builder functionality
+// UPDATED: Multi-pack builder with new pricing
 function setupMultipackBuilder() {
     document.querySelectorAll('.multipack-size-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -303,7 +299,14 @@ function setupMultipackBuilder() {
             this.classList.add('active');
 
             selectedMultipackSize = parseInt(this.dataset.size);
-            selectedMultipackPrice = parseInt(this.dataset.price);
+
+            // Updated pricing structure
+            if (selectedMultipackSize === 3) {
+                selectedMultipackPrice = 13; // Was 22
+            } else if (selectedMultipackSize === 6) {
+                selectedMultipackPrice = 24; // Was 40
+            }
+
             maxScents = selectedMultipackSize;
 
             if (selectedScents.length > maxScents) {
@@ -334,7 +337,6 @@ function setupMultipackBuilder() {
     });
 }
 
-// Update multi-pack UI
 function updateMultipackUI() {
     document.getElementById('selected-count').textContent = selectedScents.length;
     document.getElementById('max-count').textContent = maxScents;
@@ -344,7 +346,6 @@ function updateMultipackUI() {
     addButton.disabled = selectedScents.length !== maxScents;
 }
 
-// Close modals
 function closeModal() {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.style.display = 'none';
@@ -352,7 +353,6 @@ function closeModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Setup event listeners
 function setupEventListeners() {
     document.querySelectorAll('.pack-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -381,7 +381,6 @@ function setupEventListeners() {
     });
 }
 
-// Setup modal events
 function setupModalEvents() {
     document.querySelectorAll('.close').forEach(closeBtn => {
         closeBtn.addEventListener('click', closeModal);
@@ -402,7 +401,6 @@ function setupModalEvents() {
     });
 }
 
-// Setup filter buttons
 function setupFilterButtons() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -415,7 +413,6 @@ function setupFilterButtons() {
     });
 }
 
-// Update total price in product modal
 function updateTotalPrice() {
     if (!currentProduct) return;
 
@@ -425,7 +422,6 @@ function updateTotalPrice() {
     document.getElementById('total-price').textContent = total.toFixed(2);
 }
 
-// Add to cart functions with proper cart integration
 window.addToCart = function() {
     if (!currentProduct) return;
 

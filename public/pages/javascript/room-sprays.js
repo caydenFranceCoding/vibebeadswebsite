@@ -1,12 +1,12 @@
-// Room Sprays Page JavaScript with Cart Integration
+// Room Sprays Page JavaScript with UPDATED PRICING - $9.00 per bottle
 // File: public/pages/javascript/room-sprays.js
 
-// Product data with your real image paths
+// Product data with UPDATED PRICING - All room sprays now $9.00
 const roomSprayProducts = [
     {
         id: 401,
         name: 'Clean Cotton',
-        price: 12.00,
+        price: 9.00, // Updated: was 12.00
         image: '../images/room sprays/clean cotton room spray.jpeg',
         category: 'fresh',
         description: 'Fresh, crisp scent of clean laundry drying in the spring air. Perfect for bedrooms, bathrooms, and any space needing instant freshness.',
@@ -17,7 +17,7 @@ const roomSprayProducts = [
     {
         id: 402,
         name: 'Egyptian Amber',
-        price: 14.00,
+        price: 9.00, // Updated: was 14.00
         image: '../images/room sprays/egyption amber room spray.jpeg',
         category: 'signature',
         description: 'Rich, exotic amber with warm resin notes and mysterious spices. Creates an sophisticated atmosphere perfect for evening relaxation.',
@@ -28,7 +28,7 @@ const roomSprayProducts = [
     {
         id: 403,
         name: 'Grapefruit & Mint',
-        price: 12.00,
+        price: 9.00, // Updated: was 12.00
         image: '../images/room sprays/grape fruit and mint.jpeg',
         category: 'fresh',
         description: 'Energizing blend of pink grapefruit and cooling mint leaves. Instantly refreshes any space with bright, uplifting citrus energy.',
@@ -39,7 +39,7 @@ const roomSprayProducts = [
     {
         id: 404,
         name: 'Vanilla Orchid',
-        price: 13.00,
+        price: 9.00, // Updated: was 13.00
         image: '../images/room sprays/vanilla orchid.jpeg',
         category: 'signature',
         description: 'Delicate vanilla bean paired with exotic orchid blooms. Elegant floral scent that adds luxury to any room instantly.',
@@ -56,9 +56,9 @@ let selectedSize = '4oz';
 let selectedSizePrice = 0;
 let quantity = 1;
 
-// Bundle builder state
+// Bundle builder state - UPDATED PRICING
 let selectedBundleSize = 3;
-let selectedBundlePrice = 30;
+let selectedBundlePrice = 24; // Updated: was 30 (now $24 for 3-pack)
 let selectedScents = [];
 let maxScents = 3;
 
@@ -73,7 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-// Render products based on current filter
 function renderProducts() {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
@@ -100,14 +99,12 @@ function renderProducts() {
     });
 }
 
-// Create product card with real images
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
     card.setAttribute('data-product-id', product.id);
     card.onclick = () => openProductModal(product);
 
-    // Use real image if available, fall back to emoji
     let imageContent;
     if (product.image) {
         imageContent = `<img src="${product.image}" alt="${product.name}" loading="lazy">`;
@@ -131,7 +128,6 @@ function createProductCard(product) {
     return card;
 }
 
-// Quick add to cart function
 function quickAddToCart(productId) {
     const product = roomSprayProducts.find(p => p.id === productId);
     if (!product) return;
@@ -155,7 +151,7 @@ function quickAddToCart(productId) {
     }
 }
 
-// Create bundle builder card
+// UPDATED: Bundle builder card with new pricing
 function createBundleCard() {
     const card = document.createElement('div');
     card.className = 'product-card fade-in bundle-builder-card';
@@ -167,8 +163,8 @@ function createBundleCard() {
         </div>
         <div class="product-info">
             <h3 class="product-title">Bundle Builder</h3>
-            <div class="savings-badge">Save up to 25%</div>
-            <p class="product-price">From $30.00 USD</p>
+            <div class="savings-badge">Save up to 20%</div>
+            <p class="product-price">From $24.00 USD</p>
             <p class="product-description">Mix and match your favorite room spray scents and save big with our bundle deals!</p>
             <button class="add-to-cart-btn" onclick="event.stopPropagation(); openBundleModal()">Build Your Bundle</button>
         </div>
@@ -177,7 +173,7 @@ function createBundleCard() {
     return card;
 }
 
-// Open product modal with real images
+// UPDATED: Open product modal with new pricing structure
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
@@ -190,7 +186,6 @@ function openProductModal(product) {
         <p><strong>Uses:</strong> Home, office, car, fabric-safe</p>
     `;
 
-    // Use real image in modal
     const modalImageContainer = document.querySelector('#product-modal .modal-image');
     if (product.image) {
         modalImageContainer.innerHTML = `<img id="modal-product-image" src="${product.image}" alt="${product.name}">`;
@@ -202,6 +197,7 @@ function openProductModal(product) {
     selectedSizePrice = 0;
     quantity = 1;
 
+    // UPDATED: New size pricing structure
     document.querySelectorAll('#product-modal .size-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.size === '4oz') {
@@ -211,8 +207,8 @@ function openProductModal(product) {
             btn.textContent = `4oz Spray - $${product.price.toFixed(2)}`;
             btn.dataset.price = '0';
         } else {
-            btn.textContent = `8oz Spray - $${(product.price + 8).toFixed(2)}`;
-            btn.dataset.price = '8';
+            btn.textContent = `8oz Spray - $${(product.price + 6).toFixed(2)}`; // $6 more for 8oz
+            btn.dataset.price = '6';
         }
     });
 
@@ -223,13 +219,13 @@ function openProductModal(product) {
     document.body.style.overflow = 'hidden';
 }
 
-// Open bundle modal
+// UPDATED: Bundle modal with new pricing
 function openBundleModal() {
     const modal = document.getElementById('bundle-modal');
 
     selectedScents = [];
     selectedBundleSize = 3;
-    selectedBundlePrice = 30;
+    selectedBundlePrice = 24; // Updated: was 30
     maxScents = 3;
 
     document.querySelectorAll('input[name="bundle-scents"]').forEach(input => {
@@ -248,7 +244,7 @@ function openBundleModal() {
     document.body.style.overflow = 'hidden';
 }
 
-// Setup bundle builder functionality
+// UPDATED: Bundle builder with new pricing
 function setupBundleBuilder() {
     document.querySelectorAll('.bundle-size-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -256,7 +252,14 @@ function setupBundleBuilder() {
             this.classList.add('active');
 
             selectedBundleSize = parseInt(this.dataset.size);
-            selectedBundlePrice = parseInt(this.dataset.price);
+
+            // Updated pricing structure
+            if (selectedBundleSize === 3) {
+                selectedBundlePrice = 24; // Was 30 (save $3)
+            } else if (selectedBundleSize === 5) {
+                selectedBundlePrice = 36; // Was 45 (save $9)
+            }
+
             maxScents = selectedBundleSize;
 
             if (selectedScents.length > maxScents) {
@@ -287,7 +290,6 @@ function setupBundleBuilder() {
     });
 }
 
-// Update bundle UI
 function updateBundleUI() {
     document.getElementById('selected-count').textContent = selectedScents.length;
     document.getElementById('max-count').textContent = maxScents;
@@ -297,7 +299,6 @@ function updateBundleUI() {
     addButton.disabled = selectedScents.length !== maxScents;
 }
 
-// Close modals
 function closeModal() {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.style.display = 'none';
@@ -305,7 +306,6 @@ function closeModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Setup event listeners
 function setupEventListeners() {
     document.querySelectorAll('.size-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -334,7 +334,6 @@ function setupEventListeners() {
     });
 }
 
-// Setup modal events
 function setupModalEvents() {
     document.querySelectorAll('.close').forEach(closeBtn => {
         closeBtn.addEventListener('click', closeModal);
@@ -355,7 +354,6 @@ function setupModalEvents() {
     });
 }
 
-// Setup filter buttons
 function setupFilterButtons() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -368,7 +366,6 @@ function setupFilterButtons() {
     });
 }
 
-// Update total price in product modal
 function updateTotalPrice() {
     if (!currentProduct) return;
 
@@ -378,7 +375,6 @@ function updateTotalPrice() {
     document.getElementById('total-price').textContent = total.toFixed(2);
 }
 
-// Add to cart functions with proper cart integration
 window.addToCart = function() {
     if (!currentProduct) return;
 
