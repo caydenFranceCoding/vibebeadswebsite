@@ -1,82 +1,82 @@
-// Updated Candles Page JavaScript with YOUR ACTUAL IMAGES
+// Updated Candles Page JavaScript with NEW PRICING STRUCTURE
 // File: public/pages/javascript/candles.js
 
-// Product data with your real image paths
+// Product data with your real image paths - UPDATED PRICING
 const candleProducts = [
     {
         id: 1,
         name: 'Apple Ginger Spritz',
-        price: 45.00,
+        price: 15.00, // Updated: was 45.00
         image: '../images/candles/apple ginger spritz.jpeg',
         category: 'signature',
         description: 'Crisp apple meets warming ginger with a bubbly spritz finish. Fresh, spicy, and invigorating - perfect for energizing any space.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🍎',
         featured: true
     },
     {
         id: 2,
         name: 'Blackberry Margarita',
-        price: 42.00,
+        price: 15.00, // Updated: was 42.00
         image: '../images/candles/black berry margarita.jpeg',
         category: 'signature',
         description: 'Sweet blackberries blended with zesty lime and a hint of salt. Like a summer cocktail in candle form.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🫐',
         featured: true
     },
     {
         id: 3,
         name: 'Black Coral Moss',
-        price: 48.00,
+        price: 15.00, // Updated: was 48.00
         image: '../images/candles/black coral & moss.jpeg',
         category: 'signature',
         description: 'Deep oceanic blend with earthy moss undertones. Mysterious and sophisticated, perfect for creating an elegant atmosphere.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🌊',
         featured: true
     },
     {
         id: 4,
         name: 'Egyptian Amber',
-        price: 50.00,
+        price: 15.00, // Updated: was 50.00
         image: '../images/candles/egyption amber.jpeg',
         category: 'signature',
         description: 'Exotic and mysterious blend of amber resin, frankincense, and warm spices. Transport yourself to ancient lands.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🏺',
         featured: true
     },
     {
         id: 5,
         name: 'Mango Papaya',
-        price: 38.00,
+        price: 15.00, // Updated: was 38.00
         image: '../images/candles/mango papaya.jpeg',
         category: 'signature',
         description: 'Tropical paradise with ripe mango and sweet papaya. Brings sunshine and summer vibes to any room.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🥭',
         featured: false
     },
     {
         id: 6,
         name: 'Pink Watermelon Lemon',
-        price: 40.00,
+        price: 15.00, // Updated: was 40.00
         image: '../images/candles/pink watermelon lemon.jpeg',
         category: 'signature',
         description: 'Juicy pink watermelon with bright lemon zest. Refreshing and uplifting, perfect for summer gatherings.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🍉',
         featured: false
     },
     {
         id: 7,
         name: 'Sweet Jamaica',
-        price: 46.00,
+        price: 15.00, // Updated: was 46.00
         image: '../images/candles/vanilla bean.jpeg', // Using vanilla bean as closest match
         category: 'signature',
         description: 'Island-inspired blend of coconut, tropical fruits, and warm vanilla. Escape to the Caribbean with every breath.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🏝️',
         featured: false
     },
@@ -84,55 +84,55 @@ const candleProducts = [
     {
         id: 8,
         name: 'Vanilla Bean',
-        price: 42.00,
+        price: 15.00, // Updated: was 42.00
         image: '../images/candles/vanilla bean.jpeg',
         category: 'signature',
         description: 'Rich, creamy vanilla bean with warm undertones. Classic and comforting scent that creates a cozy atmosphere.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🤍',
         featured: false
     },
     {
         id: 9,
         name: 'Black Truffle Amber Woods',
-        price: 55.00,
+        price: 15.00, // Updated: was 55.00
         image: '../images/candles/black truffle amber woods.jpeg',
         category: 'signature',
         description: 'Luxurious blend of black truffle, amber, and rich woods. Sophisticated and mysterious, perfect for evening ambiance.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🖤',
         featured: false
     },
     {
         id: 10,
         name: 'Cinnamon Chai',
-        price: 44.00,
+        price: 15.00, // Updated: was 44.00
         image: '../images/candles/cinnamon chai.jpeg',
         category: 'signature',
         description: 'Warm cinnamon spice blended with aromatic chai tea. Cozy and inviting, perfect for cool evenings.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🍂',
         featured: false
     },
     {
         id: 11,
         name: 'Grapefruit & Mint',
-        price: 41.00,
+        price: 15.00, // Updated: was 41.00
         image: '../images/candles/grapefruit & mint.jpeg',
         category: 'signature',
         description: 'Fresh grapefruit with cooling mint. Energizing and refreshing, perfect for morning motivation.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🍊',
         featured: false
     },
     {
         id: 12,
         name: 'Moonflower Nectar',
-        price: 47.00,
+        price: 15.00, // Updated: was 47.00
         image: '../images/candles/moonflower nectar.jpeg',
         category: 'signature',
         description: 'Exotic moonflower with sweet nectar notes. Floral and dreamy, perfect for evening relaxation.',
-        burnTime: '45-50 hours',
+        burnTime: '25-30 hours (8oz), 35-40 hours (10oz), 50-60 hours (16oz)',
         emoji: '🌙',
         featured: false
     }
@@ -182,7 +182,7 @@ function renderProducts() {
     });
 }
 
-// UPDATED: Create product card with real images
+// UPDATED: Create product card with real images and new pricing
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card fade-in';
@@ -221,7 +221,7 @@ function quickAddToCart(productId) {
         const cartItem = {
             id: product.id,
             name: `${product.name} (8oz)`,
-            price: product.price,
+            price: product.price, // Now $15.00 for 8oz
             quantity: 1,
             size: '8oz',
             scent: null,
@@ -236,7 +236,7 @@ function quickAddToCart(productId) {
     }
 }
 
-// Create custom scent card
+// Create custom scent card with updated pricing
 function createCustomScentCard() {
     const card = document.createElement('div');
     card.className = 'product-card fade-in custom-scent-card';
@@ -248,7 +248,7 @@ function createCustomScentCard() {
         </div>
         <div class="product-info">
             <h3 class="product-title">Pick Your Scent</h3>
-            <p class="product-price">From $38.00 USD</p>
+            <p class="product-price">From $15.00 USD</p>
             <p class="product-description">Create your perfect custom candle by choosing from our collection of premium fragrances</p>
             <button class="add-to-cart-btn" onclick="event.stopPropagation(); openCustomScentModal()">Customize Candle</button>
         </div>
@@ -257,7 +257,7 @@ function createCustomScentCard() {
     return card;
 }
 
-// UPDATED: Open product modal with real images
+// UPDATED: Open product modal with real images and new pricing structure
 function openProductModal(product) {
     currentProduct = product;
     const modal = document.getElementById('product-modal');
@@ -281,17 +281,21 @@ function openProductModal(product) {
     selectedSizePrice = 0;
     quantity = 1;
 
+    // UPDATED: New size button pricing structure
     document.querySelectorAll('.size-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.size === '8oz') {
             btn.classList.add('active');
         }
         if (btn.dataset.size === '8oz') {
-            btn.textContent = `8oz Candle - $${product.price.toFixed(2)}`;
+            btn.textContent = `8oz Candle - $15.00`;
             btn.dataset.price = '0';
-        } else {
-            btn.textContent = `16oz Candle - $${(product.price + 20).toFixed(2)}`;
-            btn.dataset.price = '20';
+        } else if (btn.dataset.size === '10oz') {
+            btn.textContent = `10oz Candle - $16.00`;
+            btn.dataset.price = '1'; // $1 more than base price
+        } else if (btn.dataset.size === '16oz') {
+            btn.textContent = `16oz Candle - $22.00`;
+            btn.dataset.price = '7'; // $7 more than base price
         }
     });
 
@@ -302,12 +306,14 @@ function openProductModal(product) {
     document.body.style.overflow = 'hidden';
 }
 
-// Open custom scent modal
+// Open custom scent modal with updated pricing
 function openCustomScentModal() {
     const modal = document.getElementById('custom-scent-modal');
 
     document.querySelectorAll('input[name="scent"]').forEach(input => {
         input.checked = false;
+        // Update custom scent pricing to new structure
+        input.dataset.price = '15'; // Base price is now $15
     });
 
     document.querySelectorAll('#custom-scent-modal .size-btn').forEach(btn => {
@@ -401,35 +407,35 @@ function setupFilterButtons() {
     });
 }
 
-// Update total price in product modal
+// UPDATED: Update total price in product modal with new pricing
 function updateTotalPrice() {
     if (!currentProduct) return;
 
-    const basePrice = currentProduct.price;
+    const basePrice = currentProduct.price; // Now $15.00 for all candles
     const total = (basePrice + selectedSizePrice) * quantity;
 
     document.getElementById('total-price').textContent = total.toFixed(2);
 }
 
-// Update custom scent price
+// UPDATED: Update custom scent price with new pricing
 function updateCustomPrice() {
     const selectedScent = document.querySelector('input[name="scent"]:checked');
     const addButton = document.querySelector('#custom-scent-modal .add-to-cart-btn');
     const priceSpan = document.getElementById('custom-total-price');
 
     if (selectedScent) {
-        const basePrice = parseInt(selectedScent.dataset.price);
+        const basePrice = 15; // New base price for custom candles
         const total = basePrice + selectedSizePrice;
 
         priceSpan.textContent = total.toFixed(2);
         addButton.disabled = false;
     } else {
-        priceSpan.textContent = '0.00';
+        priceSpan.textContent = '15.00';
         addButton.disabled = true;
     }
 }
 
-// Add to cart functions
+// UPDATED: Add to cart functions with new pricing
 window.addToCart = function() {
     if (!currentProduct) return;
 
@@ -461,7 +467,7 @@ window.addCustomToCart = function() {
     const selectedScent = document.querySelector('input[name="scent"]:checked');
     if (!selectedScent) return;
 
-    const basePrice = parseInt(selectedScent.dataset.price);
+    const basePrice = 15; // New base price for custom candles
     const finalPrice = basePrice + selectedSizePrice;
 
     const cartItem = {

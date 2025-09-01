@@ -88,7 +88,7 @@
         </div>
     </section>
 
-    <!-- Product Modal -->
+    <!-- Product Modal - UPDATED with new size options -->
     <div id="product-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -105,8 +105,9 @@
                         <div class="size-options">
                             <h4>Size:</h4>
                             <div class="size-buttons">
-                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Candle - $45</button>
-                                <button class="size-btn" data-size="16oz" data-price="20">16oz Candle - $65</button>
+                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Candle - $15.00</button>
+                                <button class="size-btn" data-size="10oz" data-price="1">10oz Candle - $16.00</button>
+                                <button class="size-btn" data-size="16oz" data-price="7">16oz Candle - $22.00</button>
                             </div>
                         </div>
 
@@ -121,7 +122,7 @@
                     </div>
 
                     <button class="add-to-cart-btn" onclick="addToCart()">
-                        Add to Cart - $<span id="total-price">45.00</span>
+                        Add to Cart - $<span id="total-price">15.00</span>
                     </button>
 
                     <div class="product-details">
@@ -130,7 +131,7 @@
                             <li>Hand-poured premium soy wax</li>
                             <li>Cotton wick for clean burning</li>
                             <li>Phthalate-free fragrances</li>
-                            <li>45-90 hour burn time</li>
+                            <li>25-60 hour burn time (size dependent)</li>
                             <li>Reusable glass container</li>
                         </ul>
                     </div>
@@ -139,7 +140,7 @@
         </div>
     </div>
 
-    <!-- Custom Scent Modal -->
+    <!-- Custom Scent Modal - UPDATED with new pricing -->
     <div id="custom-scent-modal" class="modal">
         <div class="modal-content custom-modal">
             <span class="close">&times;</span>
@@ -152,15 +153,15 @@
                         <h3>Fresh & Fruity</h3>
                         <div class="scent-options">
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Apple Ginger Spritz" data-price="45">
+                                <input type="radio" name="scent" value="Apple Ginger Spritz" data-price="15">
                                 <span>Apple Ginger Spritz</span>
                             </label>
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Pink Watermelon Lemon" data-price="40">
+                                <input type="radio" name="scent" value="Pink Watermelon Lemon" data-price="15">
                                 <span>Pink Watermelon Lemon</span>
                             </label>
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Mango Papaya" data-price="38">
+                                <input type="radio" name="scent" value="Mango Papaya" data-price="15">
                                 <span>Mango Papaya</span>
                             </label>
                         </div>
@@ -170,15 +171,15 @@
                         <h3>Exotic & Bold</h3>
                         <div class="scent-options">
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Blackberry Margarita" data-price="42">
+                                <input type="radio" name="scent" value="Blackberry Margarita" data-price="15">
                                 <span>Blackberry Margarita</span>
                             </label>
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Sweet Jamaica" data-price="46">
+                                <input type="radio" name="scent" value="Sweet Jamaica" data-price="15">
                                 <span>Sweet Jamaica</span>
                             </label>
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Egyptian Amber" data-price="50">
+                                <input type="radio" name="scent" value="Egyptian Amber" data-price="15">
                                 <span>Egyptian Amber</span>
                             </label>
                         </div>
@@ -188,7 +189,7 @@
                         <h3>Ocean & Earth</h3>
                         <div class="scent-options">
                             <label class="scent-option">
-                                <input type="radio" name="scent" value="Black Coral Moss" data-price="48">
+                                <input type="radio" name="scent" value="Black Coral Moss" data-price="15">
                                 <span>Black Coral Moss</span>
                             </label>
                         </div>
@@ -199,14 +200,15 @@
                     <div class="size-options">
                         <h4>Size:</h4>
                         <div class="size-buttons">
-                            <button class="size-btn active" data-size="8oz" data-extra="0">8oz Candle</button>
-                            <button class="size-btn" data-size="16oz" data-extra="20">16oz Candle (+$20)</button>
+                            <button class="size-btn active" data-size="8oz" data-extra="0">8oz Candle - $15.00</button>
+                            <button class="size-btn" data-size="10oz" data-extra="1">10oz Candle - $16.00</button>
+                            <button class="size-btn" data-size="16oz" data-extra="7">16oz Candle - $22.00</button>
                         </div>
                     </div>
                 </div>
 
                 <button class="add-to-cart-btn" onclick="addCustomToCart()" disabled>
-                    Add Custom Candle to Cart - $<span id="custom-total-price">45.00</span>
+                    Add Custom Candle to Cart - $<span id="custom-total-price">15.00</span>
                 </button>
             </div>
         </div>
