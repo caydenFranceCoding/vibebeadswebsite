@@ -1,3 +1,6 @@
+// Fixed Checkout Manager - Complete Order Button Issue
+// File: public/script/checkout.js
+
 class CheckoutManager {
   constructor() {
     this.isProcessing = false;
@@ -10,20 +13,17 @@ class CheckoutManager {
     this.isSquareInitialized = false;
     this.retryCount = 0;
     this.maxRetries = 3;
-    this.requestTimeout = 15000; // Increased timeout
+    this.requestTimeout = 15000;
     this.csrfToken = null;
     this.sessionId = this.generateSessionId();
-
-    // Add configuration for different environments
     this.apiBaseUrl = this.getApiBaseUrl();
   }
 
   getApiBaseUrl() {
-    // Check if we're in development or production
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:3001'; // Local development
+      return 'http://localhost:3001';
     } else {
-      return 'https://squareupapi.onrender.com'; // Production
+      return 'https://squareupapi.onrender.com';
     }
   }
 
@@ -40,12 +40,10 @@ class CheckoutManager {
       this.loadCartItems();
       this.renderCartItems();
       this.updateTotals();
-      this.setupEventListeners();
+      this.setupEventListeners(); // This is key!
       this.setupSecurityMeasures();
 
-      // Add status update for initialization
       this.updateStatus('Initializing payment system...', 'info');
-
       await this.initializeSquarePayments();
 
       window.addEventListener('cartUpdated', (event) => {
@@ -68,10 +66,48 @@ class CheckoutManager {
     }
   }
 
-  setupSecurityMeasures() {
-    // Prevent multiple form submissions
-    this.debounceSubmit = this.debounce(this.handleSubmit.bind(this), 1000);
+  setupEventListeners() {
+    // FIXED: Proper event listener setup for complete order button
+    const completeOrderBtn = document.getElementById('complete-order-btn');
+    if (completeOrderBtn) {
+      // Remove any existing event listeners
+      completeOrderBtn.replaceWith(completeOrderBtn.cloneNode(true));
+      const newBtn = document.getElementById('complete-order-btn');
 
+      // Add click event listener
+      newBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        console.log('Complete order button clicked!'); // Debug log
+        this.handleSubmit(event);
+      });
+
+      console.log('Complete order button event listener added'); // Debug log
+    } else {
+      console.error('Complete order button not found!'); // Debug log
+    }
+
+    // Add keyboard navigation support
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && event.target.form && !this.isProcessing) {
+        event.preventDefault();
+        this.handleSubmit(event);
+      }
+    });
+
+    // Digital wallet button listeners
+    const applePayBtn = document.getElementById('apple-pay-button');
+    const googlePayBtn = document.getElementById('google-pay-button');
+
+    if (applePayBtn) {
+      applePayBtn.addEventListener('click', () => this.handleDigitalWalletPayment('applePay'));
+    }
+
+    if (googlePayBtn) {
+      googlePayBtn.addEventListener('click', () => this.handleDigitalWalletPayment('googlePay'));
+    }
+  }
+
+  setupSecurityMeasures() {
     // Form tampering detection
     this.originalFormData = this.getFormData();
 
@@ -82,17 +118,103 @@ class CheckoutManager {
     }
   }
 
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
+  async handleSubmit(event) {
+    event.preventDefault();
+
+    console.log('handleSubmit called, isProcessing:', this.isProcessing); // Debug log
+    console.log('Cart items length:', this.cartItems.length); // Debug log
+
+    if (this.isProcessing) {
+      console.log('Already processing, returning'); // Debug log
+      return;
+    }
+
+    if (this.cartItems.length === 0) {
+      this.showError('Your cart is empty. Please add items before checking out.');
+      return;
+    }
+
+    this.hideError();
+
+    try {
+      // Security checks
+      this.validateFormIntegrity();
+
+      const formData = this.getFormData();
+      const validation = this.validateForm(formData);
+
+      if (!validation.valid) {
+        this.showError(validation.message);
+        return;
+      }
+
+      this.setProcessingState(true);
+      const totals = this.updateTotals();
+
+      if (this.isSquareInitialized && this.card) {
+        console.log('Processing with Square...'); // Debug log
+        const token = await this.tokenizePayment();
+        await this.processPayment(token, totals.total, formData);
+      } else {
+        console.log('Processing demo payment...'); // Debug log
+        const result = await this.processDemoPayment(totals.total);
+        if (result.success) {
+          this.showSuccessPage(result.paymentId);
+          this.clearCart();
+        }
+      }
+
+    } catch (error) {
+      this.handleError('Payment processing failed', error);
+    } finally {
+      this.setProcessingState(false);
+    }
   }
+
+  setProcessingState(processing) {
+    console.log('Setting processing state:', processing); // Debug log
+    this.isProcessing = processing;
+
+    const elements = {
+      buttonText: document.getElementById('button-text'),
+      buttonSpinner: document.getElementById('button-spinner'),
+      completeBtn: document.getElementById('complete-order-btn'),
+      applePayButton: document.getElementById('apple-pay-button'),
+      googlePayButton: document.getElementById('google-pay-button')
+    };
+
+    if (elements.buttonText) {
+      elements.buttonText.style.display = processing ? 'none' : 'block';
+    }
+    if (elements.buttonSpinner) {
+      elements.buttonSpinner.style.display = processing ? 'flex' : 'none';
+    }
+    if (elements.completeBtn) {
+      elements.completeBtn.disabled = processing || this.cartItems.length === 0;
+      elements.completeBtn.setAttribute('aria-busy', processing.toString());
+      elements.completeBtn.style.opacity = processing ? '0.7' : '1';
+      elements.completeBtn.style.cursor = processing ? 'not-allowed' : 'pointer';
+    }
+    if (elements.applePayButton) {
+      elements.applePayButton.disabled = processing;
+    }
+    if (elements.googlePayButton) {
+      elements.googlePayButton.disabled = processing;
+    }
+
+    // Update form fields
+    document.querySelectorAll('input, select').forEach(input => {
+      if (processing) {
+        input.setAttribute('readonly', 'true');
+        input.style.opacity = '0.7';
+      } else {
+        input.removeAttribute('readonly');
+        input.style.opacity = '1';
+      }
+    });
+  }
+
+  // ... (rest of your existing methods remain the same) ...
 
   async initializeSquarePayments() {
     try {
@@ -132,7 +254,6 @@ class CheckoutManager {
 
   async initializeCard() {
     try {
-      // Use minimal styling to avoid Square's CSS restrictions
       this.card = await this.payments.card({
         style: {
           input: {
@@ -168,7 +289,6 @@ class CheckoutManager {
       const button = document.getElementById('apple-pay-button');
       if (button && this.applePay) {
         button.style.display = 'block';
-        button.addEventListener('click', () => this.handleDigitalWalletPayment('applePay'));
       }
     } catch (error) {
       const button = document.getElementById('apple-pay-button');
@@ -184,7 +304,6 @@ class CheckoutManager {
       const button = document.getElementById('google-pay-button');
       if (button && this.googlePay) {
         button.style.display = 'block';
-        button.addEventListener('click', () => this.handleDigitalWalletPayment('googlePay'));
       }
     } catch (error) {
       const button = document.getElementById('google-pay-button');
@@ -255,96 +374,6 @@ class CheckoutManager {
     }
   }
 
-  setProcessingState(processing) {
-    this.isProcessing = processing;
-
-    const elements = {
-      buttonText: document.getElementById('button-text'),
-      buttonSpinner: document.getElementById('button-spinner'),
-      completeBtn: document.getElementById('complete-order-btn'),
-      applePayButton: document.getElementById('apple-pay-button'),
-      googlePayButton: document.getElementById('google-pay-button')
-    };
-
-    if (elements.buttonText) {
-      elements.buttonText.style.display = processing ? 'none' : 'block';
-    }
-    if (elements.buttonSpinner) {
-      elements.buttonSpinner.style.display = processing ? 'flex' : 'none';
-    }
-    if (elements.completeBtn) {
-      elements.completeBtn.disabled = processing || this.cartItems.length === 0;
-      elements.completeBtn.setAttribute('aria-busy', processing.toString());
-    }
-    if (elements.applePayButton) {
-      elements.applePayButton.disabled = processing;
-    }
-    if (elements.googlePayButton) {
-      elements.googlePayButton.disabled = processing;
-    }
-
-    // Update form fields
-    document.querySelectorAll('input, select').forEach(input => {
-      if (processing) {
-        input.setAttribute('readonly', 'true');
-      } else {
-        input.removeAttribute('readonly');
-      }
-    });
-  }
-
-  async handleSubmit(event) {
-    event.preventDefault();
-
-    if (this.isProcessing || this.cartItems.length === 0) return;
-
-    this.hideError();
-
-    try {
-      // Security checks
-      this.validateFormIntegrity();
-
-      const formData = this.getFormData();
-      const validation = this.validateForm(formData);
-
-      if (!validation.valid) {
-        this.showError(validation.message);
-        return;
-      }
-
-      this.setProcessingState(true);
-
-      const totals = this.updateTotals();
-
-      if (this.isSquareInitialized && this.card) {
-        const token = await this.tokenizePayment();
-        await this.processPayment(token, totals.total, formData);
-      } else {
-        const result = await this.processDemoPayment(totals.total);
-        if (result.success) {
-          this.showSuccessPage(result.paymentId);
-          this.clearCart();
-        }
-      }
-
-    } catch (error) {
-      this.handleError('Payment processing failed', error);
-    } finally {
-      this.setProcessingState(false);
-    }
-  }
-
-  validateFormIntegrity() {
-    const currentFormData = this.getFormData();
-    const suspiciousChanges = Object.keys(currentFormData).filter(key =>
-      key.startsWith('amount') || key.startsWith('price') || key.startsWith('total')
-    );
-
-    if (suspiciousChanges.length > 0) {
-      throw new Error('Form tampering detected');
-    }
-  }
-
   async loadSquareConfig() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
@@ -381,7 +410,6 @@ class CheckoutManager {
         throw new Error(`Configuration request timed out. Please check if ${this.apiBaseUrl} is accessible.`);
       }
 
-      // If it's a network error, provide more helpful information
       if (error.message.includes('fetch')) {
         throw new Error(`Cannot connect to payment server at ${this.apiBaseUrl}. Please check your internet connection.`);
       }
@@ -488,7 +516,6 @@ class CheckoutManager {
         throw new Error('Payment request timed out. Please try again.');
       }
 
-      // Retry logic for network errors
       if (this.shouldRetry(error) && this.retryCount < this.maxRetries) {
         this.retryCount++;
         this.updateStatus(`Retrying payment... (${this.retryCount}/${this.maxRetries})`, 'info');
@@ -515,6 +542,19 @@ class CheckoutManager {
       return errorResponse.details.map(d => d.message || d.detail || d.code).join(', ');
     }
     return errorResponse.error || errorResponse.message || 'Payment failed';
+  }
+
+  processDemoPayment(total) {
+    this.updateStatus('Processing demo payment...', 'info');
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          paymentId: `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        });
+      }, 2000);
+    });
   }
 
   showFallbackPaymentMethod() {
@@ -561,7 +601,6 @@ class CheckoutManager {
       statusElement.textContent = message;
       statusElement.className = `square-status status-${type}`;
 
-      // Remove status message after 10 seconds for success messages
       if (type === 'success') {
         setTimeout(() => {
           if (statusElement.textContent === message) {
@@ -605,21 +644,6 @@ class CheckoutManager {
     if (window.cartManager) {
       window.cartManager.clearCart();
     }
-  }
-
-  setupEventListeners() {
-    const completeOrderBtn = document.getElementById('complete-order-btn');
-    if (completeOrderBtn) {
-      completeOrderBtn.addEventListener('click', this.debounceSubmit);
-    }
-
-    // Add keyboard navigation support
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && event.target.form) {
-        event.preventDefault();
-        this.handleSubmit(event);
-      }
-    });
   }
 
   renderCartItems() {
@@ -695,7 +719,7 @@ class CheckoutManager {
     if (elements.shipping) elements.shipping.textContent = `$${shipping.toFixed(2)}`;
     if (elements.tax) elements.tax.textContent = `$${tax.toFixed(2)}`;
     if (elements.total) elements.total.textContent = `$${total.toFixed(2)}`;
-    if (elements.buttonText) {
+    if (elements.buttonText && !this.isProcessing) {
       elements.buttonText.textContent = `Complete Order - $${total.toFixed(2)}`;
     }
   }
@@ -732,6 +756,18 @@ class CheckoutManager {
     return { valid: true };
   }
 
+  validateFormIntegrity() {
+    // Basic form tampering detection
+    const currentFormData = this.getFormData();
+    const suspiciousChanges = Object.keys(currentFormData).filter(key =>
+      key.startsWith('amount') || key.startsWith('price') || key.startsWith('total')
+    );
+
+    if (suspiciousChanges.length > 0) {
+      throw new Error('Form tampering detected');
+    }
+  }
+
   showError(message) {
     const errorElement = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
@@ -742,7 +778,6 @@ class CheckoutManager {
       errorElement.setAttribute('role', 'alert');
       errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // Auto-hide after 15 seconds
       setTimeout(() => this.hideError(), 15000);
     }
   }
@@ -780,19 +815,6 @@ class CheckoutManager {
     return div.innerHTML;
   }
 
-  processDemoPayment(total) {
-    this.updateStatus('Processing demo payment...', 'info');
-
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          paymentId: `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        });
-      }, 2000);
-    });
-  }
-
   updateQuantity(index, change) {
     if (index < 0 || index >= this.cartItems.length) return;
 
@@ -826,8 +848,14 @@ class CheckoutManager {
 // Initialize checkout manager
 const checkoutManager = new CheckoutManager();
 
+// IMPORTANT: Initialize on DOM content loaded
 document.addEventListener('DOMContentLoaded', () => {
-  checkoutManager.init();
+  console.log('DOM loaded, initializing checkout manager...'); // Debug log
+  checkoutManager.init().then(() => {
+    console.log('Checkout manager initialized successfully'); // Debug log
+  }).catch(error => {
+    console.error('Failed to initialize checkout manager:', error); // Debug log
+  });
 });
 
 // Make methods globally available for onclick handlers
