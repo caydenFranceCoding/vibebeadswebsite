@@ -1,4 +1,4 @@
-// Fixed Checkout Manager - Complete Order Button Issue
+// Fixed Checkout Manager - Field Length Validation for Square
 // File: public/script/checkout.js
 
 class CheckoutManager {
@@ -35,12 +35,81 @@ class CheckoutManager {
     return `${this.sessionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // FIXED: Helper method to truncate fields for Square API requirements
+  truncateField(value, maxLength = 45, suffix = '...') {
+    if (!value || typeof value !== 'string') return value;
+    if (value.length <= maxLength) return value;
+
+    const truncateLength = maxLength - suffix.length;
+    return value.substring(0, truncateLength) + suffix;
+  }
+
+  // FIXED: Helper method to sanitize all form data for Square
+  sanitizeFormDataForSquare(formData) {
+    const sanitized = { ...formData };
+
+    // Square field length limits
+    const fieldLimits = {
+      firstName: 45,
+      lastName: 45,
+      address: 60,  // Address line can be up to 60
+      city: 45,
+      state: 45,
+      zipCode: 20,
+      email: 254,   // Email can be longer
+      country: 2    // Country code should be 2 chars
+    };
+
+    // Sanitize each field according to Square's requirements
+    Object.keys(fieldLimits).forEach(field => {
+      if (sanitized[field]) {
+        const limit = fieldLimits[field];
+        if (field === 'email') {
+          // For email, just validate format but don't truncate
+          if (sanitized[field].length > limit) {
+            throw new Error('Email address is too long');
+          }
+        } else if (field === 'country') {
+          // Country should be 2-letter code
+          sanitized[field] = sanitized[field].substring(0, 2).toUpperCase();
+        } else if (field === 'address') {
+          // Address can be longer, but still limit it
+          sanitized[field] = this.truncateField(sanitized[field], limit, '...');
+        } else {
+          // Standard fields with 45 char limit
+          sanitized[field] = this.truncateField(sanitized[field], limit, '...');
+        }
+      }
+    });
+
+    return sanitized;
+  }
+
+  // FIXED: Helper method to create order description that fits Square limits
+  createOrderDescription() {
+    if (this.cartItems.length === 0) return 'Empty order';
+
+    const maxLength = 45;
+
+    if (this.cartItems.length === 1) {
+      return this.truncateField(this.cartItems[0].name, maxLength);
+    }
+
+    // Multiple items - create a summary
+    const itemCount = this.cartItems.length;
+    const suffix = ` and ${itemCount - 1} more`;
+    const availableLength = maxLength - suffix.length;
+
+    const firstItem = this.truncateField(this.cartItems[0].name, availableLength, '');
+    return `${firstItem}${suffix}`;
+  }
+
   async init() {
     try {
       this.loadCartItems();
       this.renderCartItems();
       this.updateTotals();
-      this.setupEventListeners(); // This is key!
+      this.setupEventListeners();
       this.setupSecurityMeasures();
 
       this.updateStatus('Initializing payment system...', 'info');
@@ -67,26 +136,22 @@ class CheckoutManager {
   }
 
   setupEventListeners() {
-    // FIXED: Proper event listener setup for complete order button
     const completeOrderBtn = document.getElementById('complete-order-btn');
     if (completeOrderBtn) {
-      // Remove any existing event listeners
       completeOrderBtn.replaceWith(completeOrderBtn.cloneNode(true));
       const newBtn = document.getElementById('complete-order-btn');
 
-      // Add click event listener
       newBtn.addEventListener('click', (event) => {
         event.preventDefault();
-        console.log('Complete order button clicked!'); // Debug log
+        console.log('Complete order button clicked!');
         this.handleSubmit(event);
       });
 
-      console.log('Complete order button event listener added'); // Debug log
+      console.log('Complete order button event listener added');
     } else {
-      console.error('Complete order button not found!'); // Debug log
+      console.error('Complete order button not found!');
     }
 
-    // Add keyboard navigation support
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && event.target.form && !this.isProcessing) {
         event.preventDefault();
@@ -94,7 +159,6 @@ class CheckoutManager {
       }
     });
 
-    // Digital wallet button listeners
     const applePayBtn = document.getElementById('apple-pay-button');
     const googlePayBtn = document.getElementById('google-pay-button');
 
@@ -108,10 +172,8 @@ class CheckoutManager {
   }
 
   setupSecurityMeasures() {
-    // Form tampering detection
     this.originalFormData = this.getFormData();
 
-    // Add CSRF protection if available
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     if (csrfMeta) {
       this.csrfToken = csrfMeta.getAttribute('content');
@@ -121,11 +183,11 @@ class CheckoutManager {
   async handleSubmit(event) {
     event.preventDefault();
 
-    console.log('handleSubmit called, isProcessing:', this.isProcessing); // Debug log
-    console.log('Cart items length:', this.cartItems.length); // Debug log
+    console.log('handleSubmit called, isProcessing:', this.isProcessing);
+    console.log('Cart items length:', this.cartItems.length);
 
     if (this.isProcessing) {
-      console.log('Already processing, returning'); // Debug log
+      console.log('Already processing, returning');
       return;
     }
 
@@ -137,10 +199,14 @@ class CheckoutManager {
     this.hideError();
 
     try {
-      // Security checks
       this.validateFormIntegrity();
 
-      const formData = this.getFormData();
+      const rawFormData = this.getFormData();
+
+      // FIXED: Sanitize form data for Square API requirements
+      const formData = this.sanitizeFormDataForSquare(rawFormData);
+      console.log('Sanitized form data:', formData);
+
       const validation = this.validateForm(formData);
 
       if (!validation.valid) {
@@ -152,11 +218,11 @@ class CheckoutManager {
       const totals = this.updateTotals();
 
       if (this.isSquareInitialized && this.card) {
-        console.log('Processing with Square...'); // Debug log
+        console.log('Processing with Square...');
         const token = await this.tokenizePayment();
         await this.processPayment(token, totals.total, formData);
       } else {
-        console.log('Processing demo payment...'); // Debug log
+        console.log('Processing demo payment...');
         const result = await this.processDemoPayment(totals.total);
         if (result.success) {
           this.showSuccessPage(result.paymentId);
@@ -172,7 +238,7 @@ class CheckoutManager {
   }
 
   setProcessingState(processing) {
-    console.log('Setting processing state:', processing); // Debug log
+    console.log('Setting processing state:', processing);
     this.isProcessing = processing;
 
     const elements = {
@@ -202,7 +268,6 @@ class CheckoutManager {
       elements.googlePayButton.disabled = processing;
     }
 
-    // Update form fields
     document.querySelectorAll('input, select').forEach(input => {
       if (processing) {
         input.setAttribute('readonly', 'true');
@@ -213,8 +278,6 @@ class CheckoutManager {
       }
     });
   }
-
-  // ... (rest of your existing methods remain the same) ...
 
   async initializeSquarePayments() {
     try {
@@ -313,12 +376,14 @@ class CheckoutManager {
 
   buildPaymentRequestOptions() {
     const totals = this.updateTotals();
+
+    // FIXED: Create proper payment request with field length validation
     return {
       countryCode: 'US',
       currencyCode: 'USD',
       total: {
         amount: totals.total.toFixed(2),
-        label: 'Total'
+        label: this.createOrderDescription() // Use sanitized description
       },
       requestBillingContact: false,
       requestShippingContact: false
@@ -456,18 +521,42 @@ class CheckoutManager {
     });
   }
 
+  // FIXED: Enhanced processPayment with proper field validation
   async processPayment(sourceId, total, formData = null) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
+      // FIXED: Create payment data with properly formatted fields for Square
       const paymentData = {
         sourceId: sourceId,
-        amount: total,
+        amount: Math.round(total * 100), // Square expects amount in cents
         currency: 'USD',
         idempotencyKey: this.generateIdempotencyKey(),
-        buyerEmail: formData?.email || undefined
+        locationId: this.squareConfig.locationId,
+        // Add order details with proper field lengths
+        orderDescription: this.createOrderDescription(),
       };
+
+      // FIXED: Add buyer information if available (with field validation)
+      if (formData?.email) {
+        paymentData.buyerEmail = formData.email;
+      }
+
+      // FIXED: Add billing address if available (with field validation)
+      if (formData) {
+        paymentData.billingAddress = {
+          firstName: formData.firstName || '',
+          lastName: formData.lastName || '',
+          addressLine1: formData.address || '',
+          locality: formData.city || '',
+          administrativeDistrictLevel1: formData.state || '',
+          postalCode: formData.zipCode || '',
+          country: formData.country || 'US'
+        };
+      }
+
+      console.log('Sending payment data to Square:', paymentData);
 
       const headers = {
         'Content-Type': 'application/json',
@@ -734,6 +823,7 @@ class CheckoutManager {
     return formData;
   }
 
+  // FIXED: Enhanced form validation with field length warnings
   validateForm(formData) {
     const requiredFields = ['email', 'firstName', 'lastName', 'address', 'city', 'state', 'zipCode'];
     const missingFields = requiredFields.filter(field => !formData[field]);
@@ -753,11 +843,32 @@ class CheckoutManager {
       return { valid: false, message: 'Please enter a valid ZIP code' };
     }
 
+    // FIXED: Check for field lengths that might cause Square API issues
+    const fieldLengthWarnings = [];
+    if (formData.firstName && formData.firstName.length > 45) {
+      fieldLengthWarnings.push('First name is too long (max 45 characters)');
+    }
+    if (formData.lastName && formData.lastName.length > 45) {
+      fieldLengthWarnings.push('Last name is too long (max 45 characters)');
+    }
+    if (formData.address && formData.address.length > 60) {
+      fieldLengthWarnings.push('Address is too long (max 60 characters)');
+    }
+    if (formData.city && formData.city.length > 45) {
+      fieldLengthWarnings.push('City is too long (max 45 characters)');
+    }
+
+    if (fieldLengthWarnings.length > 0) {
+      return {
+        valid: false,
+        message: `Please shorten these fields: ${fieldLengthWarnings.join(', ')}`
+      };
+    }
+
     return { valid: true };
   }
 
   validateFormIntegrity() {
-    // Basic form tampering detection
     const currentFormData = this.getFormData();
     const suspiciousChanges = Object.keys(currentFormData).filter(key =>
       key.startsWith('amount') || key.startsWith('price') || key.startsWith('total')
@@ -848,13 +959,12 @@ class CheckoutManager {
 // Initialize checkout manager
 const checkoutManager = new CheckoutManager();
 
-// IMPORTANT: Initialize on DOM content loaded
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, initializing checkout manager...'); // Debug log
+  console.log('DOM loaded, initializing checkout manager...');
   checkoutManager.init().then(() => {
-    console.log('Checkout manager initialized successfully'); // Debug log
+    console.log('Checkout manager initialized successfully');
   }).catch(error => {
-    console.error('Failed to initialize checkout manager:', error); // Debug log
+    console.error('Failed to initialize checkout manager:', error);
   });
 });
 
