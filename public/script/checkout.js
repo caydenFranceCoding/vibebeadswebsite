@@ -132,29 +132,22 @@ class CheckoutManager {
 
   async initializeCard() {
     try {
+      // Use minimal styling to avoid Square's CSS restrictions
       this.card = await this.payments.card({
         style: {
           input: {
             fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#2c2c2c'
-          },
-          'input::placeholder': {
-            color: '#999999'
+            color: '#333333'
           },
           '.input-container': {
-            borderColor: '#d1d5db',
-            borderRadius: '8px',
-            borderWidth: '1px'
+            borderColor: '#cccccc',
+            borderRadius: '8px'
           },
           '.input-container.is-focus': {
-            borderColor: '#059669'
+            borderColor: '#8B7355'
           },
           '.input-container.is-error': {
             borderColor: '#dc2626'
-          },
-          '.message-text': {
-            color: '#dc2626'
           }
         }
       });
@@ -566,14 +559,14 @@ class CheckoutManager {
     const statusElement = document.getElementById('square-status');
     if (statusElement) {
       statusElement.textContent = message;
-      statusElement.className = `status-${type}`;
+      statusElement.className = `square-status status-${type}`;
 
       // Remove status message after 10 seconds for success messages
       if (type === 'success') {
         setTimeout(() => {
           if (statusElement.textContent === message) {
             statusElement.textContent = '';
-            statusElement.className = '';
+            statusElement.className = 'square-status';
           }
         }, 10000);
       }
