@@ -1,633 +1,790 @@
-// Enhanced Checkout JavaScript with Apple Pay & Google Pay
-// File: public/script/checkout.js (cleaned version)
+class CheckoutManager {
+  constructor() {
+    this.isProcessing = false;
+    this.squareConfig = null;
+    this.cartItems = [];
+    this.payments = null;
+    this.card = null;
+    this.applePay = null;
+    this.googlePay = null;
+    this.isSquareInitialized = false;
+    this.retryCount = 0;
+    this.maxRetries = 3;
+    this.requestTimeout = 30000;
+    this.csrfToken = null;
+    this.sessionId = this.generateSessionId();
+  }
 
-// State
-let isProcessing = false;
-let squareConfig = null;
-let cartItems = [];
-let payments = null;
-let card = null;
-let applePay = null;
-let googlePay = null;
-let isSquareInitialized = false;
+  generateSessionId() {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
 
-// Initialize checkout page
-document.addEventListener('DOMContentLoaded', function() {
-    loadCartItems();
-    renderCartItems();
-    updateTotals();
-    setupEventListeners();
+  generateIdempotencyKey() {
+    return `${this.sessionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
 
-    // Initialize Square payments with proper error handling
-    initializeSquarePayments().catch(error => {
-        showFallbackPaymentMethod();
-    });
-
-    // Listen for cart updates from other pages
-    window.addEventListener('cartUpdated', function(event) {
-        loadCartItems();
-        renderCartItems();
-        updateTotals();
-    });
-});
-
-// Enhanced Square payments initialization with digital wallets
-async function initializeSquarePayments() {
+  async init() {
     try {
-        // Wait for config to load
-        if (!squareConfig) {
-            await loadSquareConfig();
+      this.loadCartItems();
+      this.renderCartItems();
+      this.updateTotals();
+      this.setupEventListeners();
+      this.setupSecurityMeasures();
+
+      await this.initializeSquarePayments();
+
+      window.addEventListener('cartUpdated', (event) => {
+        this.loadCartItems();
+        this.renderCartItems();
+        this.updateTotals();
+      });
+
+      window.addEventListener('beforeunload', (event) => {
+        if (this.isProcessing) {
+          event.preventDefault();
+          event.returnValue = 'Payment is being processed. Are you sure you want to leave?';
         }
-
-        // Load the correct Square SDK based on environment
-        await loadSquareSDK(squareConfig.environment);
-
-        if (!window.Square) {
-            throw new Error('Square Web Payments SDK not available');
-        }
-
-        // Initialize payments object
-        payments = window.Square.payments(squareConfig.applicationId, squareConfig.locationId);
-
-        // Initialize payment methods
-        await Promise.all([
-            initializeCard(),
-            initializeApplePay(),
-            initializeGooglePay()
-        ]);
-
-        isSquareInitialized = true;
-
-        // Update status
-        const statusElement = document.getElementById('square-status');
-        if (statusElement) {
-            statusElement.textContent = `Square ${squareConfig.environment} environment ready with digital wallets`;
-            statusElement.style.color = '#059669';
-        }
+      });
 
     } catch (error) {
-        const statusElement = document.getElementById('square-status');
-        if (statusElement) {
-            statusElement.textContent = `Error: ${error.message}`;
-            statusElement.style.color = '#dc2626';
-        }
-        isSquareInitialized = false;
-        throw error;
+      this.handleError('Initialization failed', error);
+      this.showFallbackPaymentMethod();
     }
-}
+  }
 
-// Initialize card payment method
-async function initializeCard() {
-    try {
-        card = await payments.card({
-            style: {
-                input: {
-                    fontSize: '16px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#2c2c2c'
-                },
-                'input::placeholder': {
-                    color: '#999999'
-                },
-                '.input-container': {
-                    borderColor: '#d1d5db',
-                    borderRadius: '8px'
-                },
-                '.input-container.is-focus': {
-                    borderColor: '#8B7355'
-                },
-                '.input-container.is-error': {
-                    borderColor: '#dc2626'
-                }
-            }
-        });
+  setupSecurityMeasures() {
+    // Prevent multiple form submissions
+    this.debounceSubmit = this.debounce(this.handleSubmit.bind(this), 1000);
 
-        await card.attach('#card-container');
-    } catch (error) {
-        throw error;
+    // Form tampering detection
+    this.originalFormData = this.getFormData();
+
+    // Add CSRF protection if available
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+      this.csrfToken = csrfMeta.getAttribute('content');
     }
-}
+  }
 
-// Initialize Apple Pay
-async function initializeApplePay() {
-    try {
-        // Create payment request using Square's method
-        const paymentRequest = await payments.paymentRequest(buildPaymentRequestOptions());
-        applePay = await payments.applePay(paymentRequest);
-
-        const applePayButton = document.getElementById('apple-pay-button');
-        if (applePayButton && applePay) {
-            applePayButton.style.display = 'block';
-            applePayButton.addEventListener('click', async () => {
-                await handleDigitalWalletPayment('applePay');
-            });
-        }
-    } catch (error) {
-        const applePayButton = document.getElementById('apple-pay-button');
-        if (applePayButton) {
-            applePayButton.style.display = 'none';
-        }
-    }
-}
-
-// Initialize Google Pay
-async function initializeGooglePay() {
-    try {
-        // Create payment request using Square's method
-        const paymentRequest = await payments.paymentRequest(buildPaymentRequestOptions());
-        googlePay = await payments.googlePay(paymentRequest);
-
-        const googlePayButton = document.getElementById('google-pay-button');
-        if (googlePayButton && googlePay) {
-            googlePayButton.style.display = 'block';
-            googlePayButton.addEventListener('click', async () => {
-                await handleDigitalWalletPayment('googlePay');
-            });
-        }
-    } catch (error) {
-        const googlePayButton = document.getElementById('google-pay-button');
-        if (googlePayButton) {
-            googlePayButton.style.display = 'none';
-        }
-    }
-}
-
-function buildPaymentRequestOptions() {
-    const totals = updateTotals();
-
-    return {
-        countryCode: 'US',
-        currencyCode: 'USD',
-        total: {
-            amount: totals.total.toFixed(2),
-            label: 'Total'
-        },
-        requestBillingContact: false,
-        requestShippingContact: false
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
     };
-}
+  }
 
-// Handle digital wallet payments
-async function handleDigitalWalletPayment(walletType) {
-    if (isProcessing || cartItems.length === 0) return;
+  async initializeSquarePayments() {
+    try {
+      if (!this.squareConfig) {
+        await this.loadSquareConfig();
+      }
 
-    hideError();
-    setProcessingState(true);
+      await this.loadSquareSDK(this.squareConfig.environment);
+
+      if (!window.Square) {
+        throw new Error('Square Web Payments SDK not available');
+      }
+
+      this.payments = window.Square.payments(
+        this.squareConfig.applicationId,
+        this.squareConfig.locationId
+      );
+
+      await Promise.allSettled([
+        this.initializeCard(),
+        this.initializeApplePay(),
+        this.initializeGooglePay()
+      ]);
+
+      this.isSquareInitialized = true;
+      this.updateStatus('Square payments initialized successfully', 'success');
+
+    } catch (error) {
+      this.updateStatus(`Square initialization failed: ${error.message}`, 'error');
+      this.isSquareInitialized = false;
+      throw error;
+    }
+  }
+
+  async initializeCard() {
+    try {
+      this.card = await this.payments.card({
+        style: {
+          input: {
+            fontSize: '16px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            color: '#2c2c2c'
+          },
+          'input::placeholder': {
+            color: '#999999'
+          },
+          '.input-container': {
+            borderColor: '#d1d5db',
+            borderRadius: '8px',
+            borderWidth: '1px'
+          },
+          '.input-container.is-focus': {
+            borderColor: '#059669',
+            boxShadow: '0 0 0 1px #059669'
+          },
+          '.input-container.is-error': {
+            borderColor: '#dc2626'
+          },
+          '.message-text': {
+            color: '#dc2626'
+          }
+        }
+      });
+
+      await this.card.attach('#card-container');
+    } catch (error) {
+      console.warn('Card initialization failed:', error.message);
+      throw error;
+    }
+  }
+
+  async initializeApplePay() {
+    try {
+      const paymentRequest = this.payments.paymentRequest(this.buildPaymentRequestOptions());
+      this.applePay = await this.payments.applePay(paymentRequest);
+
+      const button = document.getElementById('apple-pay-button');
+      if (button && this.applePay) {
+        button.style.display = 'block';
+        button.addEventListener('click', () => this.handleDigitalWalletPayment('applePay'));
+      }
+    } catch (error) {
+      const button = document.getElementById('apple-pay-button');
+      if (button) button.style.display = 'none';
+    }
+  }
+
+  async initializeGooglePay() {
+    try {
+      const paymentRequest = this.payments.paymentRequest(this.buildPaymentRequestOptions());
+      this.googlePay = await this.payments.googlePay(paymentRequest);
+
+      const button = document.getElementById('google-pay-button');
+      if (button && this.googlePay) {
+        button.style.display = 'block';
+        button.addEventListener('click', () => this.handleDigitalWalletPayment('googlePay'));
+      }
+    } catch (error) {
+      const button = document.getElementById('google-pay-button');
+      if (button) button.style.display = 'none';
+    }
+  }
+
+  buildPaymentRequestOptions() {
+    const totals = this.updateTotals();
+    return {
+      countryCode: 'US',
+      currencyCode: 'USD',
+      total: {
+        amount: totals.total.toFixed(2),
+        label: 'Total'
+      },
+      requestBillingContact: false,
+      requestShippingContact: false
+    };
+  }
+
+  async handleDigitalWalletPayment(walletType) {
+    if (this.isProcessing || this.cartItems.length === 0) return;
+
+    this.hideError();
+    this.setProcessingState(true);
 
     try {
-        let paymentMethod;
-        if (walletType === 'applePay' && applePay) {
-            paymentMethod = applePay;
-        } else if (walletType === 'googlePay' && googlePay) {
-            paymentMethod = googlePay;
-        } else {
-            throw new Error(`${walletType} not available`);
-        }
+      let paymentMethod;
+      if (walletType === 'applePay' && this.applePay) {
+        paymentMethod = this.applePay;
+      } else if (walletType === 'googlePay' && this.googlePay) {
+        paymentMethod = this.googlePay;
+      } else {
+        throw new Error(`${walletType} not available`);
+      }
 
-        const result = await paymentMethod.tokenize();
+      const result = await paymentMethod.tokenize();
 
-        if (result.status === 'OK') {
-            const totals = updateTotals();
-
-            // For digital wallets, we use the contact info from the wallet
-            const orderData = {
-                items: cartItems,
-                shipping: result.details?.billing || result.details?.shipping || {},
-                totals: totals,
-                paymentMethod: walletType
-            };
-
-            await processPayment(result.token, totals.total, orderData);
-        } else {
-            let errorMessage = `${walletType} payment failed`;
-            if (result.errors) {
-                errorMessage = result.errors.map(error => error.message).join(', ');
-            }
-            throw new Error(errorMessage);
-        }
+      if (result.status === 'OK') {
+        const totals = this.updateTotals();
+        await this.processPayment(result.token, totals.total);
+      } else {
+        const errorMessage = result.errors?.map(e => e.message).join(', ') ||
+                           `${walletType} payment failed`;
+        throw new Error(errorMessage);
+      }
     } catch (error) {
-        showError(error.message || `${walletType} payment failed. Please try another payment method.`);
+      this.handleError(`${walletType} payment failed`, error);
     } finally {
-        setProcessingState(false);
+      this.setProcessingState(false);
     }
-}
+  }
 
-// Tokenize regular card payment
-async function tokenizePayment() {
-    if (!isSquareInitialized || !card) {
-        throw new Error('Square payment form is not ready. Please try again or contact support.');
+  async tokenizePayment() {
+    if (!this.isSquareInitialized || !this.card) {
+      throw new Error('Payment form not ready. Please refresh and try again.');
     }
 
-    try {
-        const result = await card.tokenize();
+    const result = await this.card.tokenize();
 
-        if (result.status === 'OK') {
-            return result.token;
-        } else {
-            let errorMessage = 'Card information is invalid';
-            if (result.errors) {
-                errorMessage = result.errors.map(error => error.message).join(', ');
-            }
-            throw new Error(errorMessage);
-        }
-    } catch (error) {
-        throw error;
+    if (result.status === 'OK') {
+      return result.token;
+    } else {
+      const errorMessage = result.errors?.map(e => e.message).join(', ') ||
+                         'Card information is invalid';
+      throw new Error(errorMessage);
     }
-}
+  }
 
-// Set processing state
-function setProcessingState(processing) {
-    isProcessing = processing;
-    const buttonText = document.getElementById('button-text');
-    const buttonSpinner = document.getElementById('button-spinner');
-    const completeBtn = document.getElementById('complete-order-btn');
-    const applePayButton = document.getElementById('apple-pay-button');
-    const googlePayButton = document.getElementById('google-pay-button');
+  setProcessingState(processing) {
+    this.isProcessing = processing;
 
-    if (buttonText) buttonText.style.display = processing ? 'none' : 'block';
-    if (buttonSpinner) buttonSpinner.style.display = processing ? 'flex' : 'none';
-    if (completeBtn) completeBtn.disabled = processing || cartItems.length === 0;
-    if (applePayButton) applePayButton.disabled = processing;
-    if (googlePayButton) googlePayButton.disabled = processing;
-}
+    const elements = {
+      buttonText: document.getElementById('button-text'),
+      buttonSpinner: document.getElementById('button-spinner'),
+      completeBtn: document.getElementById('complete-order-btn'),
+      applePayButton: document.getElementById('apple-pay-button'),
+      googlePayButton: document.getElementById('google-pay-button')
+    };
 
-// Enhanced form submission handler
-async function handleSubmit(event) {
+    if (elements.buttonText) {
+      elements.buttonText.style.display = processing ? 'none' : 'block';
+    }
+    if (elements.buttonSpinner) {
+      elements.buttonSpinner.style.display = processing ? 'flex' : 'none';
+    }
+    if (elements.completeBtn) {
+      elements.completeBtn.disabled = processing || this.cartItems.length === 0;
+      elements.completeBtn.setAttribute('aria-busy', processing.toString());
+    }
+    if (elements.applePayButton) {
+      elements.applePayButton.disabled = processing;
+    }
+    if (elements.googlePayButton) {
+      elements.googlePayButton.disabled = processing;
+    }
+
+    // Update form fields
+    document.querySelectorAll('input, select').forEach(input => {
+      if (processing) {
+        input.setAttribute('readonly', 'true');
+      } else {
+        input.removeAttribute('readonly');
+      }
+    });
+  }
+
+  async handleSubmit(event) {
     event.preventDefault();
 
-    if (isProcessing || cartItems.length === 0) return;
+    if (this.isProcessing || this.cartItems.length === 0) return;
 
-    hideError();
+    this.hideError();
 
-    // For card payments, validate form data
-    const formData = getFormData();
-    const validation = validateForm(formData);
+    try {
+      // Security checks
+      this.validateFormIntegrity();
 
-    if (!validation.valid) {
-        showError(validation.message);
+      const formData = this.getFormData();
+      const validation = this.validateForm(formData);
+
+      if (!validation.valid) {
+        this.showError(validation.message);
         return;
-    }
+      }
 
-    setProcessingState(true);
+      this.setProcessingState(true);
 
-    try {
-        const totals = updateTotals();
+      const totals = this.updateTotals();
 
-        if (isSquareInitialized && card) {
-            // Process with Square card payment
-            const token = await tokenizePayment();
-            await processPayment(token, totals.total, {
-                items: cartItems,
-                shipping: formData,
-                totals: totals,
-                paymentMethod: 'card'
-            });
-        } else {
-            // Process with demo mode
-            const result = await processDemoPayment(totals.total, {
-                items: cartItems,
-                shipping: formData,
-                totals: totals
-            });
-
-            if (result.success) {
-                showSuccessPage(result.paymentId);
-                // Clear cart
-                cartItems = [];
-                saveCartItems();
-                if (window.cartManager) {
-                    window.cartManager.clearCart();
-                }
-            }
-        }
-
-    } catch (error) {
-        showError(error.message || 'An error occurred during checkout. Please try again.');
-    } finally {
-        setProcessingState(false);
-    }
-}
-
-// Load Square configuration and initialize Web Payments SDK
-async function loadSquareConfig() {
-    try {
-        const response = await fetch('https://squareupapi.onrender.com/api/config');
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        squareConfig = await response.json();
-
-        // Add the location ID
-        if (!squareConfig.locationId) {
-            squareConfig.locationId = 'L65X9J5C940J8';
-        }
-
-        return squareConfig;
-    } catch (error) {
-        throw error;
-    }
-}
-
-// Load Square Web Payments SDK dynamically based on environment
-async function loadSquareSDK(environment) {
-    return new Promise((resolve, reject) => {
-        if (window.Square) {
-            resolve();
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.type = 'application/javascript';
-
-        // Use the correct SDK URL based on environment
-        if (environment === 'sandbox') {
-            script.src = 'https://sandbox.web.squarecdn.com/v1/square.js';
-        } else {
-            script.src = 'https://web.squarecdn.com/v1/square.js';
-        }
-
-        script.onload = () => {
-            resolve();
-        };
-
-        script.onerror = () => {
-            reject(new Error(`Failed to load Square ${environment} SDK`));
-        };
-
-        setTimeout(() => {
-            if (!window.Square) {
-                reject(new Error(`Square SDK loading timeout`));
-            }
-        }, 10000);
-
-        document.head.appendChild(script);
-    });
-}
-
-// Process payment with Square
-async function processPayment(sourceId, total, orderData) {
-    try {
-        const response = await fetch('https://squareupapi.onrender.com/api/payments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                sourceId: sourceId,
-                amount: total,
-                currency: 'USD',
-                orderData: orderData,
-                idempotencyKey: generateIdempotencyKey()
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Payment failed');
-        }
-
-        const result = await response.json();
-
+      if (this.isSquareInitialized && this.card) {
+        const token = await this.tokenizePayment();
+        await this.processPayment(token, totals.total, formData);
+      } else {
+        const result = await this.processDemoPayment(totals.total);
         if (result.success) {
-            showSuccessPage(result.paymentId);
-            // Clear cart
-            cartItems = [];
-            saveCartItems();
-
-            if (window.cartManager) {
-                window.cartManager.clearCart();
-            }
-        } else {
-            throw new Error(result.error || 'Payment failed');
+          this.showSuccessPage(result.paymentId);
+          this.clearCart();
         }
-    } catch (error) {
-        throw error;
-    }
-}
+      }
 
-// Show fallback payment method when Square fails to initialize
-function showFallbackPaymentMethod() {
+    } catch (error) {
+      this.handleError('Payment processing failed', error);
+    } finally {
+      this.setProcessingState(false);
+    }
+  }
+
+  validateFormIntegrity() {
+    const currentFormData = this.getFormData();
+    const suspiciousChanges = Object.keys(currentFormData).filter(key =>
+      key.startsWith('amount') || key.startsWith('price') || key.startsWith('total')
+    );
+
+    if (suspiciousChanges.length > 0) {
+      throw new Error('Form tampering detected');
+    }
+  }
+
+  async loadSquareConfig() {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch('/api/config', {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Configuration request failed: ${response.status}`);
+      }
+
+      this.squareConfig = await response.json();
+
+      if (!this.squareConfig.applicationId || !this.squareConfig.locationId) {
+        throw new Error('Invalid configuration received');
+      }
+
+      return this.squareConfig;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Configuration request timed out');
+      }
+      throw error;
+    }
+  }
+
+  async loadSquareSDK(environment) {
+    return new Promise((resolve, reject) => {
+      if (window.Square) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.type = 'application/javascript';
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+
+      const sdkUrl = environment === 'sandbox'
+        ? 'https://sandbox.web.squarecdn.com/v1/square.js'
+        : 'https://web.squarecdn.com/v1/square.js';
+
+      script.src = sdkUrl;
+
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load Square SDK from ${sdkUrl}`));
+
+      const timeout = setTimeout(() => {
+        reject(new Error('Square SDK loading timeout'));
+      }, 15000);
+
+      script.onload = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  async processPayment(sourceId, total, formData = null) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+
+    try {
+      const paymentData = {
+        sourceId: sourceId,
+        amount: total,
+        currency: 'USD',
+        idempotencyKey: this.generateIdempotencyKey(),
+        buyerEmail: formData?.email || undefined
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      };
+
+      if (this.csrfToken) {
+        headers['X-CSRF-Token'] = this.csrfToken;
+      }
+
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(paymentData),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      const responseText = await response.text();
+      let result;
+
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Invalid response from payment server');
+      }
+
+      if (!response.ok) {
+        const errorMessage = this.extractErrorMessage(result);
+        throw new Error(errorMessage);
+      }
+
+      if (result.success) {
+        this.showSuccessPage(result.paymentId);
+        this.clearCart();
+      } else {
+        throw new Error(result.error || 'Payment failed');
+      }
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        throw new Error('Payment request timed out. Please try again.');
+      }
+
+      // Retry logic for network errors
+      if (this.shouldRetry(error) && this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        await this.delay(1000 * this.retryCount);
+        return this.processPayment(sourceId, total, formData);
+      }
+
+      throw error;
+    }
+  }
+
+  shouldRetry(error) {
+    return error.message.includes('network') ||
+           error.message.includes('timeout') ||
+           error.message.includes('fetch');
+  }
+
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  extractErrorMessage(errorResponse) {
+    if (errorResponse.details && Array.isArray(errorResponse.details)) {
+      return errorResponse.details.map(d => d.message || d.detail || d.code).join(', ');
+    }
+    return errorResponse.error || errorResponse.message || 'Payment failed';
+  }
+
+  showFallbackPaymentMethod() {
     const cardContainer = document.getElementById('card-container');
-    const statusElement = document.getElementById('square-status');
     const digitalWalletButtons = document.querySelectorAll('#apple-pay-button, #google-pay-button');
 
-    // Hide digital wallet buttons
-    digitalWalletButtons.forEach(button => {
-        button.style.display = 'none';
-    });
+    digitalWalletButtons.forEach(button => button.style.display = 'none');
 
     if (cardContainer) {
-        cardContainer.innerHTML = `
-            <div class="demo-notice">
-                <strong>Demo Mode:</strong> Square payment form could not be loaded. 
-                In production, this would show the actual payment form.
-                <br><br>
-                For testing purposes, you can still complete the order.
+      cardContainer.innerHTML = `
+        <div class="demo-notice" role="alert">
+          <strong>Demo Mode:</strong> Payment processing is currently in demo mode.
+          Your order will be simulated but no actual payment will be processed.
+        </div>
+        <div class="demo-form">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" placeholder="Demo mode - any number" disabled>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expiry</label>
+              <input type="text" placeholder="MM/YY" disabled>
             </div>
-            <div style="padding: 1rem; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb;">
-                <div style="margin-bottom: 0.5rem; font-weight: 500;">Card Number</div>
-                <input type="text" placeholder="**** **** **** ****" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 1rem;" disabled>
-                
-                <div style="display: flex; gap: 1rem;">
-                    <div style="flex: 1;">
-                        <div style="margin-bottom: 0.5rem; font-weight: 500;">Expiry</div>
-                        <input type="text" placeholder="MM/YY" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" disabled>
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="margin-bottom: 0.5rem; font-weight: 500;">CVV</div>
-                        <input type="text" placeholder="***" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" disabled>
-                    </div>
-                </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="text" placeholder="***" disabled>
             </div>
-        `;
+          </div>
+        </div>
+      `;
     }
 
+    this.updateStatus('Demo mode active - no real payments will be processed', 'warning');
+  }
+
+  updateStatus(message, type = 'info') {
+    const statusElement = document.getElementById('square-status');
     if (statusElement) {
-        statusElement.textContent = 'Demo Mode - Payment processing simulation enabled';
-        statusElement.style.color = '#f59e0b';
+      statusElement.textContent = message;
+      statusElement.className = `status-${type}`;
     }
-}
+  }
 
-function loadCartItems() {
+  loadCartItems() {
     try {
-        if (window.cartManager) {
-            cartItems = window.cartManager.getItems();
-        } else {
-            const savedCart = localStorage.getItem('vibeBeadsCart');
-            cartItems = savedCart ? JSON.parse(savedCart) : [];
-        }
+      if (window.cartManager) {
+        this.cartItems = window.cartManager.getItems();
+      } else {
+        const savedCart = localStorage.getItem('vibeBeadsCart');
+        this.cartItems = savedCart ? JSON.parse(savedCart) : [];
+      }
     } catch (error) {
-        cartItems = [];
+      console.warn('Failed to load cart items:', error);
+      this.cartItems = [];
     }
-}
+  }
 
-function saveCartItems() {
+  saveCartItems() {
     try {
-        localStorage.setItem('vibeBeadsCart', JSON.stringify(cartItems));
-        if (window.cartManager) {
-            window.cartManager.cart = cartItems;
-            window.cartManager.updateCartUI();
-        }
+      localStorage.setItem('vibeBeadsCart', JSON.stringify(this.cartItems));
+      if (window.cartManager) {
+        window.cartManager.cart = this.cartItems;
+        window.cartManager.updateCartUI();
+      }
     } catch (error) {
-        // Silent error handling
+      console.warn('Failed to save cart items:', error);
     }
-}
+  }
 
-function setupEventListeners() {
+  clearCart() {
+    this.cartItems = [];
+    this.saveCartItems();
+    if (window.cartManager) {
+      window.cartManager.clearCart();
+    }
+  }
+
+  setupEventListeners() {
     const completeOrderBtn = document.getElementById('complete-order-btn');
     if (completeOrderBtn) {
-        completeOrderBtn.addEventListener('click', handleSubmit);
+      completeOrderBtn.addEventListener('click', this.debounceSubmit);
     }
-}
 
-function renderCartItems() {
+    // Add keyboard navigation support
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && event.target.form) {
+        event.preventDefault();
+        this.handleSubmit(event);
+      }
+    });
+  }
+
+  renderCartItems() {
     const cartContainer = document.getElementById('cart-items');
     if (!cartContainer) return;
 
-    if (cartItems.length === 0) {
-        cartContainer.innerHTML = `
-            <div class="empty-cart">
-                <p>Your cart is empty</p>
-                <button onclick="window.location.href='../index.html'">Continue Shopping</button>
-            </div>
-        `;
-        return;
+    if (this.cartItems.length === 0) {
+      cartContainer.innerHTML = `
+        <div class="empty-cart" role="status">
+          <p>Your cart is empty</p>
+          <button onclick="window.location.href='../index.html'" class="continue-shopping-btn">
+            Continue Shopping
+          </button>
+        </div>
+      `;
+      return;
     }
 
-    cartContainer.innerHTML = cartItems.map((item, index) => `
-        <div class="cart-item" data-index="${index}">
-            <div class="item-image">${item.image || '🕯️'}</div>
-            <div class="item-details">
-                <div class="item-name">${item.name || 'Unknown Item'}</div>
-                <div class="item-price">$${(item.price || 0).toFixed(2)} each</div>
-                <div class="quantity-controls">
-                    <button onclick="updateQuantity(${index}, -1)">-</button>
-                    <span>${item.quantity || 1}</span>
-                    <button onclick="updateQuantity(${index}, 1)">+</button>
-                    <span onclick="removeItem(${index})">Remove</span>
-                </div>
-            </div>
-            <div class="item-total">$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
-        </div>
-    `).join('');
-}
+    const itemsHtml = this.cartItems.map((item, index) => this.renderCartItem(item, index)).join('');
+    cartContainer.innerHTML = itemsHtml;
+  }
 
-function updateTotals() {
-    const subtotal = cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
-    const shipping = cartItems.length > 0 ? 8.99 : 0;
+  renderCartItem(item, index) {
+    const price = parseFloat(item.price) || 0;
+    const quantity = parseInt(item.quantity) || 1;
+    const total = price * quantity;
+
+    return `
+      <div class="cart-item" data-index="${index}" role="listitem">
+        <div class="item-image" aria-hidden="true">${this.escapeHtml(item.image || '🕯️')}</div>
+        <div class="item-details">
+          <div class="item-name">${this.escapeHtml(item.name || 'Unknown Item')}</div>
+          <div class="item-price">$${price.toFixed(2)} each</div>
+          <div class="quantity-controls">
+            <button onclick="checkoutManager.updateQuantity(${index}, -1)" 
+                    aria-label="Decrease quantity">-</button>
+            <span aria-label="Quantity">${quantity}</span>
+            <button onclick="checkoutManager.updateQuantity(${index}, 1)" 
+                    aria-label="Increase quantity">+</button>
+            <button onclick="checkoutManager.removeItem(${index})" 
+                    class="remove-btn" aria-label="Remove item">Remove</button>
+          </div>
+        </div>
+        <div class="item-total">$${total.toFixed(2)}</div>
+      </div>
+    `;
+  }
+
+  updateTotals() {
+    const subtotal = this.cartItems.reduce((sum, item) => {
+      return sum + ((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1));
+    }, 0);
+
+    const shipping = this.cartItems.length > 0 ? 8.99 : 0;
     const tax = subtotal * 0.08;
     const total = subtotal + shipping + tax;
 
-    const subtotalElement = document.getElementById('subtotal');
-    const shippingElement = document.getElementById('shipping');
-    const taxElement = document.getElementById('tax');
-    const totalElement = document.getElementById('total');
-
-    if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
-    if (shippingElement) shippingElement.textContent = `$${shipping.toFixed(2)}`;
-    if (taxElement) taxElement.textContent = `$${tax.toFixed(2)}`;
-    if (totalElement) totalElement.textContent = `$${total.toFixed(2)}`;
-
-    const buttonText = document.getElementById('button-text');
-    if (buttonText) buttonText.textContent = `Complete Order - $${total.toFixed(2)}`;
+    this.updateTotalElements(subtotal, shipping, tax, total);
 
     return { subtotal, shipping, tax, total };
-}
+  }
 
-function getFormData() {
+  updateTotalElements(subtotal, shipping, tax, total) {
+    const elements = {
+      subtotal: document.getElementById('subtotal'),
+      shipping: document.getElementById('shipping'),
+      tax: document.getElementById('tax'),
+      total: document.getElementById('total'),
+      buttonText: document.getElementById('button-text')
+    };
+
+    if (elements.subtotal) elements.subtotal.textContent = `$${subtotal.toFixed(2)}`;
+    if (elements.shipping) elements.shipping.textContent = `$${shipping.toFixed(2)}`;
+    if (elements.tax) elements.tax.textContent = `$${tax.toFixed(2)}`;
+    if (elements.total) elements.total.textContent = `$${total.toFixed(2)}`;
+    if (elements.buttonText) {
+      elements.buttonText.textContent = `Complete Order - $${total.toFixed(2)}`;
+    }
+  }
+
+  getFormData() {
     const formData = {};
-    document.querySelectorAll('input, select').forEach(input => {
-        if (input.name) formData[input.name] = input.value;
+    document.querySelectorAll('input, select, textarea').forEach(input => {
+      if (input.name) {
+        formData[input.name] = input.value.trim();
+      }
     });
     return formData;
-}
+  }
 
-function validateForm(formData) {
+  validateForm(formData) {
     const requiredFields = ['email', 'firstName', 'lastName', 'address', 'city', 'state', 'zipCode'];
-    const missingFields = requiredFields.filter(field => !formData[field]?.trim());
+    const missingFields = requiredFields.filter(field => !formData[field]);
 
     if (missingFields.length > 0) {
-        return {
-            valid: false,
-            message: `Please fill in: ${missingFields.join(', ')}`
-        };
+      return {
+        valid: false,
+        message: `Please fill in required fields: ${missingFields.join(', ')}`
+      };
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-        return { valid: false, message: 'Please enter a valid email address' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      return { valid: false, message: 'Please enter a valid email address' };
+    }
+
+    if (formData.zipCode && !/^\d{5}(-\d{4})?$/.test(formData.zipCode)) {
+      return { valid: false, message: 'Please enter a valid ZIP code' };
     }
 
     return { valid: true };
-}
+  }
 
-function showError(message) {
+  showError(message) {
     const errorElement = document.getElementById('error-message');
     const errorText = document.getElementById('error-text');
+
     if (errorElement && errorText) {
-        errorText.textContent = message;
-        errorElement.style.display = 'block';
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      errorText.textContent = this.escapeHtml(message);
+      errorElement.style.display = 'block';
+      errorElement.setAttribute('role', 'alert');
+      errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Auto-hide after 10 seconds
+      setTimeout(() => this.hideError(), 10000);
     }
-}
+  }
 
-function hideError() {
+  hideError() {
     const errorElement = document.getElementById('error-message');
-    if (errorElement) errorElement.style.display = 'none';
-}
+    if (errorElement) {
+      errorElement.style.display = 'none';
+      errorElement.removeAttribute('role');
+    }
+  }
 
-function showSuccessPage(paymentId) {
+  showSuccessPage(paymentId) {
     const checkoutContent = document.getElementById('checkout-content');
-    if (checkoutContent) checkoutContent.style.display = 'none';
-
     const successMessage = document.getElementById('success-message');
-    if (successMessage) successMessage.style.display = 'block';
-
     const paymentIdText = document.getElementById('payment-id-text');
-    if (paymentIdText) paymentIdText.textContent = paymentId;
+
+    if (checkoutContent) checkoutContent.style.display = 'none';
+    if (successMessage) successMessage.style.display = 'block';
+    if (paymentIdText) paymentIdText.textContent = this.escapeHtml(paymentId);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  }
 
-function processDemoPayment(total, orderData) {
+  handleError(context, error) {
+    console.error(`${context}:`, error);
+    const message = error.message || 'An unexpected error occurred. Please try again.';
+    this.showError(message);
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  processDemoPayment(total) {
     return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({ success: true, paymentId: 'DEMO_' + Date.now() });
-        }, 2000);
+      setTimeout(() => {
+        resolve({
+          success: true,
+          paymentId: `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        });
+      }, 2000);
     });
-}
+  }
 
-function generateIdempotencyKey() {
-    return Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
-}
+  updateQuantity(index, change) {
+    if (index < 0 || index >= this.cartItems.length) return;
 
-function updateQuantity(index, change) {
-    if (index < 0 || index >= cartItems.length) return;
-    const newQuantity = Math.max(0, cartItems[index].quantity + change);
+    const newQuantity = Math.max(0, (parseInt(this.cartItems[index].quantity) || 1) + change);
+
     if (newQuantity === 0) {
-        removeItem(index);
+      this.removeItem(index);
     } else {
-        cartItems[index].quantity = newQuantity;
-        saveCartItems();
-        renderCartItems();
-        updateTotals();
+      this.cartItems[index].quantity = newQuantity;
+      this.saveCartItems();
+      this.renderCartItems();
+      this.updateTotals();
     }
-}
+  }
 
-function removeItem(index) {
-    if (index < 0 || index >= cartItems.length) return;
-    cartItems.splice(index, 1);
-    saveCartItems();
-    renderCartItems();
-    updateTotals();
+  removeItem(index) {
+    if (index < 0 || index >= this.cartItems.length) return;
+
+    this.cartItems.splice(index, 1);
+    this.saveCartItems();
+    this.renderCartItems();
+    this.updateTotals();
+
     if (window.cartManager) {
-        window.cartManager.cart = cartItems;
-        window.cartManager.updateCartUI();
+      window.cartManager.cart = this.cartItems;
+      window.cartManager.updateCartUI();
     }
+  }
 }
 
-// Make functions globally available
-window.updateQuantity = updateQuantity;
-window.removeItem = removeItem;
+// Initialize checkout manager
+const checkoutManager = new CheckoutManager();
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkoutManager.init();
+});
+
+// Make methods globally available for onclick handlers
+window.checkoutManager = checkoutManager;
