@@ -786,5 +786,4 @@ document.addEventListener('DOMContentLoaded', () => {
   checkoutManager.init();
 });
 
-// Make methods globally available for onclick handlers
 window.checkoutManager = checkoutManager;
