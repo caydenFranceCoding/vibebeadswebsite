@@ -10,9 +10,21 @@ class CheckoutManager {
     this.isSquareInitialized = false;
     this.retryCount = 0;
     this.maxRetries = 3;
-    this.requestTimeout = 30000;
+    this.requestTimeout = 15000; // Increased timeout
     this.csrfToken = null;
     this.sessionId = this.generateSessionId();
+
+    // Add configuration for different environments
+    this.apiBaseUrl = this.getApiBaseUrl();
+  }
+
+  getApiBaseUrl() {
+    // Check if we're in development or production
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3001'; // Local development
+    } else {
+      return 'https://squareupapi.onrender.com'; // Production
+    }
   }
 
   generateSessionId() {
@@ -31,6 +43,9 @@ class CheckoutManager {
       this.setupEventListeners();
       this.setupSecurityMeasures();
 
+      // Add status update for initialization
+      this.updateStatus('Initializing payment system...', 'info');
+
       await this.initializeSquarePayments();
 
       window.addEventListener('cartUpdated', (event) => {
@@ -47,6 +62,7 @@ class CheckoutManager {
       });
 
     } catch (error) {
+      console.error('Initialization error:', error);
       this.handleError('Initialization failed', error);
       this.showFallbackPaymentMethod();
     }
@@ -81,15 +97,18 @@ class CheckoutManager {
   async initializeSquarePayments() {
     try {
       if (!this.squareConfig) {
+        this.updateStatus('Loading payment configuration...', 'info');
         await this.loadSquareConfig();
       }
 
+      this.updateStatus('Loading Square SDK...', 'info');
       await this.loadSquareSDK(this.squareConfig.environment);
 
       if (!window.Square) {
         throw new Error('Square Web Payments SDK not available');
       }
 
+      this.updateStatus('Initializing Square payments...', 'info');
       this.payments = window.Square.payments(
         this.squareConfig.applicationId,
         this.squareConfig.locationId
@@ -102,7 +121,7 @@ class CheckoutManager {
       ]);
 
       this.isSquareInitialized = true;
-      this.updateStatus('Square payments initialized successfully', 'success');
+      this.updateStatus('Payment system ready', 'success');
 
     } catch (error) {
       this.updateStatus(`Square initialization failed: ${error.message}`, 'error');
@@ -142,6 +161,7 @@ class CheckoutManager {
       });
 
       await this.card.attach('#card-container');
+      this.updateStatus('Card payment ready', 'success');
     } catch (error) {
       console.warn('Card initialization failed:', error.message);
       throw error;
@@ -335,10 +355,12 @@ class CheckoutManager {
 
   async loadSquareConfig() {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetch('https://squareupapi.onrender.com/api/config', {
+      this.updateStatus('Connecting to payment server...', 'info');
+
+      const response = await fetch(`${this.apiBaseUrl}/api/config`, {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
@@ -349,7 +371,7 @@ class CheckoutManager {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Configuration request failed: ${response.status}`);
+        throw new Error(`Configuration request failed: ${response.status} ${response.statusText}`);
       }
 
       this.squareConfig = await response.json();
@@ -358,12 +380,20 @@ class CheckoutManager {
         throw new Error('Invalid configuration received');
       }
 
+      this.updateStatus('Configuration loaded successfully', 'success');
       return this.squareConfig;
     } catch (error) {
       clearTimeout(timeoutId);
+
       if (error.name === 'AbortError') {
-        throw new Error('Configuration request timed out');
+        throw new Error(`Configuration request timed out. Please check if ${this.apiBaseUrl} is accessible.`);
       }
+
+      // If it's a network error, provide more helpful information
+      if (error.message.includes('fetch')) {
+        throw new Error(`Cannot connect to payment server at ${this.apiBaseUrl}. Please check your internet connection.`);
+      }
+
       throw error;
     }
   }
@@ -386,16 +416,20 @@ class CheckoutManager {
 
       script.src = sdkUrl;
 
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Failed to load Square SDK from ${sdkUrl}`));
-
       const timeout = setTimeout(() => {
+        script.remove();
         reject(new Error('Square SDK loading timeout'));
       }, 15000);
 
       script.onload = () => {
         clearTimeout(timeout);
         resolve();
+      };
+
+      script.onerror = () => {
+        clearTimeout(timeout);
+        script.remove();
+        reject(new Error(`Failed to load Square SDK from ${sdkUrl}`));
       };
 
       document.head.appendChild(script);
@@ -425,7 +459,7 @@ class CheckoutManager {
         headers['X-CSRF-Token'] = this.csrfToken;
       }
 
-      const response = await fetch('https://squareupapi.onrender.com/api/payments', {
+      const response = await fetch(`${this.apiBaseUrl}/api/payments`, {
         method: 'POST',
         headers,
         body: JSON.stringify(paymentData),
@@ -465,6 +499,7 @@ class CheckoutManager {
       // Retry logic for network errors
       if (this.shouldRetry(error) && this.retryCount < this.maxRetries) {
         this.retryCount++;
+        this.updateStatus(`Retrying payment... (${this.retryCount}/${this.maxRetries})`, 'info');
         await this.delay(1000 * this.retryCount);
         return this.processPayment(sourceId, total, formData);
       }
@@ -501,6 +536,8 @@ class CheckoutManager {
         <div class="demo-notice" role="alert">
           <strong>Demo Mode:</strong> Payment processing is currently in demo mode.
           Your order will be simulated but no actual payment will be processed.
+          <br><br>
+          <small>If you're seeing this, there may be an issue connecting to the payment server.</small>
         </div>
         <div class="demo-form">
           <div class="form-group">
@@ -525,10 +562,22 @@ class CheckoutManager {
   }
 
   updateStatus(message, type = 'info') {
+    console.log(`Status (${type}):`, message);
+
     const statusElement = document.getElementById('square-status');
     if (statusElement) {
       statusElement.textContent = message;
       statusElement.className = `status-${type}`;
+
+      // Remove status message after 10 seconds for success messages
+      if (type === 'success') {
+        setTimeout(() => {
+          if (statusElement.textContent === message) {
+            statusElement.textContent = '';
+            statusElement.className = '';
+          }
+        }, 10000);
+      }
     }
   }
 
@@ -701,8 +750,8 @@ class CheckoutManager {
       errorElement.setAttribute('role', 'alert');
       errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // Auto-hide after 10 seconds
-      setTimeout(() => this.hideError(), 10000);
+      // Auto-hide after 15 seconds
+      setTimeout(() => this.hideError(), 15000);
     }
   }
 
@@ -730,6 +779,7 @@ class CheckoutManager {
     console.error(`${context}:`, error);
     const message = error.message || 'An unexpected error occurred. Please try again.';
     this.showError(message);
+    this.updateStatus(`Error: ${message}`, 'error');
   }
 
   escapeHtml(text) {
@@ -739,6 +789,8 @@ class CheckoutManager {
   }
 
   processDemoPayment(total) {
+    this.updateStatus('Processing demo payment...', 'info');
+
     return new Promise(resolve => {
       setTimeout(() => {
         resolve({
