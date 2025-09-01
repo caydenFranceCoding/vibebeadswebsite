@@ -338,7 +338,7 @@ class CheckoutManager {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const response = await fetch('/api/config', {
+      const response = await fetch('https://squareupapi.onrender.com/api/config', {
         signal: controller.signal,
         headers: {
           'Accept': 'application/json',
@@ -425,7 +425,7 @@ class CheckoutManager {
         headers['X-CSRF-Token'] = this.csrfToken;
       }
 
-      const response = await fetch('/api/payments', {
+      const response = await fetch('https://squareupapi.onrender.com/api/payments', {
         method: 'POST',
         headers,
         body: JSON.stringify(paymentData),
@@ -786,4 +786,5 @@ document.addEventListener('DOMContentLoaded', () => {
   checkoutManager.init();
 });
 
+// Make methods globally available for onclick handlers
 window.checkoutManager = checkoutManager;
