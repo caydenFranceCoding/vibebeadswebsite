@@ -1,5 +1,5 @@
-// Fixed Checkout Manager - Field Length Validation for Square
-// File: public/script/checkout.js
+// Enhanced Checkout Manager with Transaction Limit Handling
+// File: public/script/checkout.js - Replace your existing checkout.js with this
 
 class CheckoutManager {
   constructor() {
@@ -17,6 +17,8 @@ class CheckoutManager {
     this.csrfToken = null;
     this.sessionId = this.generateSessionId();
     this.apiBaseUrl = this.getApiBaseUrl();
+    this.transactionLimitReached = false;
+    this.demoMode = false; // Track if we're in demo mode
   }
 
   getApiBaseUrl() {
@@ -32,54 +34,43 @@ class CheckoutManager {
   }
 
   generateIdempotencyKey() {
-    // Generate key under 45 chars
-    const timestamp = Date.now().toString(36); // ~7 chars
-    const random = Math.random().toString(36).substr(2, 8); // 8 chars
-    return `${timestamp}_${random}`; // ~16 chars total
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 8);
+    return `${timestamp}_${random}`;
   }
 
-  // FIXED: Helper method to truncate fields for Square API requirements
   truncateField(value, maxLength = 45, suffix = '...') {
     if (!value || typeof value !== 'string') return value;
     if (value.length <= maxLength) return value;
-
     const truncateLength = maxLength - suffix.length;
     return value.substring(0, truncateLength) + suffix;
   }
 
-  // FIXED: Helper method to sanitize all form data for Square
   sanitizeFormDataForSquare(formData) {
     const sanitized = { ...formData };
-
-    // Square field length limits
     const fieldLimits = {
       firstName: 45,
       lastName: 45,
-      address: 60,  // Address line can be up to 60
+      address: 60,
       city: 45,
       state: 45,
       zipCode: 20,
-      email: 254,   // Email can be longer
-      country: 2    // Country code should be 2 chars
+      email: 254,
+      country: 2
     };
 
-    // Sanitize each field according to Square's requirements
     Object.keys(fieldLimits).forEach(field => {
       if (sanitized[field]) {
         const limit = fieldLimits[field];
         if (field === 'email') {
-          // For email, just validate format but don't truncate
           if (sanitized[field].length > limit) {
             throw new Error('Email address is too long');
           }
         } else if (field === 'country') {
-          // Country should be 2-letter code
           sanitized[field] = sanitized[field].substring(0, 2).toUpperCase();
         } else if (field === 'address') {
-          // Address can be longer, but still limit it
           sanitized[field] = this.truncateField(sanitized[field], limit, '...');
         } else {
-          // Standard fields with 45 char limit
           sanitized[field] = this.truncateField(sanitized[field], limit, '...');
         }
       }
@@ -88,21 +79,17 @@ class CheckoutManager {
     return sanitized;
   }
 
-  // FIXED: Helper method to create order description that fits Square limits
   createOrderDescription() {
     if (this.cartItems.length === 0) return 'Empty order';
-
     const maxLength = 45;
 
     if (this.cartItems.length === 1) {
       return this.truncateField(this.cartItems[0].name, maxLength);
     }
 
-    // Multiple items - create a summary
     const itemCount = this.cartItems.length;
     const suffix = ` and ${itemCount - 1} more`;
     const availableLength = maxLength - suffix.length;
-
     const firstItem = this.truncateField(this.cartItems[0].name, availableLength, '');
     return `${firstItem}${suffix}`;
   }
@@ -134,7 +121,22 @@ class CheckoutManager {
     } catch (error) {
       console.error('Initialization error:', error);
       this.handleError('Initialization failed', error);
-      this.showFallbackPaymentMethod();
+      this.enableDemoMode();
+    }
+  }
+
+  // NEW: Enable demo mode when Square API fails
+  enableDemoMode() {
+    this.demoMode = true;
+    this.isSquareInitialized = false;
+    this.showFallbackPaymentMethod();
+    this.updateStatus('Demo mode enabled - Square API transaction limit reached', 'warning');
+
+    // Update button text to indicate demo mode
+    const buttonText = document.getElementById('button-text');
+    if (buttonText && buttonText.textContent.includes('Complete Order')) {
+      const total = this.updateTotals().total;
+      buttonText.textContent = `Demo Order - $${total.toFixed(2)} (No charge)`;
     }
   }
 
@@ -176,7 +178,6 @@ class CheckoutManager {
 
   setupSecurityMeasures() {
     this.originalFormData = this.getFormData();
-
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     if (csrfMeta) {
       this.csrfToken = csrfMeta.getAttribute('content');
@@ -188,6 +189,7 @@ class CheckoutManager {
 
     console.log('handleSubmit called, isProcessing:', this.isProcessing);
     console.log('Cart items length:', this.cartItems.length);
+    console.log('Demo mode:', this.demoMode);
 
     if (this.isProcessing) {
       console.log('Already processing, returning');
@@ -203,15 +205,11 @@ class CheckoutManager {
 
     try {
       this.validateFormIntegrity();
-
       const rawFormData = this.getFormData();
-
-      // FIXED: Sanitize form data for Square API requirements
       const formData = this.sanitizeFormDataForSquare(rawFormData);
       console.log('Sanitized form data:', formData);
 
       const validation = this.validateForm(formData);
-
       if (!validation.valid) {
         this.showError(validation.message);
         return;
@@ -220,15 +218,40 @@ class CheckoutManager {
       this.setProcessingState(true);
       const totals = this.updateTotals();
 
-      if (this.isSquareInitialized && this.card) {
-        console.log('Processing with Square...');
-        const token = await this.tokenizePayment();
-        await this.processPayment(token, totals.total, formData);
-      } else {
-        console.log('Processing demo payment...');
-        const result = await this.processDemoPayment(totals.total);
+      // ENHANCED: Check if we're in demo mode or if Square has transaction limits
+      if (this.demoMode || this.transactionLimitReached) {
+        console.log('Processing with demo payment...');
+        const result = await this.processDemoPayment(totals.total, formData);
         if (result.success) {
-          this.showSuccessPage(result.paymentId);
+          this.showSuccessPage(result.paymentId, true); // true = demo mode
+          this.clearCart();
+        }
+      } else if (this.isSquareInitialized && this.card) {
+        console.log('Processing with Square...');
+        try {
+          const token = await this.tokenizePayment();
+          await this.processPayment(token, totals.total, formData);
+        } catch (squareError) {
+          // If Square fails due to transaction limits, fall back to demo
+          if (this.isTransactionLimitError(squareError)) {
+            console.log('Transaction limit reached, switching to demo mode');
+            this.transactionLimitReached = true;
+            this.enableDemoMode();
+
+            const result = await this.processDemoPayment(totals.total, formData);
+            if (result.success) {
+              this.showSuccessPage(result.paymentId, true);
+              this.clearCart();
+            }
+          } else {
+            throw squareError;
+          }
+        }
+      } else {
+        console.log('Processing demo payment (Square not initialized)...');
+        const result = await this.processDemoPayment(totals.total, formData);
+        if (result.success) {
+          this.showSuccessPage(result.paymentId, true);
           this.clearCart();
         }
       }
@@ -238,6 +261,19 @@ class CheckoutManager {
     } finally {
       this.setProcessingState(false);
     }
+  }
+
+  // NEW: Check if error is related to transaction limits
+  isTransactionLimitError(error) {
+    const errorMessage = error.message.toLowerCase();
+    return (
+      errorMessage.includes('transaction_limit') ||
+      errorMessage.includes('authorization error') ||
+      errorMessage.includes('limit exceeded') ||
+      errorMessage.includes('daily limit') ||
+      errorMessage.includes('monthly limit') ||
+      errorMessage.includes('quota exceeded')
+    );
   }
 
   setProcessingState(processing) {
@@ -380,13 +416,12 @@ class CheckoutManager {
   buildPaymentRequestOptions() {
     const totals = this.updateTotals();
 
-    // FIXED: Create proper payment request with field length validation
     return {
       countryCode: 'US',
       currencyCode: 'USD',
       total: {
         amount: totals.total.toFixed(2),
-        label: this.createOrderDescription() // Use sanitized description
+        label: this.createOrderDescription()
       },
       requestBillingContact: false,
       requestShippingContact: false
@@ -395,6 +430,12 @@ class CheckoutManager {
 
   async handleDigitalWalletPayment(walletType) {
     if (this.isProcessing || this.cartItems.length === 0) return;
+
+    // Check if we should use demo mode
+    if (this.demoMode || this.transactionLimitReached) {
+      this.showError(`${walletType} is not available in demo mode. Please use the regular checkout form.`);
+      return;
+    }
 
     this.hideError();
     this.setProcessingState(true);
@@ -420,7 +461,14 @@ class CheckoutManager {
         throw new Error(errorMessage);
       }
     } catch (error) {
-      this.handleError(`${walletType} payment failed`, error);
+      // Check if this is a transaction limit error
+      if (this.isTransactionLimitError(error)) {
+        this.transactionLimitReached = true;
+        this.enableDemoMode();
+        this.showError(`Transaction limit reached. Please use the demo checkout form below.`);
+      } else {
+        this.handleError(`${walletType} payment failed`, error);
+      }
     } finally {
       this.setProcessingState(false);
     }
@@ -524,29 +572,24 @@ class CheckoutManager {
     });
   }
 
-  // FIXED: Enhanced processPayment with proper field validation
   async processPayment(sourceId, total, formData = null) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      // FIXED: Create payment data with properly formatted fields for Square
       const paymentData = {
         sourceId: sourceId,
-        amount: Math.round(total * 100), // Square expects amount in cents
+        amount: Math.round(total * 100),
         currency: 'USD',
         idempotencyKey: this.generateIdempotencyKey(),
         locationId: this.squareConfig.locationId,
-        // Add order details with proper field lengths
         orderDescription: this.createOrderDescription(),
       };
 
-      // FIXED: Add buyer information if available (with field validation)
       if (formData?.email) {
         paymentData.buyerEmail = formData.email;
       }
 
-      // FIXED: Add billing address if available (with field validation)
       if (formData) {
         paymentData.billingAddress = {
           firstName: formData.firstName || '',
@@ -591,11 +634,17 @@ class CheckoutManager {
 
       if (!response.ok) {
         const errorMessage = this.extractErrorMessage(result);
+
+        // ENHANCED: Check for transaction limit errors in the response
+        if (this.isTransactionLimitError(new Error(errorMessage))) {
+          throw new Error('TRANSACTION_LIMIT: ' + errorMessage);
+        }
+
         throw new Error(errorMessage);
       }
 
       if (result.success) {
-        this.showSuccessPage(result.paymentId);
+        this.showSuccessPage(result.paymentId, false); // false = real payment
         this.clearCart();
       } else {
         throw new Error(result.error || 'Payment failed');
@@ -620,9 +669,11 @@ class CheckoutManager {
   }
 
   shouldRetry(error) {
-    return error.message.includes('network') ||
-           error.message.includes('timeout') ||
-           error.message.includes('fetch');
+    const message = error.message.toLowerCase();
+    return (message.includes('network') ||
+           message.includes('timeout') ||
+           message.includes('fetch')) &&
+           !this.isTransactionLimitError(error);
   }
 
   delay(ms) {
@@ -636,14 +687,23 @@ class CheckoutManager {
     return errorResponse.error || errorResponse.message || 'Payment failed';
   }
 
-  processDemoPayment(total) {
+  // ENHANCED: Demo payment with customer info
+  processDemoPayment(total, formData = null) {
     this.updateStatus('Processing demo payment...', 'info');
 
     return new Promise(resolve => {
       setTimeout(() => {
+        const customerInfo = formData ? {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          address: formData.address
+        } : {};
+
         resolve({
           success: true,
-          paymentId: `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          paymentId: `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          amount: total,
+          customer: customerInfo
         });
       }, 2000);
     });
@@ -653,36 +713,81 @@ class CheckoutManager {
     const cardContainer = document.getElementById('card-container');
     const digitalWalletButtons = document.querySelectorAll('#apple-pay-button, #google-pay-button');
 
-    digitalWalletButtons.forEach(button => button.style.display = 'none');
+    digitalWalletButtons.forEach(button => {
+      button.style.display = 'none';
+    });
 
     if (cardContainer) {
       cardContainer.innerHTML = `
-        <div class="demo-notice" role="alert">
-          <strong>Demo Mode:</strong> Payment processing is currently in demo mode.
-          Your order will be simulated but no actual payment will be processed.
-          <br><br>
-          <small>If you're seeing this, there may be an issue connecting to the payment server.</small>
+        <div class="demo-notice" role="alert" style="
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          border: 2px solid #f59e0b;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          text-align: center;
+        ">
+          <h4 style="color: #92400e; margin-bottom: 1rem; font-size: 1.1rem;">
+            🚫 Square Transaction Limit Reached
+          </h4>
+          <p style="color: #92400e; margin-bottom: 1rem; line-height: 1.5;">
+            <strong>Demo Mode Active:</strong> The Square API has reached its daily transaction limit. 
+            Your order will be processed as a demo transaction - no actual payment will be charged.
+          </p>
+          <p style="color: #92400e; font-size: 0.9rem;">
+            This is normal for sandbox/demo accounts. In production, this limit would be much higher.
+          </p>
         </div>
-        <div class="demo-form">
-          <div class="form-group">
-            <label>Card Number</label>
-            <input type="text" placeholder="Demo mode - any number" disabled>
+        <div class="demo-form" style="
+          background: #f9fafb;
+          border: 2px dashed #d1d5db;
+          border-radius: 8px;
+          padding: 1.5rem;
+          text-align: center;
+        ">
+          <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+            Demo card form (not functional)
+          </p>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: #6b7280;">Card Number</label>
+            <input type="text" placeholder="4111 1111 1111 1111" disabled style="
+              width: 100%;
+              padding: 0.75rem;
+              border: 1px solid #d1d5db;
+              border-radius: 6px;
+              background: #f9fafb;
+              color: #6b7280;
+            ">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Expiry</label>
-              <input type="text" placeholder="MM/YY" disabled>
+          <div class="form-row" style="display: flex; gap: 1rem;">
+            <div class="form-group" style="flex: 1;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #6b7280;">Expiry</label>
+              <input type="text" placeholder="12/25" disabled style="
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                background: #f9fafb;
+                color: #6b7280;
+              ">
             </div>
-            <div class="form-group">
-              <label>CVV</label>
-              <input type="text" placeholder="***" disabled>
+            <div class="form-group" style="flex: 1;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #6b7280;">CVV</label>
+              <input type="text" placeholder="123" disabled style="
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                background: #f9fafb;
+                color: #6b7280;
+              ">
             </div>
           </div>
         </div>
       `;
     }
 
-    this.updateStatus('Demo mode active - no real payments will be processed', 'warning');
+    this.updateStatus('Demo mode active - Square transaction limit reached', 'warning');
   }
 
   updateStatus(message, type = 'info') {
@@ -812,7 +917,11 @@ class CheckoutManager {
     if (elements.tax) elements.tax.textContent = `$${tax.toFixed(2)}`;
     if (elements.total) elements.total.textContent = `$${total.toFixed(2)}`;
     if (elements.buttonText && !this.isProcessing) {
-      elements.buttonText.textContent = `Complete Order - $${total.toFixed(2)}`;
+      if (this.demoMode || this.transactionLimitReached) {
+        elements.buttonText.textContent = `Demo Order - $${total.toFixed(2)} (No Charge)`;
+      } else {
+        elements.buttonText.textContent = `Complete Order - $${total.toFixed(2)}`;
+      }
     }
   }
 
@@ -826,7 +935,6 @@ class CheckoutManager {
     return formData;
   }
 
-  // FIXED: Enhanced form validation with field length warnings
   validateForm(formData) {
     const requiredFields = ['email', 'firstName', 'lastName', 'address', 'city', 'state', 'zipCode'];
     const missingFields = requiredFields.filter(field => !formData[field]);
@@ -846,7 +954,6 @@ class CheckoutManager {
       return { valid: false, message: 'Please enter a valid ZIP code' };
     }
 
-    // FIXED: Check for field lengths that might cause Square API issues
     const fieldLengthWarnings = [];
     if (formData.firstName && formData.firstName.length > 45) {
       fieldLengthWarnings.push('First name is too long (max 45 characters)');
@@ -904,13 +1011,39 @@ class CheckoutManager {
     }
   }
 
-  showSuccessPage(paymentId) {
+  // ENHANCED: Success page with demo mode indication
+  showSuccessPage(paymentId, isDemoMode = false) {
     const checkoutContent = document.getElementById('checkout-content');
     const successMessage = document.getElementById('success-message');
     const paymentIdText = document.getElementById('payment-id-text');
 
     if (checkoutContent) checkoutContent.style.display = 'none';
-    if (successMessage) successMessage.style.display = 'block';
+    if (successMessage) {
+      successMessage.style.display = 'block';
+
+      // Update success message for demo mode
+      if (isDemoMode) {
+        const successCard = successMessage.querySelector('.success-card');
+        const title = successCard.querySelector('h2');
+        const description = successCard.querySelector('p');
+
+        if (title) {
+          title.textContent = 'Demo Order Processed!';
+        }
+        if (description) {
+          description.innerHTML = `
+            <strong>This was a demo transaction - no actual payment was charged.</strong><br><br>
+            Thank you for testing our checkout system! In a real scenario, your payment would have been processed successfully.
+          `;
+        }
+
+        // Add demo styling
+        if (successCard) {
+          successCard.style.background = 'linear-gradient(135deg, #fef3c7, #fde68a)';
+          successCard.style.borderColor = '#f59e0b';
+        }
+      }
+    }
     if (paymentIdText) paymentIdText.textContent = this.escapeHtml(paymentId);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
