@@ -14,7 +14,7 @@ class CheckoutManager {
         this.requestTimeout = 15000;
         this.sessionId = this.generateSessionId();
         this.apiBaseUrl = this.getApiBaseUrl();
-        this.stripePublishableKey = 'pk_test_51S2xLf9qYhHIIRbLy8ZyGmQw2Z36zQaKl2JeksdwUIqe0Lk5rXgjv9Tb8f38KPHDwHuA3qi5ZcV3FQxaGCQCj80I00SoLS7Ycy';
+        this.stripePublishableKey = 'pk_live_51S2xLO6Nxjdm7xqzH1Wu94D7u5PpDSo2BZSjwrbGwU9atQJxfeywaRhFe7drdlAzfl7sEyb7fQkkSQzzBgWaw7P800VPaZbD3T';
     }
 
     getApiBaseUrl() {
