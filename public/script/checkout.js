@@ -18,8 +18,8 @@ class CheckoutManager {
     }
 
     getApiBaseUrl() {
-        // Use your Render URL here
-        return 'https://stripeapi-xyz.onrender.com'; // Replace with your actual Render URL
+        // Updated to use your actual Render URL
+        return 'https://stripeapi-5re0.onrender.com';
     }
 
     generateSessionId() {
