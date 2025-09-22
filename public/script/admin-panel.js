@@ -1,4 +1,3 @@
-// Updated admin-panel.js - Fixed page naming consistency
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
@@ -29,18 +28,56 @@ class AdminPanel {
 
     async init() {
         try {
+            await this.loadContentForAllUsers();
             await this.checkIPAddress();
             if (this.isAdmin) {
                 await this.checkServerConnection();
                 this.createAdminPanel();
                 this.setupEditableElements();
                 this.setupEventListeners();
-                await this.loadServerContent();
                 console.log('Admin panel initialized');
             }
         } catch (error) {
-            console.error('Admin panel initialization failed:', error);
+            console.error('Initialization failed:', error);
         }
+    }
+
+    async loadContentForAllUsers() {
+        const pageName = this.getPageIdentifier();
+        
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/content`);
+            if (response.ok) {
+                const serverContent = await response.json();
+                if (serverContent[pageName]) {
+                    this.applyContentToPage(serverContent[pageName]);
+                    console.log('Content loaded from server');
+                }
+            }
+        } catch (error) {
+            const savedContent = localStorage.getItem(`admin_content_${pageName}`);
+            if (savedContent) {
+                this.applyContentToPage(JSON.parse(savedContent));
+                console.log('Content loaded from localStorage');
+            }
+        }
+    }
+
+    applyContentToPage(changes) {
+        const selectors = [
+            '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
+            '.product-title', '.product-description', '.product-price', '.sale-banner',
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+        ];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach((element, index) => {
+                const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
+                if (changes[elementId] && changes[elementId] !== 'lastModified' && changes[elementId] !== 'modifiedBy') {
+                    element.innerHTML = changes[elementId];
+                }
+            });
+        });
     }
 
     async checkServerConnection() {
@@ -341,42 +378,6 @@ class AdminPanel {
             localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(changes));
             alert('Server save failed, saved locally');
         }
-    }
-
-    async loadServerContent() {
-        const pageName = this.getPageIdentifier();
-
-        try {
-            if (this.apiBaseUrl) {
-                const response = await fetch(`${this.apiBaseUrl}/api/content`);
-                if (response.ok) {
-                    const serverContent = await response.json();
-                    if (serverContent[pageName]) {
-                        this.applyContent(serverContent[pageName]);
-                        console.log('Loaded from backend');
-                        return;
-                    }
-                }
-            }
-
-            const savedContent = localStorage.getItem(`admin_content_${pageName}`);
-            if (savedContent) {
-                this.applyContent(JSON.parse(savedContent));
-                console.log('Loaded from localStorage');
-            }
-        } catch (error) {
-            console.error('Failed to load content:', error);
-        }
-    }
-
-    applyContent(changes) {
-        Object.entries(changes).forEach(([id, content]) => {
-            if (id === 'lastModified' || id === 'modifiedBy') return;
-            const element = this.editableElements.get(id);
-            if (element) {
-                element.innerHTML = content;
-            }
-        });
     }
 
     async resetContent() {
