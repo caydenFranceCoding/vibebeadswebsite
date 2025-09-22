@@ -1,12 +1,6 @@
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
-            '192.168.1.100',
-            '10.0.0.50',
-            '203.0.113.45',
-            '192.168.1.243',
-            '104.179.159.180',
-            '172.59.196.158',
             '104.28.33.73'
         ];
 
@@ -35,7 +29,9 @@ class AdminPanel {
                 this.createAdminPanel();
                 this.setupEditableElements();
                 this.setupEventListeners();
-                console.log('Admin panel initialized');
+                console.log('Admin panel initialized for IP:', this.currentUserIP);
+            } else {
+                console.log('Regular user - content loaded, no admin panel. IP:', this.currentUserIP);
             }
         } catch (error) {
             console.error('Initialization failed:', error);
@@ -51,7 +47,7 @@ class AdminPanel {
                 const serverContent = await response.json();
                 if (serverContent[pageName]) {
                     this.applyContentToPage(serverContent[pageName]);
-                    console.log('Content loaded from server');
+                    console.log('Content loaded from server for page:', pageName);
                 }
             }
         } catch (error) {
@@ -110,21 +106,31 @@ class AdminPanel {
                 }
             }
 
+            if (!this.currentUserIP) {
+                console.error('Failed to detect IP address');
+                this.isAdmin = false;
+                return;
+            }
+
             const isLocalhost = window.location.hostname === 'localhost' ||
                                window.location.hostname === '127.0.0.1';
 
-            this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || isLocalhost;
+            this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || 
+                          (isLocalhost && window.location.hostname === 'localhost');
 
-            if (this.apiBaseUrl && this.isAdmin) {
+            if (this.apiBaseUrl && this.currentUserIP) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/admin/status`);
-                    this.isAdmin = response.ok;
+                    const result = await response.json();
+                    this.isAdmin = response.ok && result.authorized;
+                    console.log('Server admin verification:', result);
                 } catch (error) {
-                    console.warn('Backend admin verification failed');
+                    console.warn('Backend admin verification failed:', error);
+                    this.isAdmin = false;
                 }
             }
 
-            console.log(`IP: ${this.currentUserIP}, Admin: ${this.isAdmin}`);
+            console.log(`IP: ${this.currentUserIP}, Is Admin: ${this.isAdmin}, Allowed IPs:`, this.allowedIPs);
         } catch (error) {
             console.error('IP check failed:', error);
             this.isAdmin = false;
@@ -132,6 +138,11 @@ class AdminPanel {
     }
 
     createAdminPanel() {
+        if (!this.isAdmin) {
+            console.log('Attempted to create admin panel for non-admin user');
+            return;
+        }
+
         const adminHTML = `
             <div id="admin-panel" class="admin-panel">
                 <div class="admin-header">
@@ -251,6 +262,8 @@ class AdminPanel {
     }
 
     setupEventListeners() {
+        if (!this.isAdmin) return;
+
         document.getElementById('close-btn').addEventListener('click', () => {
             document.getElementById('admin-panel').classList.add('hidden');
         });
@@ -277,6 +290,8 @@ class AdminPanel {
     }
 
     setupEditableElements() {
+        if (!this.isAdmin) return;
+
         const selectors = [
             '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
             '.product-title', '.product-description', '.product-price', '.sale-banner',
@@ -296,6 +311,8 @@ class AdminPanel {
     }
 
     toggleEditMode() {
+        if (!this.isAdmin) return;
+
         const editMode = !document.body.classList.contains('edit-mode');
         const toggleBtn = document.getElementById('toggle-edit-mode');
         const saveBtn = document.getElementById('save-changes');
@@ -317,6 +334,8 @@ class AdminPanel {
     }
 
     exitEditMode() {
+        if (!this.isAdmin) return;
+
         document.body.classList.remove('edit-mode');
         document.getElementById('toggle-edit-mode').textContent = 'Enable Edit Mode';
         document.getElementById('edit-overlay').style.display = 'none';
@@ -327,6 +346,8 @@ class AdminPanel {
     }
 
     editElement(elementId) {
+        if (!this.isAdmin) return;
+
         const element = this.editableElements.get(elementId);
         if (!element) return;
 
@@ -338,6 +359,11 @@ class AdminPanel {
     }
 
     async saveChanges() {
+        if (!this.isAdmin) {
+            console.error('Unauthorized save attempt');
+            return;
+        }
+
         const changes = {};
         this.editableElements.forEach((element, id) => {
             changes[id] = element.innerHTML;
@@ -381,6 +407,8 @@ class AdminPanel {
     }
 
     async resetContent() {
+        if (!this.isAdmin) return;
+
         if (!confirm('Reset all content to original? This cannot be undone.')) return;
 
         this.originalContent.forEach((content, id) => {
