@@ -1,6 +1,4 @@
-// Updated admin-panel.js - Minimal Backend Integration
-// File: public/script/admin-panel.js
-
+// Updated admin-panel.js - Fixed page naming consistency
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
@@ -9,12 +7,10 @@ class AdminPanel {
             '203.0.113.45',
             '192.168.1.243',
             '104.179.159.180',
-            '104.28.50.139',
             '172.59.196.158',
             '104.28.33.73'
         ];
 
-        // Use your Render backend URL
         this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
         this.currentUserIP = null;
         this.isAdmin = false;
@@ -22,6 +18,13 @@ class AdminPanel {
         this.originalContent = new Map();
 
         this.init();
+    }
+
+    getPageIdentifier() {
+        const path = window.location.pathname;
+        let page = path.split('/').pop() || 'index.html';
+        if (!page.includes('.')) page += '.html';
+        return page.replace('.html', '');
     }
 
     async init() {
@@ -44,16 +47,15 @@ class AdminPanel {
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/health`);
             if (!response.ok) throw new Error('Server not responding');
-            console.log('✅ Backend connected');
+            console.log('Backend connected');
         } catch (error) {
-            console.warn('❌ Backend not available, using localStorage fallback');
+            console.warn('Backend not available, using localStorage fallback');
             this.apiBaseUrl = null;
         }
     }
 
     async checkIPAddress() {
         try {
-            // Try multiple IP services
             const ipSources = [
                 'https://api.ipify.org?format=json',
                 'https://ipapi.co/json/',
@@ -71,13 +73,11 @@ class AdminPanel {
                 }
             }
 
-            // Check if localhost or allowed IP
             const isLocalhost = window.location.hostname === 'localhost' ||
                                window.location.hostname === '127.0.0.1';
 
             this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || isLocalhost;
 
-            // Verify with backend if available
             if (this.apiBaseUrl && this.isAdmin) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/admin/status`);
@@ -98,7 +98,7 @@ class AdminPanel {
         const adminHTML = `
             <div id="admin-panel" class="admin-panel">
                 <div class="admin-header">
-                    <div class="admin-title">🔧 ADMIN PANEL</div>
+                    <div class="admin-title">ADMIN PANEL</div>
                     <button id="close-btn" class="admin-btn">×</button>
                 </div>
                 
@@ -106,13 +106,13 @@ class AdminPanel {
                     <div class="admin-section">
                         <h3>Content Editor</h3>
                         <button id="toggle-edit-mode" class="admin-action-btn">
-                            📝 Enable Edit Mode
+                            Enable Edit Mode
                         </button>
                         <button id="save-changes" class="admin-action-btn" disabled>
-                            💾 Save Changes
+                            Save Changes
                         </button>
                         <button id="reset-content" class="admin-action-btn">
-                            🔄 Reset Content
+                            Reset Content
                         </button>
                     </div>
 
@@ -120,14 +120,15 @@ class AdminPanel {
                         <h3>Status</h3>
                         <div class="admin-info">
                             <div>IP: ${this.currentUserIP}</div>
-                            <div>Backend: ${this.apiBaseUrl ? '🟢 Connected' : '🔴 Local Only'}</div>
+                            <div>Backend: ${this.apiBaseUrl ? 'Connected' : 'Local Only'}</div>
                             <div>Elements: <span id="editable-count">0</span></div>
+                            <div>Page: ${this.getPageIdentifier()}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="admin-toggle" class="admin-toggle">🔧</div>
+            <div id="admin-toggle" class="admin-toggle">Admin</div>
             
             <div id="edit-overlay" class="edit-overlay" style="display: none;">
                 <div class="edit-toolbar">
@@ -180,7 +181,7 @@ class AdminPanel {
                 .admin-toggle {
                     position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
                     background: #8B7355; border-radius: 8px; display: flex; align-items: center;
-                    justify-content: center; font-size: 20px; cursor: pointer; z-index: 9999;
+                    justify-content: center; font-size: 12px; cursor: pointer; z-index: 9999;
                     transition: all 0.3s; box-shadow: 0 4px 20px rgba(139,115,85,0.3);
                 }
                 .admin-toggle:hover { transform: scale(1.05); }
@@ -265,7 +266,7 @@ class AdminPanel {
 
         if (editMode) {
             document.body.classList.add('edit-mode');
-            toggleBtn.textContent = '👁️ Disable Edit Mode';
+            toggleBtn.textContent = 'Disable Edit Mode';
             saveBtn.disabled = false;
             overlay.style.display = 'block';
 
@@ -280,7 +281,7 @@ class AdminPanel {
 
     exitEditMode() {
         document.body.classList.remove('edit-mode');
-        document.getElementById('toggle-edit-mode').textContent = '📝 Enable Edit Mode';
+        document.getElementById('toggle-edit-mode').textContent = 'Enable Edit Mode';
         document.getElementById('edit-overlay').style.display = 'none';
 
         this.editableElements.forEach((element) => {
@@ -305,34 +306,30 @@ class AdminPanel {
             changes[id] = element.innerHTML;
         });
 
-        const page = window.location.pathname.split('/').pop() || 'index.html';
-        const pageName = page.replace('.html', '');
+        const pageName = this.getPageIdentifier();
 
         try {
             if (this.apiBaseUrl) {
-                // Save to backend
                 const response = await fetch(`${this.apiBaseUrl}/api/content`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        page,
+                        page: pageName,
                         changes,
                         timestamp: new Date().toISOString()
                     })
                 });
 
                 if (!response.ok) throw new Error('Server save failed');
-                console.log('✅ Saved to backend');
+                console.log('Saved to backend');
             } else {
-                // Fallback to localStorage
-                localStorage.setItem(`admin_content_${page}`, JSON.stringify(changes));
-                console.log('💾 Saved to localStorage');
+                localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(changes));
+                console.log('Saved to localStorage');
             }
 
-            // Visual feedback
             const saveBtn = document.getElementById('save-changes');
             const originalText = saveBtn.textContent;
-            saveBtn.textContent = '✅ Saved!';
+            saveBtn.textContent = 'Saved!';
             saveBtn.disabled = true;
 
             setTimeout(() => {
@@ -341,14 +338,13 @@ class AdminPanel {
 
         } catch (error) {
             console.error('Save failed:', error);
-            localStorage.setItem(`admin_content_${page}`, JSON.stringify(changes));
+            localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(changes));
             alert('Server save failed, saved locally');
         }
     }
 
     async loadServerContent() {
-        const page = window.location.pathname.split('/').pop() || 'index.html';
-        const pageName = page.replace('.html', '');
+        const pageName = this.getPageIdentifier();
 
         try {
             if (this.apiBaseUrl) {
@@ -357,17 +353,16 @@ class AdminPanel {
                     const serverContent = await response.json();
                     if (serverContent[pageName]) {
                         this.applyContent(serverContent[pageName]);
-                        console.log('📥 Loaded from backend');
+                        console.log('Loaded from backend');
                         return;
                     }
                 }
             }
 
-            // Fallback to localStorage
             const savedContent = localStorage.getItem(`admin_content_${pageName}`);
             if (savedContent) {
                 this.applyContent(JSON.parse(savedContent));
-                console.log('📁 Loaded from localStorage');
+                console.log('Loaded from localStorage');
             }
         } catch (error) {
             console.error('Failed to load content:', error);
@@ -392,7 +387,7 @@ class AdminPanel {
             if (element) element.innerHTML = content;
         });
 
-        const page = window.location.pathname.split('/').pop().replace('.html', '');
+        const pageName = this.getPageIdentifier();
 
         if (this.apiBaseUrl) {
             try {
@@ -406,13 +401,12 @@ class AdminPanel {
             }
         }
 
-        localStorage.removeItem(`admin_content_${page}`);
+        localStorage.removeItem(`admin_content_${pageName}`);
         document.getElementById('save-changes').disabled = true;
-        console.log('🔄 Content reset');
+        console.log('Content reset');
     }
 }
 
-// Initialize admin panel
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         window.adminPanel = new AdminPanel();
