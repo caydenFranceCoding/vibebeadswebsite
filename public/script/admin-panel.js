@@ -7,6 +7,7 @@ class AdminPanel {
             '192.168.1.100',  // Your home IP
             '10.0.0.50',      // Your office IP
             '203.0.113.45',   // Another allowed IP
+            '192.168.1.243'
             // Add your actual IP addresses here
         ];
 
