@@ -1,18 +1,17 @@
-// Admin Control Panel System
+// Updated Admin Panel with Server Integration (No Emojis)
 // File: public/script/admin-panel.js
 
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
-            '192.168.1.100',  // Your home IP
-            '10.0.0.50',      // Your office IP
-            '203.0.113.45',   // Another allowed IP
+            '192.168.1.100',
+            '10.0.0.50',
+            '203.0.113.45',
             '192.168.1.243',
             '104.179.159.180'
-
-            // Add your actual IP addresses here
         ];
 
+        this.apiBaseUrl = this.getApiBaseUrl();
         this.currentUserIP = null;
         this.isAdmin = false;
         this.panelVisible = false;
@@ -24,14 +23,24 @@ class AdminPanel {
         this.init();
     }
 
+    getApiBaseUrl() {
+        // Use environment-specific API URL
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:3001';
+        }
+        return 'https://your-admin-api.onrender.com'; // Replace with your actual API URL
+    }
+
     async init() {
         try {
             await this.checkIPAddress();
             if (this.isAdmin) {
+                await this.checkServerConnection();
                 this.createAdminPanel();
                 this.setupEditableElements();
                 this.setupEventListeners();
-                this.loadSavedContent();
+                await this.loadServerContent();
                 console.log('Admin panel initialized for authorized user');
             }
         } catch (error) {
@@ -39,9 +48,22 @@ class AdminPanel {
         }
     }
 
+    async checkServerConnection() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/health`);
+            if (!response.ok) {
+                throw new Error('Server not responding');
+            }
+            const data = await response.json();
+            console.log('Server connection successful:', data);
+        } catch (error) {
+            console.warn('Admin server not available, falling back to local storage:', error);
+            this.apiBaseUrl = null; // Fall back to localStorage
+        }
+    }
+
     async checkIPAddress() {
         try {
-            // Try multiple IP detection services
             const ipSources = [
                 'https://api.ipify.org?format=json',
                 'https://ipapi.co/json/',
@@ -59,12 +81,20 @@ class AdminPanel {
                 }
             }
 
-            // For development/testing, also check if running on localhost
             const isLocalhost = window.location.hostname === 'localhost' ||
                                window.location.hostname === '127.0.0.1' ||
                                window.location.hostname === '';
 
             this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || isLocalhost;
+
+            if (this.apiBaseUrl && this.isAdmin) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/admin/status`);
+                    this.isAdmin = response.ok;
+                } catch (error) {
+                    console.warn('Admin verification failed, using IP check only');
+                }
+            }
 
             console.log(`User IP: ${this.currentUserIP}, Admin Access: ${this.isAdmin}`);
         } catch (error) {
@@ -74,16 +104,15 @@ class AdminPanel {
     }
 
     createAdminPanel() {
-        // Create admin panel HTML
         const adminHTML = `
             <div id="admin-panel" class="admin-panel">
                 <div class="admin-header">
                     <div class="admin-title">
-                        <span class="admin-icon">⚙️</span>
-                        <span>Admin Panel</span>
+                        <span class="admin-icon">ADMIN</span>
+                        <span>Control Panel</span>
                     </div>
                     <div class="admin-controls">
-                        <button id="minimize-btn" class="admin-btn" title="Minimize">−</button>
+                        <button id="minimize-btn" class="admin-btn" title="Minimize">-</button>
                         <button id="close-btn" class="admin-btn" title="Close">×</button>
                     </div>
                 </div>
@@ -93,15 +122,15 @@ class AdminPanel {
                         <h3>Page Content Editor</h3>
                         <div class="admin-buttons">
                             <button id="toggle-edit-mode" class="admin-action-btn">
-                                <span class="btn-icon">✏️</span>
+                                <span class="btn-icon">EDIT</span>
                                 Enable Edit Mode
                             </button>
                             <button id="save-changes" class="admin-action-btn" disabled>
-                                <span class="btn-icon">💾</span>
+                                <span class="btn-icon">SAVE</span>
                                 Save Changes
                             </button>
                             <button id="reset-content" class="admin-action-btn">
-                                <span class="btn-icon">🔄</span>
+                                <span class="btn-icon">RESET</span>
                                 Reset Content
                             </button>
                         </div>
@@ -111,15 +140,15 @@ class AdminPanel {
                         <h3>Product Management</h3>
                         <div class="admin-buttons">
                             <button id="add-product" class="admin-action-btn">
-                                <span class="btn-icon">➕</span>
+                                <span class="btn-icon">ADD</span>
                                 Add Product
                             </button>
                             <button id="edit-products" class="admin-action-btn">
-                                <span class="btn-icon">📝</span>
+                                <span class="btn-icon">EDIT</span>
                                 Edit Products
                             </button>
                             <button id="manage-images" class="admin-action-btn">
-                                <span class="btn-icon">🖼️</span>
+                                <span class="btn-icon">IMG</span>
                                 Manage Images
                             </button>
                         </div>
@@ -129,15 +158,15 @@ class AdminPanel {
                         <h3>Page Settings</h3>
                         <div class="admin-buttons">
                             <button id="edit-banner" class="admin-action-btn">
-                                <span class="btn-icon">📢</span>
+                                <span class="btn-icon">BANNER</span>
                                 Edit Banner
                             </button>
                             <button id="manage-nav" class="admin-action-btn">
-                                <span class="btn-icon">🧭</span>
+                                <span class="btn-icon">NAV</span>
                                 Navigation
                             </button>
                             <button id="seo-settings" class="admin-action-btn">
-                                <span class="btn-icon">🔍</span>
+                                <span class="btn-icon">SEO</span>
                                 SEO Settings
                             </button>
                         </div>
@@ -158,13 +187,17 @@ class AdminPanel {
                                 <span class="info-label">Editable Elements:</span>
                                 <span class="info-value" id="editable-count">0</span>
                             </div>
+                            <div class="info-item">
+                                <span class="info-label">Server:</span>
+                                <span class="info-value" id="server-status">${this.apiBaseUrl ? 'Connected' : 'Local Only'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="admin-toggle" class="admin-toggle" title="Admin Panel">
-                ⚙️
+                ADMIN
             </div>
 
             <div id="edit-overlay" class="edit-overlay" style="display: none;">
@@ -175,13 +208,8 @@ class AdminPanel {
             </div>
         `;
 
-        // Add admin panel to page
         document.body.insertAdjacentHTML('beforeend', adminHTML);
-
-        // Add admin panel styles
         this.addAdminStyles();
-
-        // Update current page info
         document.getElementById('current-page').textContent = this.getCurrentPageName();
     }
 
@@ -231,7 +259,11 @@ class AdminPanel {
                 }
 
                 .admin-icon {
-                    font-size: 16px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    background: rgba(255,255,255,0.2);
+                    padding: 2px 6px;
+                    border-radius: 4px;
                 }
 
                 .admin-controls {
@@ -252,6 +284,7 @@ class AdminPanel {
                     align-items: center;
                     justify-content: center;
                     transition: background 0.2s ease;
+                    font-weight: 600;
                 }
 
                 .admin-btn:hover {
@@ -312,7 +345,13 @@ class AdminPanel {
                 }
 
                 .btn-icon {
-                    font-size: 14px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    background: rgba(139, 115, 85, 0.3);
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    min-width: 32px;
+                    text-align: center;
                 }
 
                 .admin-info {
@@ -348,22 +387,24 @@ class AdminPanel {
                     position: fixed;
                     bottom: 20px;
                     right: 20px;
-                    width: 50px;
+                    width: 60px;
                     height: 50px;
                     background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
-                    border-radius: 50%;
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 20px;
+                    font-size: 10px;
+                    font-weight: 700;
                     cursor: pointer;
                     box-shadow: 0 4px 20px rgba(139, 115, 85, 0.3);
                     z-index: 9999;
                     transition: all 0.3s ease;
+                    color: white;
                 }
 
                 .admin-toggle:hover {
-                    transform: scale(1.1);
+                    transform: scale(1.05);
                     box-shadow: 0 6px 25px rgba(139, 115, 85, 0.4);
                 }
 
@@ -412,6 +453,7 @@ class AdminPanel {
                     cursor: pointer;
                     font-size: 12px;
                     transition: all 0.2s ease;
+                    font-weight: 500;
                 }
 
                 .exit-edit-btn:hover {
@@ -453,7 +495,6 @@ class AdminPanel {
                     z-index: 2;
                 }
 
-                /* Responsive */
                 @media (max-width: 768px) {
                     .admin-panel {
                         width: 300px;
@@ -464,9 +505,9 @@ class AdminPanel {
                     .admin-toggle {
                         bottom: 10px;
                         right: 10px;
-                        width: 45px;
+                        width: 55px;
                         height: 45px;
-                        font-size: 18px;
+                        font-size: 9px;
                     }
 
                     .edit-toolbar {
@@ -484,7 +525,6 @@ class AdminPanel {
     }
 
     setupEventListeners() {
-        // Panel controls
         document.getElementById('minimize-btn').addEventListener('click', () => {
             document.getElementById('admin-panel').classList.toggle('minimized');
         });
@@ -497,7 +537,6 @@ class AdminPanel {
             document.getElementById('admin-panel').classList.remove('hidden');
         });
 
-        // Edit mode controls
         document.getElementById('toggle-edit-mode').addEventListener('click', () => {
             this.toggleEditMode();
         });
@@ -540,7 +579,6 @@ class AdminPanel {
             this.showSEOSettings();
         });
 
-        // Dragging functionality
         this.setupDragging();
     }
 
@@ -579,7 +617,6 @@ class AdminPanel {
     }
 
     setupEditableElements() {
-        // Define editable elements by selector
         const editableSelectors = [
             '.hero-content h1',
             '.hero-tagline',
@@ -617,11 +654,10 @@ class AdminPanel {
 
         if (editMode) {
             document.body.classList.add('edit-mode');
-            toggleBtn.innerHTML = '<span class="btn-icon">👁️</span>Disable Edit Mode';
+            toggleBtn.innerHTML = '<span class="btn-icon">VIEW</span>Disable Edit Mode';
             saveBtn.disabled = false;
             overlay.style.display = 'block';
 
-            // Make elements editable
             this.editableElements.forEach((element, id) => {
                 element.classList.add('editable-element');
                 element.addEventListener('click', () => this.editElement(id));
@@ -636,10 +672,9 @@ class AdminPanel {
         const toggleBtn = document.getElementById('toggle-edit-mode');
         const overlay = document.getElementById('edit-overlay');
 
-        toggleBtn.innerHTML = '<span class="btn-icon">✏️</span>Enable Edit Mode';
+        toggleBtn.innerHTML = '<span class="btn-icon">EDIT</span>Enable Edit Mode';
         overlay.style.display = 'none';
 
-        // Remove editable styling
         this.editableElements.forEach((element) => {
             element.classList.remove('editable-element');
         });
@@ -670,31 +705,86 @@ class AdminPanel {
         }
     }
 
-    saveChanges() {
+    async saveChanges() {
         const changes = {};
         this.editableElements.forEach((element, id) => {
             changes[id] = element.innerHTML;
         });
 
-        localStorage.setItem(`admin_content_${this.getCurrentPageName()}`, JSON.stringify(changes));
+        const page = this.getCurrentPageName();
+        const timestamp = new Date().toISOString();
 
-        // Visual feedback
-        const saveBtn = document.getElementById('save-changes');
-        const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<span class="btn-icon">✅</span>Saved!';
-        saveBtn.disabled = true;
+        try {
+            if (this.apiBaseUrl) {
+                // Save to server
+                const response = await fetch(`${this.apiBaseUrl}/api/content`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        page,
+                        changes,
+                        timestamp
+                    })
+                });
 
-        setTimeout(() => {
-            saveBtn.innerHTML = originalText;
-        }, 2000);
+                if (!response.ok) {
+                    throw new Error('Server save failed');
+                }
 
-        console.log('Content saved successfully');
+                const result = await response.json();
+                console.log('Content saved to server:', result);
+            } else {
+                // Fallback to localStorage
+                localStorage.setItem(`admin_content_${page}`, JSON.stringify(changes));
+                console.log('Content saved to localStorage');
+            }
+
+            // Visual feedback
+            const saveBtn = document.getElementById('save-changes');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<span class="btn-icon">OK</span>Saved!';
+            saveBtn.disabled = true;
+
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+            }, 2000);
+
+        } catch (error) {
+            console.error('Save failed:', error);
+            // Fallback to localStorage
+            localStorage.setItem(`admin_content_${page}`, JSON.stringify(changes));
+            alert('Server save failed, saved locally instead');
+        }
     }
 
-    loadSavedContent() {
-        const savedContent = localStorage.getItem(`admin_content_${this.getCurrentPageName()}`);
-        if (savedContent) {
-            try {
+    async loadServerContent() {
+        const page = this.getCurrentPageName();
+
+        try {
+            if (this.apiBaseUrl) {
+                const response = await fetch(`${this.apiBaseUrl}/api/content`);
+                if (response.ok) {
+                    const serverContent = await response.json();
+                    if (serverContent[page]) {
+                        const changes = serverContent[page];
+                        Object.entries(changes).forEach(([id, content]) => {
+                            if (id === 'lastModified' || id === 'modifiedBy') return;
+                            const element = this.editableElements.get(id);
+                            if (element) {
+                                element.innerHTML = content;
+                            }
+                        });
+                        console.log('Server content loaded for page:', page);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback to localStorage
+            const savedContent = localStorage.getItem(`admin_content_${page}`);
+            if (savedContent) {
                 const changes = JSON.parse(savedContent);
                 Object.entries(changes).forEach(([id, content]) => {
                     const element = this.editableElements.get(id);
@@ -702,10 +792,10 @@ class AdminPanel {
                         element.innerHTML = content;
                     }
                 });
-                console.log('Saved content loaded');
-            } catch (error) {
-                console.error('Failed to load saved content:', error);
+                console.log('Local content loaded');
             }
+        } catch (error) {
+            console.error('Failed to load content:', error);
         }
     }
 
@@ -718,9 +808,19 @@ class AdminPanel {
                 }
             });
 
-            localStorage.removeItem(`admin_content_${this.getCurrentPageName()}`);
-            document.getElementById('save-changes').disabled = true;
+            const page = this.getCurrentPageName();
 
+            // Clear from server if possible
+            if (this.apiBaseUrl) {
+                fetch(`${this.apiBaseUrl}/api/content`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page, changes: {}, timestamp: new Date().toISOString() })
+                }).catch(console.error);
+            }
+
+            localStorage.removeItem(`admin_content_${page}`);
+            document.getElementById('save-changes').disabled = true;
             console.log('Content reset to original');
         }
     }
@@ -731,20 +831,17 @@ class AdminPanel {
         return page.replace('.html', '');
     }
 
-    // Modal functions (simplified implementations)
+    // Modal functions
     showAddProductModal() {
-        alert('Add Product feature would open a modal here');
-
+        alert('Add Product feature would open a modal here - Server integration ready');
     }
 
     showEditProductsModal() {
-        alert('Edit Products feature would open a modal here');
-
+        alert('Edit Products feature would open a modal here - Server integration ready');
     }
 
     showImageManagerModal() {
-        alert('Image Manager feature would open a modal here');
-
+        alert('Image Manager feature would open a modal here - Server integration ready');
     }
 
     showBannerEditor() {
@@ -759,25 +856,21 @@ class AdminPanel {
     }
 
     showNavigationManager() {
-        alert('Navigation Manager feature would open a modal here');
-
+        alert('Navigation Manager feature would open a modal here - Server integration ready');
     }
 
     showSEOSettings() {
-        alert('SEO Settings feature would open a modal here');
-
+        alert('SEO Settings feature would open a modal here - Server integration ready');
     }
 }
 
 // Initialize admin panel when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Small delay to ensure all other scripts have loaded
     setTimeout(() => {
         window.adminPanel = new AdminPanel();
     }, 1000);
 });
 
-// Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AdminPanel;
 }
