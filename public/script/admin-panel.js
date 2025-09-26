@@ -1,4 +1,4 @@
-// Enhanced Admin Panel with Full Product Support
+// Optimized Admin Panel with Full Product Support
 // File: public/script/admin-panel.js
 
 class AdminPanel {
@@ -15,6 +15,7 @@ class AdminPanel {
         this.lastContentUpdate = null;
         this.lastProductUpdate = null;
         this.updateCheckInterval = null;
+        this.allProducts = []; // Cache for all products
 
         this.init();
     }
@@ -28,8 +29,13 @@ class AdminPanel {
 
     async init() {
         try {
+            // Load content first
             await this.loadContentForAllUsers();
+            
+            // Load products for all users
             await this.loadProductsForAllUsers();
+            
+            // Check admin status
             await this.checkIPAddress();
             
             if (this.isAdmin) {
@@ -37,12 +43,12 @@ class AdminPanel {
                 this.createAdminPanel();
                 this.setupEditableElements();
                 this.setupEventListeners();
-                this.startUpdateChecking();
                 console.log('Admin panel initialized for IP:', this.currentUserIP);
-            } else {
-                this.startUpdateChecking();
-                console.log('Regular user - content loaded, checking for updates. IP:', this.currentUserIP);
             }
+            
+            // Start update checking for all users
+            this.startUpdateChecking();
+            
         } catch (error) {
             console.error('Initialization failed:', error);
         }
@@ -70,56 +76,64 @@ class AdminPanel {
     }
 
     async loadProductsForAllUsers() {
-        // Load both server and local products
+        console.log('Loading products for all users...');
+        
+        // Find all product containers
         const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
-        if (dynamicContainers.length === 0) {
-            console.log('No dynamic product containers found');
+        const regularContainers = document.querySelectorAll('.products-grid, .product-grid, .featured-products');
+        const allContainers = [...dynamicContainers, ...regularContainers];
+        
+        if (allContainers.length === 0) {
+            console.log('No product containers found');
             return;
         }
 
         let products = [];
 
+        // Try to load from server first
         try {
-            // Try to load from server first
             const response = await fetch(`${this.apiBaseUrl}/api/products/list`);
             if (response.ok) {
                 const serverProducts = await response.json();
                 if (serverProducts && serverProducts.length > 0) {
                     products = [...products, ...serverProducts];
-                    console.log('Products loaded from server:', serverProducts.length);
+                    console.log('Server products loaded:', serverProducts.length);
                 }
             }
         } catch (error) {
             console.log('Server products unavailable, using local only');
         }
 
-        // Always load local products (admin-added products)
+        // Always load admin-added products from localStorage
         try {
             const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             if (localProducts.length > 0) {
                 products = [...products, ...localProducts];
-                console.log('Products loaded from localStorage:', localProducts.length);
+                console.log('Local products loaded:', localProducts.length);
             }
         } catch (error) {
             console.log('Error loading local products:', error);
         }
 
-        // Cache combined products
+        // Remove duplicates by ID
+        products = products.filter((product, index, self) => 
+            index === self.findIndex(p => p.id === product.id)
+        );
+
+        // Cache products
+        this.allProducts = products;
         if (products.length > 0) {
             localStorage.setItem('cached_all_products', JSON.stringify(products));
-            this.renderProductsToContainers(products, dynamicContainers);
-        } else {
-            // Try to load cached products
-            const cachedProducts = localStorage.getItem('cached_all_products');
-            if (cachedProducts) {
-                products = JSON.parse(cachedProducts);
-                this.renderProductsToContainers(products, dynamicContainers);
-            }
         }
+
+        // Render products to all containers
+        this.renderProductsToContainers(products, allContainers);
     }
 
     renderProductsToContainers(products, containers) {
-        containers.forEach(container => {
+        console.log(`Rendering ${products.length} products to ${containers.length} containers`);
+        
+        containers.forEach((container, containerIndex) => {
             if (products.length === 0) {
                 container.innerHTML = `
                     <div class="no-products-message">
@@ -130,31 +144,53 @@ class AdminPanel {
                 return;
             }
 
-            const productsHTML = products.map(product => this.createProductHTML(product)).join('');
+            const productsHTML = products.map((product, productIndex) => 
+                this.createProductHTML(product, `${containerIndex}-${productIndex}`)
+            ).join('');
+            
             container.innerHTML = productsHTML;
         });
 
-        console.log(`Rendered ${products.length} products in ${containers.length} containers`);
+        console.log(`Successfully rendered products to ${containers.length} containers`);
     }
 
-    createProductHTML(product) {
+    createProductHTML(product, uniqueId) {
+        const productId = this.escapeHtml(product.id);
+        const productName = this.escapeHtml(product.name);
+        const productPrice = (product.price || 0).toFixed(2);
+        const productEmoji = this.escapeHtml(product.emoji || '🕯️');
+        const productDescription = this.escapeHtml(product.description || '');
+
         return `
-            <div class="product-card fade-in" data-static-product="${product.id}" onclick="addQuickProduct('${this.escapeQuotes(product.id)}', '${this.escapeQuotes(product.name)}', ${product.price}, '${this.escapeQuotes(product.emoji || '🕯️')}')">
+            <div class="product-card fade-in" 
+                 data-product-id="${productId}" 
+                 data-unique-id="${uniqueId}"
+                 onclick="productManager.openProductDetail('${productId}')">
+                
                 <div class="product-image">
                     ${product.imageUrl ? 
-                        `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" loading="lazy">` :
-                        `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
+                        `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">` :
+                        `<div class="product-emoji">${productEmoji}</div>`
                     }
                 </div>
+                
                 <div class="product-info">
-                    <h3 class="product-title">${this.escapeHtml(product.name)}</h3>
-                    <p class="product-description">${this.escapeHtml(product.description || '')}</p>
-                    <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                    <h3 class="product-title">${productName}</h3>
+                    <p class="product-description">${productDescription}</p>
+                    <div class="product-price">$${productPrice}</div>
                     <div class="product-category">${this.formatCategory(product.category)}</div>
+                    
                     ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
                     ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
-                    <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('${this.escapeQuotes(product.id)}', '${this.escapeQuotes(product.name)}', ${product.price}, '${this.escapeQuotes(product.emoji || '🕯️')}')">
+                    
+                    <button class="add-to-cart-btn quick-add" 
+                            onclick="event.stopPropagation(); productManager.addToCart('${productId}', 1)">
                         Add to Cart
+                    </button>
+                    
+                    <button class="view-details-btn" 
+                            onclick="event.stopPropagation(); productManager.openProductDetail('${productId}')">
+                        View Details
                     </button>
                 </div>
             </div>
@@ -168,118 +204,11 @@ class AdminPanel {
         return div.innerHTML;
     }
 
-    escapeQuotes(text) {
-        if (!text) return '';
-        return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
-    }
-
     formatCategory(category) {
         if (!category) return 'General';
         return category.split('-').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
-    }
-
-    async startUpdateChecking() {
-        // Check for updates every 30 seconds
-        this.updateCheckInterval = setInterval(() => {
-            this.checkForUpdates();
-        }, 30000);
-
-        // Also check immediately
-        this.checkForUpdates();
-    }
-
-    async checkForUpdates() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/api/timestamps`);
-            if (!response.ok) return;
-
-            const timestamps = await response.json();
-            
-            // Check if content was updated
-            if (timestamps.content && timestamps.content !== this.lastContentUpdate) {
-                console.log('Content update detected, reloading...');
-                this.lastContentUpdate = timestamps.content;
-                await this.loadContentForAllUsers();
-                
-                if (!this.isAdmin) {
-                    this.showUpdateNotification('Content updated!');
-                }
-            }
-
-            // Check if products were updated
-            if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
-                console.log('Product update detected, reloading...');
-                this.lastProductUpdate = timestamps.products;
-                await this.loadProductsForAllUsers();
-                
-                if (!this.isAdmin) {
-                    this.showUpdateNotification('Products updated!');
-                }
-            }
-
-        } catch (error) {
-            console.error('Update check failed:', error);
-        }
-    }
-
-    showUpdateNotification(message) {
-        // Create a subtle notification for regular users
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #8B7355;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.textContent = message;
-
-        const style = document.createElement('style');
-        style.textContent = '@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }';
-        document.head.appendChild(style);
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-            style.remove();
-        }, 3000);
-    }
-
-    applyContentToPage(changes) {
-        const selectors = [
-            '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
-            '.product-title', '.product-description', '.product-price', '.sale-banner',
-            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
-        ];
-
-        selectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach((element, index) => {
-                const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
-                if (changes[elementId] && changes[elementId] !== 'lastModified' && changes[elementId] !== 'modifiedBy') {
-                    element.innerHTML = changes[elementId];
-                }
-            });
-        });
-    }
-
-    async checkServerConnection() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/api/health`);
-            if (!response.ok) throw new Error('Server not responding');
-            console.log('Backend connected');
-        } catch (error) {
-            console.warn('Backend not available, using localStorage fallback');
-            this.apiBaseUrl = null;
-        }
     }
 
     async checkIPAddress() {
@@ -295,7 +224,7 @@ class AdminPanel {
                     const response = await fetch(source);
                     const data = await response.json();
                     this.currentUserIP = data.ip || data.query;
-                    break;
+                    if (this.currentUserIP) break;
                 } catch (err) {
                     continue;
                 }
@@ -310,37 +239,42 @@ class AdminPanel {
             const isLocalhost = window.location.hostname === 'localhost' ||
                                window.location.hostname === '127.0.0.1';
 
-            this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || 
-                          (isLocalhost && window.location.hostname === 'localhost');
+            this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || isLocalhost;
 
+            // Server verification
             if (this.apiBaseUrl && this.currentUserIP) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/admin/status`);
                     const result = await response.json();
                     this.isAdmin = response.ok && result.authorized;
-                    console.log('Server admin verification:', result);
                 } catch (error) {
                     console.warn('Backend admin verification failed:', error);
-                    this.isAdmin = false;
                 }
             }
 
-            console.log(`IP: ${this.currentUserIP}, Is Admin: ${this.isAdmin}, Allowed IPs:`, this.allowedIPs);
+            console.log(`IP: ${this.currentUserIP}, Is Admin: ${this.isAdmin}`);
         } catch (error) {
             console.error('IP check failed:', error);
             this.isAdmin = false;
         }
     }
 
-    createAdminPanel() {
-        if (!this.isAdmin) {
-            console.log('Attempted to create admin panel for non-admin user');
-            return;
+    async checkServerConnection() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/health`);
+            if (!response.ok) throw new Error('Server not responding');
+            console.log('Backend connected');
+        } catch (error) {
+            console.warn('Backend not available, using localStorage fallback');
+            this.apiBaseUrl = null;
         }
+    }
 
-        const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
-        const hasProductContainers = dynamicContainers.length > 0;
-        const localProductCount = JSON.parse(localStorage.getItem('admin_products') || '[]').length;
+    createAdminPanel() {
+        if (!this.isAdmin) return;
+
+        const productContainers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid, .featured-products');
+        const localProductCount = this.allProducts.length;
 
         const adminHTML = `
             <div id="admin-panel" class="admin-panel">
@@ -364,11 +298,11 @@ class AdminPanel {
                     </div>
 
                     <div class="admin-section">
-                        <h3>Products ${hasProductContainers ? `(${localProductCount} local)` : '(No Containers)'}</h3>
-                        <button id="add-product" class="admin-action-btn" ${!hasProductContainers ? 'disabled title="Add data-admin-products=\'true\' to a container"' : ''}>
+                        <h3>Products (${localProductCount} total)</h3>
+                        <button id="add-product" class="admin-action-btn">
                             ➕ Add Product
                         </button>
-                        <button id="edit-products" class="admin-action-btn" ${!hasProductContainers ? 'disabled' : ''}>
+                        <button id="edit-products" class="admin-action-btn" ${localProductCount === 0 ? 'disabled' : ''}>
                             📝 Manage Products
                         </button>
                         <button id="refresh-products" class="admin-action-btn">
@@ -384,8 +318,8 @@ class AdminPanel {
                             <div>Mode: Full Admin Access</div>
                             <div>Elements: <span id="editable-count">0</span></div>
                             <div>Page: ${this.getPageIdentifier()}</div>
-                            <div>Product Containers: ${dynamicContainers.length}</div>
-                            <div>Local Products: ${localProductCount}</div>
+                            <div>Product Containers: ${productContainers.length}</div>
+                            <div>Total Products: ${localProductCount}</div>
                         </div>
                     </div>
                 </div>
@@ -446,6 +380,7 @@ class AdminPanel {
                     background: #8B7355; border-radius: 8px; display: flex; align-items: center;
                     justify-content: center; font-size: 12px; cursor: pointer; z-index: 9999;
                     transition: all 0.3s; box-shadow: 0 4px 20px rgba(139,115,85,0.3);
+                    color: white; font-weight: 600;
                 }
                 .admin-toggle:hover { transform: scale(1.05); }
                 .admin-panel.hidden { display: none; }
@@ -466,28 +401,60 @@ class AdminPanel {
                     position: relative; cursor: pointer !important;
                     outline: 2px dashed #8B7355 !important; background: rgba(139,115,85,0.1) !important;
                 }
-                .editable-element::after {
-                    content: 'Click to edit'; position: absolute; top: -25px; left: 0;
-                    background: #8B7355; color: white; padding: 2px 8px; border-radius: 4px;
-                    font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 2;
-                }
                 .product-card {
                     background: white; border: 1px solid #e8e8e8; border-radius: 12px;
                     padding: 16px; text-align: center; transition: all 0.3s ease;
-                    position: relative; margin-bottom: 16px;
+                    position: relative; margin-bottom: 16px; cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                 }
                 .product-card:hover {
-                    transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+                    transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.15);
                 }
                 .product-emoji {
-                    font-size: 48px; margin-bottom: 12px;
+                    font-size: 48px; margin-bottom: 12px; display: block;
                 }
                 .product-image img {
                     width: 100%; height: 200px; object-fit: cover; border-radius: 8px;
+                    margin-bottom: 12px;
+                }
+                .product-info { text-align: left; }
+                .product-title { 
+                    font-size: 18px; font-weight: 600; margin: 0 0 8px 0; 
+                    color: #2c2c2c; text-align: center;
+                }
+                .product-description { 
+                    font-size: 14px; color: #666; margin: 0 0 12px 0; 
+                    line-height: 1.4; text-align: center;
+                }
+                .product-price { 
+                    font-size: 20px; font-weight: 700; color: #8B7355; 
+                    text-align: center; margin: 12px 0;
+                }
+                .product-category {
+                    font-size: 12px; color: #999; text-transform: uppercase;
+                    letter-spacing: 0.5px; text-align: center; margin-bottom: 15px;
+                }
+                .add-to-cart-btn, .view-details-btn {
+                    width: 48%; padding: 10px; border: none; border-radius: 6px;
+                    font-size: 12px; font-weight: 600; cursor: pointer;
+                    transition: all 0.2s ease; margin: 2px 1%;
+                }
+                .add-to-cart-btn {
+                    background: #8B7355; color: white;
+                }
+                .add-to-cart-btn:hover {
+                    background: #6d5a42; transform: translateY(-1px);
+                }
+                .view-details-btn {
+                    background: transparent; color: #8B7355; border: 2px solid #8B7355;
+                }
+                .view-details-btn:hover {
+                    background: #8B7355; color: white;
                 }
                 .out-of-stock {
                     background: #ff4444; color: white; padding: 4px 8px;
-                    border-radius: 4px; font-size: 12px; margin-top: 8px;
+                    border-radius: 4px; font-size: 12px; margin: 8px auto;
+                    display: inline-block;
                 }
                 .featured-badge {
                     position: absolute; top: 8px; right: 8px;
@@ -496,9 +463,16 @@ class AdminPanel {
                 }
                 .no-products-message {
                     text-align: center; padding: 40px 20px; color: #666;
+                    border: 2px dashed #e0e0e0; border-radius: 12px;
+                    background: #fafafa;
                 }
-                .no-products-message p { margin: 8px 0; }
-                .no-products-message small { color: #999; }
+                .fade-in {
+                    animation: fadeIn 0.5s ease-in-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
             </style>
         `;
         document.head.insertAdjacentHTML('beforeend', styles);
@@ -507,85 +481,42 @@ class AdminPanel {
     setupEventListeners() {
         if (!this.isAdmin) return;
 
-        const closeBtn = document.getElementById('close-btn');
-        const toggleBtn = document.getElementById('admin-toggle');
-        const editModeBtn = document.getElementById('toggle-edit-mode');
-        const exitEditBtn = document.getElementById('exit-edit-mode');
-        const saveBtn = document.getElementById('save-changes');
-        const resetBtn = document.getElementById('reset-content');
-        const addProductBtn = document.getElementById('add-product');
-        const editProductsBtn = document.getElementById('edit-products');
-        const refreshBtn = document.getElementById('refresh-products');
+        // Event listeners
+        document.getElementById('close-btn')?.addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.add('hidden');
+        });
 
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                document.getElementById('admin-panel').classList.add('hidden');
-            });
-        }
+        document.getElementById('admin-toggle')?.addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.remove('hidden');
+        });
 
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                document.getElementById('admin-panel').classList.remove('hidden');
-            });
-        }
+        document.getElementById('toggle-edit-mode')?.addEventListener('click', () => {
+            this.toggleEditMode();
+        });
 
-        if (editModeBtn) {
-            editModeBtn.addEventListener('click', () => {
-                this.toggleEditMode();
-            });
-        }
+        document.getElementById('exit-edit-mode')?.addEventListener('click', () => {
+            this.exitEditMode();
+        });
 
-        if (exitEditBtn) {
-            exitEditBtn.addEventListener('click', () => {
-                this.exitEditMode();
-            });
-        }
+        document.getElementById('save-changes')?.addEventListener('click', () => {
+            this.saveChanges();
+        });
 
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                this.saveChanges();
-            });
-        }
+        document.getElementById('reset-content')?.addEventListener('click', () => {
+            this.resetContent();
+        });
 
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.resetContent();
-            });
-        }
+        document.getElementById('add-product')?.addEventListener('click', () => {
+            this.showAddProductModal();
+        });
 
-        if (addProductBtn) {
-            addProductBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log('Add Product button clicked');
-                
-                if (window.adminModals) {
-                    console.log('Using admin modals');
-                    window.adminModals.showAddProductModal();
-                } else {
-                    console.log('Using fallback product creation');
-                    this.createProductWithPrompts();
-                }
-            });
-        }
+        document.getElementById('edit-products')?.addEventListener('click', () => {
+            this.showEditProductsModal();
+        });
 
-        if (editProductsBtn) {
-            editProductsBtn.addEventListener('click', () => {
-                if (window.adminModals) {
-                    window.adminModals.showEditProductsModal();
-                } else {
-                    alert('Product management modal not available. Please refresh the page.');
-                }
-            });
-        }
-
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                console.log('Refreshing products...');
-                this.loadProductsForAllUsers();
-            });
-        }
-
-        console.log('Admin panel event listeners setup complete');
+        document.getElementById('refresh-products')?.addEventListener('click', () => {
+            this.loadProductsForAllUsers();
+        });
     }
 
     setupEditableElements() {
@@ -593,14 +524,13 @@ class AdminPanel {
 
         const selectors = [
             '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
-            '.product-title', '.product-description', '.product-price', '.sale-banner',
             '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
         ];
 
         selectors.forEach(selector => {
             document.querySelectorAll(selector).forEach((element, index) => {
-                // Skip elements inside static products
-                if (element.closest('[data-static-product]')) return;
+                // Skip elements inside product cards
+                if (element.closest('.product-card')) return;
                 
                 const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
                 element.setAttribute('data-admin-id', elementId);
@@ -661,10 +591,7 @@ class AdminPanel {
     }
 
     async saveChanges() {
-        if (!this.isAdmin) {
-            console.error('Unauthorized save attempt');
-            return;
-        }
+        if (!this.isAdmin) return;
 
         const changes = {};
         this.editableElements.forEach((element, id) => {
@@ -737,41 +664,59 @@ class AdminPanel {
         console.log('Content reset');
     }
 
-    // Enhanced method for admin modals to add products
-    async addProduct(productData) {
-        if (!this.isAdmin) {
-            console.error('Unauthorized product addition attempt');
-            return false;
+    showAddProductModal() {
+        if (!this.isAdmin) return;
+        
+        if (window.adminModals) {
+            window.adminModals.showAddProductModal();
+        } else {
+            // Fallback
+            this.createProductWithPrompts();
         }
+    }
+
+    showEditProductsModal() {
+        if (!this.isAdmin) return;
+        
+        if (window.adminModals) {
+            window.adminModals.showEditProductsModal();
+        } else {
+            alert('Product management modal not available. Please refresh the page.');
+        }
+    }
+
+    async addProduct(productData) {
+        if (!this.isAdmin) return false;
 
         try {
-            // Try to save to server first
-            if (this.apiBaseUrl) {
-                const response = await fetch(`${this.apiBaseUrl}/api/products`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productId: productData.id,
-                        productData
-                    })
-                });
-
-                if (response.ok) {
-                    console.log('Product added to server successfully');
-                    // Trigger reload for all users
-                    await this.loadProductsForAllUsers();
-                    return true;
-                }
-            }
-
-            // Fallback: save locally and reload
-            console.log('Adding product locally as fallback');
+            // Save locally first
             const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             existingProducts.push(productData);
             localStorage.setItem('admin_products', JSON.stringify(existingProducts));
             
+            // Try to save to server
+            if (this.apiBaseUrl) {
+                try {
+                    await fetch(`${this.apiBaseUrl}/api/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            productId: productData.id,
+                            productData
+                        })
+                    });
+                    console.log('Product also saved to server');
+                } catch (serverError) {
+                    console.warn('Server save failed, but local save succeeded');
+                }
+            }
+            
             // Reload products immediately
             await this.loadProductsForAllUsers();
+            
+            // Update admin panel counters
+            this.updateAdminPanelInfo();
+            
             return true;
 
         } catch (error) {
@@ -780,10 +725,18 @@ class AdminPanel {
         }
     }
 
-    // Fallback product creation with prompts
-    createProductWithPrompts() {
-        console.log('Using fallback product creation method');
+    updateAdminPanelInfo() {
+        const localProductCount = this.allProducts.length;
+        const productCountElements = document.querySelectorAll('.admin-section h3');
+        productCountElements[1].textContent = `Products (${localProductCount} total)`;
         
+        const editBtn = document.getElementById('edit-products');
+        if (editBtn) {
+            editBtn.disabled = localProductCount === 0;
+        }
+    }
+
+    createProductWithPrompts() {
         const name = prompt('Product Name:');
         if (!name) return;
 
@@ -795,9 +748,7 @@ class AdminPanel {
         }
 
         const description = prompt('Product Description (optional):') || `Premium ${name} with excellent quality.`;
-        
         const category = prompt('Category (candles/wax-melts/room-sprays/diffusers/jewelry):', 'candles') || 'candles';
-        
         const emoji = prompt('Emoji/Icon (optional):', '🕯️') || '🕯️';
 
         const productData = {
@@ -813,7 +764,6 @@ class AdminPanel {
             createdBy: 'admin-fallback'
         };
 
-        // Add product using existing method
         this.addProduct(productData).then(success => {
             if (success) {
                 alert(`✅ Product "${name}" added successfully!`);
@@ -830,7 +780,84 @@ class AdminPanel {
         return `${nameSlug}-${timestamp}-${randomStr}`;
     }
 
-    // Cleanup on page unload
+    applyContentToPage(changes) {
+        const selectors = [
+            '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+        ];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach((element, index) => {
+                if (element.closest('.product-card')) return; // Skip product elements
+                
+                const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
+                if (changes[elementId] && changes[elementId] !== 'lastModified' && changes[elementId] !== 'modifiedBy') {
+                    element.innerHTML = changes[elementId];
+                }
+            });
+        });
+    }
+
+    async startUpdateChecking() {
+        this.updateCheckInterval = setInterval(() => {
+            this.checkForUpdates();
+        }, 30000);
+
+        this.checkForUpdates();
+    }
+
+    async checkForUpdates() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/timestamps`);
+            if (!response.ok) return;
+
+            const timestamps = await response.json();
+            
+            if (timestamps.content && timestamps.content !== this.lastContentUpdate) {
+                this.lastContentUpdate = timestamps.content;
+                await this.loadContentForAllUsers();
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Content updated!');
+                }
+            }
+
+            if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
+                this.lastProductUpdate = timestamps.products;
+                await this.loadProductsForAllUsers();
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Products updated!');
+                }
+            }
+
+        } catch (error) {
+            console.error('Update check failed:', error);
+        }
+    }
+
+    showUpdateNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #8B7355;
+            color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+
+        const style = document.createElement('style');
+        style.textContent = '@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }';
+        document.head.appendChild(style);
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+            style.remove();
+        }, 3000);
+    }
+
     destroy() {
         if (this.updateCheckInterval) {
             clearInterval(this.updateCheckInterval);
@@ -838,10 +865,231 @@ class AdminPanel {
     }
 }
 
+// Global Product Manager for handling product interactions
+class ProductManager {
+    constructor(adminPanel) {
+        this.adminPanel = adminPanel;
+    }
+
+    openProductDetail(productId) {
+        const product = this.findProduct(productId);
+        if (!product) {
+            console.error('Product not found:', productId);
+            return;
+        }
+
+        // Create detailed product modal
+        this.showProductModal(product);
+    }
+
+    findProduct(productId) {
+        return this.adminPanel.allProducts.find(p => p.id === productId);
+    }
+
+    showProductModal(product) {
+        // Remove existing modal
+        const existingModal = document.getElementById('product-detail-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'product-detail-modal';
+        modal.className = 'product-modal';
+        modal.innerHTML = `
+            <div class="product-modal-content">
+                <div class="product-modal-header">
+                    <h2>${this.escapeHtml(product.name)}</h2>
+                    <button class="close-modal" onclick="this.closest('.product-modal').remove()">×</button>
+                </div>
+                <div class="product-modal-body">
+                    <div class="product-detail-image">
+                        ${product.imageUrl ? 
+                            `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}">` :
+                            `<div class="product-detail-emoji">${product.emoji || '🕯️'}</div>`
+                        }
+                    </div>
+                    <div class="product-detail-info">
+                        <div class="product-detail-price">$${(product.price || 0).toFixed(2)}</div>
+                        <div class="product-detail-category">${this.adminPanel.formatCategory(product.category)}</div>
+                        <div class="product-detail-description">
+                            ${product.description || 'No description available.'}
+                        </div>
+                        ${!product.inStock ? '<div class="out-of-stock-large">Out of Stock</div>' : ''}
+                        <div class="product-actions">
+                            <div class="quantity-selector">
+                                <label>Quantity:</label>
+                                <select id="product-quantity">
+                                    ${[1,2,3,4,5].map(i => `<option value="${i}">${i}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button class="add-to-cart-large" onclick="productManager.addToCart('${product.id}', document.getElementById('product-quantity').value)" ${!product.inStock ? 'disabled' : ''}>
+                                ${product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal styles
+        if (!document.getElementById('product-modal-styles')) {
+            const modalStyles = document.createElement('style');
+            modalStyles.id = 'product-modal-styles';
+            modalStyles.textContent = `
+                .product-modal {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.8); z-index: 10002; display: flex;
+                    align-items: center; justify-content: center; backdrop-filter: blur(5px);
+                }
+                .product-modal-content {
+                    background: white; border-radius: 16px; max-width: 600px; width: 90%;
+                    max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+                }
+                .product-modal-header {
+                    display: flex; justify-content: space-between; align-items: center;
+                    padding: 20px 30px; border-bottom: 1px solid #eee; background: #8B7355;
+                    color: white; border-radius: 16px 16px 0 0;
+                }
+                .product-modal-header h2 { margin: 0; font-size: 24px; }
+                .close-modal {
+                    background: rgba(255,255,255,0.2); border: none; color: white;
+                    width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 20px;
+                }
+                .product-modal-body { padding: 30px; display: flex; gap: 30px; }
+                .product-detail-image { flex: 1; text-align: center; }
+                .product-detail-image img { width: 100%; max-width: 300px; border-radius: 12px; }
+                .product-detail-emoji { font-size: 120px; }
+                .product-detail-info { flex: 1; }
+                .product-detail-price { 
+                    font-size: 28px; font-weight: 700; color: #8B7355; margin-bottom: 10px; 
+                }
+                .product-detail-category {
+                    font-size: 14px; color: #999; text-transform: uppercase;
+                    letter-spacing: 0.5px; margin-bottom: 20px;
+                }
+                .product-detail-description {
+                    font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 25px;
+                }
+                .product-actions { border-top: 1px solid #eee; padding-top: 25px; }
+                .quantity-selector { margin-bottom: 20px; }
+                .quantity-selector label { font-weight: 600; margin-right: 10px; }
+                .quantity-selector select {
+                    padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px;
+                }
+                .add-to-cart-large {
+                    width: 100%; padding: 15px; background: #8B7355; color: white;
+                    border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+                    cursor: pointer; transition: background 0.2s;
+                }
+                .add-to-cart-large:hover:not(:disabled) { background: #6d5a42; }
+                .add-to-cart-large:disabled { background: #ccc; cursor: not-allowed; }
+                .out-of-stock-large {
+                    background: #ff4444; color: white; padding: 10px 20px; border-radius: 6px;
+                    text-align: center; font-weight: 600; margin-bottom: 20px;
+                }
+                @media (max-width: 768px) {
+                    .product-modal-body { flex-direction: column; padding: 20px; }
+                }
+            `;
+            document.head.appendChild(modalStyles);
+        }
+
+        document.body.appendChild(modal);
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    addToCart(productId, quantity = 1) {
+        const product = this.findProduct(productId);
+        if (!product) {
+            console.error('Product not found for cart:', productId);
+            return;
+        }
+
+        if (!product.inStock) {
+            alert('Sorry, this product is out of stock.');
+            return;
+        }
+
+        const cartItem = {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: parseInt(quantity),
+            size: 'Standard',
+            scent: null,
+            image: product.emoji || '🕯️',
+            isCustom: false
+        };
+
+        // Use existing cart manager if available
+        if (window.cartManager) {
+            window.cartManager.addItem(cartItem);
+            console.log('Added to cart via cartManager:', cartItem);
+        } else {
+            // Fallback cart handling
+            this.addToFallbackCart(cartItem);
+        }
+
+        // Close product modal if open
+        const modal = document.getElementById('product-detail-modal');
+        if (modal) modal.remove();
+
+        // Show confirmation
+        this.showAddToCartConfirmation(product.name, quantity);
+    }
+
+    addToFallbackCart(item) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+        
+        if (existingIndex >= 0) {
+            cart[existingIndex].quantity += item.quantity;
+        } else {
+            cart.push(item);
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        console.log('Added to fallback cart:', item);
+    }
+
+    showAddToCartConfirmation(productName, quantity) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #4CAF50;
+            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.innerHTML = `
+            <strong>✅ Added to Cart!</strong><br>
+            ${quantity}x ${this.escapeHtml(productName)}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         window.adminPanel = new AdminPanel();
+        window.productManager = new ProductManager(window.adminPanel);
         
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
@@ -852,25 +1100,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
 });
 
-// Make addQuickProduct globally available for product cards
+// Legacy support for old addQuickProduct function
 window.addQuickProduct = function(id, name, price, emoji) {
-    if (window.cartManager) {
-        const product = {
-            id: id,
-            name: name,
-            price: parseFloat(price) || 0,
-            quantity: 1,
-            size: 'Standard',
-            scent: null,
-            image: emoji,
-            isCustom: false
-        };
-
-        window.cartManager.addItem(product);
-        console.log('Added product to cart:', product);
+    if (window.productManager) {
+        window.productManager.addToCart(id, 1);
     } else {
-        // Fallback for when cart manager isn't available
-        console.log('Added product (fallback):', { id, name, price, emoji });
+        console.log('Added product (legacy):', { id, name, price, emoji });
         alert(`Added ${name} to cart! ($${price})`);
     }
 };
