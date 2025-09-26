@@ -126,11 +126,7 @@ class AdminPanel {
 
     async verifyAdminWithBackend() {
         try {
-            const response = await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/admin/verify`, 5000, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip: this.state.currentUserIP })
-            });
+            const response = await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/admin/status`, 5000);
             
             if (response.ok) {
                 const result = await response.json();
@@ -149,14 +145,16 @@ class AdminPanel {
         const pageName = this.getPageIdentifier();
         
         try {
-            // Try server first
-            const response = await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/content/${pageName}`, 5000);
+            // Try server first - get all content, then extract page-specific
+            const response = await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/content`, 5000);
             
             if (response.ok) {
-                const serverContent = await response.json();
-                this.applyContentToPage(serverContent);
-                console.log('Content loaded from server');
-                return;
+                const allContent = await response.json();
+                if (allContent[pageName]) {
+                    this.applyContentToPage(allContent[pageName]);
+                    console.log('Content loaded from server');
+                    return;
+                }
             }
         } catch (error) {
             console.log('Server content unavailable, using local fallback');
@@ -816,12 +814,11 @@ class AdminPanel {
             // Clear server content if connected
             if (this.state.serverConnected) {
                 try {
-                    await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/content/reset`, 10000, {
+                    await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/reset`, 10000, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            page: pageName,
-                            ip: this.state.currentUserIP 
+                            type: 'content'
                         })
                     });
                 } catch (error) {
@@ -908,7 +905,10 @@ class AdminPanel {
                     const response = await this.fetchWithTimeout(`${this.config.apiBaseUrl}/api/products`, 10000, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(productData)
+                        body: JSON.stringify({
+                            productId: productData.id,
+                            productData: productData
+                        })
                     });
                     
                     if (response.ok) {
