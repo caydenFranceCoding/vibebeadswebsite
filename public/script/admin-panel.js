@@ -29,17 +29,14 @@ class AdminPanel {
 
     async init() {
         try {
-            // Check admin status first
-            await this.checkIPAddress();
-            
-            // Load content
+            // Load content first
             await this.loadContentForAllUsers();
             
-            // Wait for DOM to be fully ready before loading products
-            await this.waitForDOM();
+            // Load products for all users
+            await this.loadProductsForAllUsers();
             
-            // Load products for all users with retry mechanism
-            await this.loadProductsWithRetry();
+            // Check admin status
+            await this.checkIPAddress();
             
             if (this.isAdmin) {
                 await this.checkServerConnection();
@@ -54,69 +51,6 @@ class AdminPanel {
             
         } catch (error) {
             console.error('Initialization failed:', error);
-            // Still try to load products even if other parts fail
-            setTimeout(() => this.loadProductsWithRetry(), 2000);
-        }
-    }
-
-    async waitForDOM() {
-        return new Promise(resolve => {
-            if (document.readyState === 'complete') {
-                resolve();
-            } else {
-                window.addEventListener('load', resolve, { once: true });
-                // Fallback timeout
-                setTimeout(resolve, 3000);
-            }
-        });
-    }
-
-    async loadProductsWithRetry(maxRetries = 3) {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                console.log(`Loading products (attempt ${attempt}/${maxRetries})...`);
-                await this.loadProductsForAllUsers();
-                
-                // Verify products actually rendered
-                const productCards = document.querySelectorAll('.product-card');
-                if (productCards.length > 0 || this.allProducts.length === 0) {
-                    console.log(`Products loaded successfully on attempt ${attempt}`);
-                    return;
-                }
-                
-                console.warn(`Products loaded but not rendered on attempt ${attempt}`);
-                if (attempt < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                }
-                
-            } catch (error) {
-                console.error(`Product loading attempt ${attempt} failed:`, error);
-                if (attempt < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                }
-            }
-        }
-        
-        // Final fallback - try loading from cache
-        console.log('All attempts failed, trying cached products...');
-        this.loadFromCache();
-    }
-
-    loadFromCache() {
-        try {
-            const cachedProducts = localStorage.getItem('cached_all_products');
-            if (cachedProducts) {
-                const products = JSON.parse(cachedProducts);
-                this.allProducts = products;
-                
-                const containers = this.findProductContainers();
-                if (containers.length > 0) {
-                    this.renderProductsToContainers(products, containers);
-                    console.log('Loaded products from cache');
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load from cache:', error);
         }
     }
 
@@ -144,11 +78,13 @@ class AdminPanel {
     async loadProductsForAllUsers() {
         console.log('Loading products for all users...');
         
-        // Find all product containers with better error handling
-        const containers = this.findProductContainers();
+        // Find all product containers
+        const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
+        const regularContainers = document.querySelectorAll('.products-grid, .product-grid, .featured-products');
+        const allContainers = [...dynamicContainers, ...regularContainers];
         
-        if (containers.length === 0) {
-            console.log('No product containers found on page');
+        if (allContainers.length === 0) {
+            console.log('No product containers found');
             return;
         }
 
@@ -156,24 +92,22 @@ class AdminPanel {
 
         // Try to load from server first
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/products/list`, {
-                timeout: 5000 // 5 second timeout
-            });
+            const response = await fetch(`${this.apiBaseUrl}/api/products/list`);
             if (response.ok) {
                 const serverProducts = await response.json();
-                if (serverProducts && Array.isArray(serverProducts) && serverProducts.length > 0) {
+                if (serverProducts && serverProducts.length > 0) {
                     products = [...products, ...serverProducts];
                     console.log('Server products loaded:', serverProducts.length);
                 }
             }
         } catch (error) {
-            console.log('Server products unavailable:', error.message);
+            console.log('Server products unavailable, using local only');
         }
 
         // Always load admin-added products from localStorage
         try {
             const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            if (Array.isArray(localProducts) && localProducts.length > 0) {
+            if (localProducts.length > 0) {
                 products = [...products, ...localProducts];
                 console.log('Local products loaded:', localProducts.length);
             }
@@ -186,159 +120,38 @@ class AdminPanel {
             index === self.findIndex(p => p.id === product.id)
         );
 
-        // Cache products with timestamp
+        // Cache products
         this.allProducts = products;
         if (products.length > 0) {
             localStorage.setItem('cached_all_products', JSON.stringify(products));
-            localStorage.setItem('products_last_loaded', Date.now().toString());
         }
 
-        // Render products immediately without waiting
-        this.renderProductsToContainers(products, containers);
-        
-        // Set up a mutation observer to re-render if containers get cleared
-        this.setupProductWatcher();
-    }
-
-    findProductContainers() {
-        const selectors = [
-            '[data-admin-products="true"]',
-            '.products-grid',
-            '.product-grid', 
-            '.featured-products',
-            '.product-container',
-            '.products-container',
-            '#products-section .grid',
-            '.shop-grid'
-        ];
-
-        const containers = [];
-        selectors.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(el => {
-                if (!containers.includes(el)) {
-                    containers.push(el);
-                }
-            });
-        });
-
-        console.log(`Found ${containers.length} product containers:`, containers.map(c => c.className || c.id));
-        return containers;
-    }
-
-    setupProductWatcher() {
-        // Prevent multiple observers
-        if (this.productObserver) {
-            this.productObserver.disconnect();
-        }
-
-        // Watch for changes to product containers
-        this.productObserver = new MutationObserver((mutations) => {
-            let shouldRerender = false;
-            
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList') {
-                    // Check if any product containers were cleared
-                    const target = mutation.target;
-                    if (this.isProductContainer(target) && target.children.length === 0) {
-                        console.log('Product container was cleared, re-rendering...');
-                        shouldRerender = true;
-                    }
-                }
-            });
-
-            if (shouldRerender && this.allProducts.length > 0) {
-                setTimeout(() => {
-                    const containers = this.findProductContainers();
-                    this.renderProductsToContainers(this.allProducts, containers);
-                }, 100);
-            }
-        });
-
-        // Start observing
-        this.productObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
-
-    isProductContainer(element) {
-        const containerSelectors = [
-            'data-admin-products',
-            'products-grid',
-            'product-grid',
-            'featured-products',
-            'product-container',
-            'products-container'
-        ];
-
-        return containerSelectors.some(selector => 
-            element.hasAttribute?.(selector) || 
-            element.className?.includes(selector) ||
-            element.id?.includes(selector)
-        );
+        // Render products to all containers
+        this.renderProductsToContainers(products, allContainers);
     }
 
     renderProductsToContainers(products, containers) {
         console.log(`Rendering ${products.length} products to ${containers.length} containers`);
         
         containers.forEach((container, containerIndex) => {
-            try {
-                // Skip if container is not visible or doesn't exist
-                if (!container || !document.contains(container)) {
-                    console.warn(`Container ${containerIndex} not found in DOM`);
-                    return;
-                }
-
-                if (products.length === 0) {
-                    container.innerHTML = `
-                        <div class="no-products-message">
-                            <p>No products available yet</p>
-                            ${this.isAdmin ? '<p><small>Use the admin panel to add products</small></p>' : ''}
-                        </div>
-                    `;
-                    return;
-                }
-
-                const productsHTML = products.map((product, productIndex) => 
-                    this.createProductHTML(product, `${containerIndex}-${productIndex}`)
-                ).join('');
-                
-                // Use requestAnimationFrame to ensure DOM is ready
-                requestAnimationFrame(() => {
-                    try {
-                        container.innerHTML = productsHTML;
-                        
-                        // Verify products actually rendered
-                        const renderedCards = container.querySelectorAll('.product-card');
-                        console.log(`Container ${containerIndex}: Rendered ${renderedCards.length} product cards`);
-                        
-                        // Add fade-in animation
-                        renderedCards.forEach((card, index) => {
-                            setTimeout(() => {
-                                card.style.opacity = '0';
-                                card.style.transform = 'translateY(20px)';
-                                card.style.transition = 'all 0.5s ease';
-                                
-                                setTimeout(() => {
-                                    card.style.opacity = '1';
-                                    card.style.transform = 'translateY(0)';
-                                }, index * 100); // Stagger animation
-                            }, 50);
-                        });
-                        
-                    } catch (renderError) {
-                        console.error(`Error rendering to container ${containerIndex}:`, renderError);
-                    }
-                });
-                
-            } catch (error) {
-                console.error(`Error processing container ${containerIndex}:`, error);
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="no-products-message">
+                        <p>No products available yet</p>
+                        ${this.isAdmin ? '<p><small>Use the admin panel to add products</small></p>' : ''}
+                    </div>
+                `;
+                return;
             }
+
+            const productsHTML = products.map((product, productIndex) => 
+                this.createProductHTML(product, `${containerIndex}-${productIndex}`)
+            ).join('');
+            
+            container.innerHTML = productsHTML;
         });
 
-        // Store rendering timestamp
-        localStorage.setItem('products_last_rendered', Date.now().toString());
+        console.log(`Successfully rendered products to ${containers.length} containers`);
     }
 
     createProductHTML(product, uniqueId) {
@@ -1049,9 +862,6 @@ class AdminPanel {
         if (this.updateCheckInterval) {
             clearInterval(this.updateCheckInterval);
         }
-        if (this.productObserver) {
-            this.productObserver.disconnect();
-        }
     }
 }
 
@@ -1277,48 +1087,18 @@ class ProductManager {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Multiple initialization approaches to prevent timing issues
-    const initializePanel = () => {
-        try {
-            window.adminPanel = new AdminPanel();
-            window.productManager = new ProductManager(window.adminPanel);
-            console.log('Admin panel and product manager initialized');
-        } catch (error) {
-            console.error('Failed to initialize admin panel:', error);
-        }
-    };
-
-    // Try immediate initialization
-    if (document.readyState === 'complete') {
-        initializePanel();
-    } else {
-        // Wait for full page load
-        window.addEventListener('load', initializePanel, { once: true });
+    setTimeout(() => {
+        window.adminPanel = new AdminPanel();
+        window.productManager = new ProductManager(window.adminPanel);
         
-        // Backup initialization after delay
-        setTimeout(initializePanel, 2000);
-    }
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        if (window.adminPanel) {
-            window.adminPanel.destroy();
-        }
-    });
-});
-
-// Additional initialization for SPAs or dynamic content
-if (typeof window !== 'undefined') {
-    // If already loaded, try initializing
-    if (document.readyState !== 'loading' && !window.adminPanel) {
-        setTimeout(() => {
-            if (!window.adminPanel) {
-                window.adminPanel = new AdminPanel();
-                window.productManager = new ProductManager(window.adminPanel);
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.adminPanel) {
+                window.adminPanel.destroy();
             }
-        }, 1000);
-    }
-}
+        });
+    }, 1000);
+});
 
 // Legacy support for old addQuickProduct function
 window.addQuickProduct = function(id, name, price, emoji) {

@@ -778,7 +778,6 @@ class AdminModals {
 
 // Initialize admin modals when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for admin panel to be ready
     const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {
             console.log('Initializing admin modals...');
@@ -794,26 +793,63 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     };
 
-    // Try multiple times with increasing delays
-    const maxAttempts = 5;
+    // Multiple initialization attempts with better error handling
+    const maxAttempts = 10;
     let attempts = 0;
 
     const tryInit = () => {
         attempts++;
-        if (initializeModals()) {
-            return; // Success
+        
+        try {
+            if (initializeModals()) {
+                return; // Success
+            }
+        } catch (error) {
+            console.error(`Admin modal initialization attempt ${attempts} failed:`, error);
         }
         
         if (attempts < maxAttempts) {
-            setTimeout(tryInit, attempts * 1000); // 1s, 2s, 3s, 4s delays
+            // Exponential backoff with shorter initial delays
+            const delay = Math.min(500 * Math.pow(1.5, attempts - 1), 5000);
+            setTimeout(tryInit, delay);
         } else {
-            console.warn('Admin modals failed to initialize - admin panel may not be ready');
+            console.warn('Admin modals failed to initialize after all attempts');
         }
     };
 
-    // Start initialization attempts
-    setTimeout(tryInit, 500); // Initial delay to let admin panel load
+    // Start trying immediately, then with delays
+    tryInit();
 });
+
+// Also try initialization on window load
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        if (!window.adminModals && window.adminPanel && window.adminPanel.isAdmin) {
+            console.log('Trying admin modals initialization on window load...');
+            try {
+                window.adminModals = new AdminModals(window.adminPanel);
+                window.adminPanel.showAddProductModal = () => window.adminModals.showAddProductModal();
+                window.adminPanel.showEditProductsModal = () => window.adminModals.showEditProductsModal();
+                console.log('Admin modals initialized on window load');
+            } catch (error) {
+                console.error('Window load initialization failed:', error);
+            }
+        }
+    }, 1000);
+});
+
+// Global function to manually initialize modals (for debugging)
+window.initAdminModals = function() {
+    if (window.adminPanel && window.adminPanel.isAdmin) {
+        window.adminModals = new AdminModals(window.adminPanel);
+        window.adminPanel.showAddProductModal = () => window.adminModals.showAddProductModal();
+        window.adminPanel.showEditProductsModal = () => window.adminModals.showEditProductsModal();
+        console.log('Admin modals manually initialized');
+        return true;
+    }
+    console.log('Cannot initialize - admin panel not ready or not admin');
+    return false;
+};
 
 // Handle modal closing on ESC key
 document.addEventListener('keydown', (e) => {
