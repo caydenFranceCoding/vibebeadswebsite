@@ -507,45 +507,85 @@ class AdminPanel {
     setupEventListeners() {
         if (!this.isAdmin) return;
 
-        document.getElementById('close-btn').addEventListener('click', () => {
-            document.getElementById('admin-panel').classList.add('hidden');
-        });
+        const closeBtn = document.getElementById('close-btn');
+        const toggleBtn = document.getElementById('admin-toggle');
+        const editModeBtn = document.getElementById('toggle-edit-mode');
+        const exitEditBtn = document.getElementById('exit-edit-mode');
+        const saveBtn = document.getElementById('save-changes');
+        const resetBtn = document.getElementById('reset-content');
+        const addProductBtn = document.getElementById('add-product');
+        const editProductsBtn = document.getElementById('edit-products');
+        const refreshBtn = document.getElementById('refresh-products');
 
-        document.getElementById('admin-toggle').addEventListener('click', () => {
-            document.getElementById('admin-panel').classList.remove('hidden');
-        });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                document.getElementById('admin-panel').classList.add('hidden');
+            });
+        }
 
-        document.getElementById('toggle-edit-mode').addEventListener('click', () => {
-            this.toggleEditMode();
-        });
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.getElementById('admin-panel').classList.remove('hidden');
+            });
+        }
 
-        document.getElementById('exit-edit-mode').addEventListener('click', () => {
-            this.exitEditMode();
-        });
+        if (editModeBtn) {
+            editModeBtn.addEventListener('click', () => {
+                this.toggleEditMode();
+            });
+        }
 
-        document.getElementById('save-changes').addEventListener('click', () => {
-            this.saveChanges();
-        });
+        if (exitEditBtn) {
+            exitEditBtn.addEventListener('click', () => {
+                this.exitEditMode();
+            });
+        }
 
-        document.getElementById('reset-content').addEventListener('click', () => {
-            this.resetContent();
-        });
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.saveChanges();
+            });
+        }
 
-        document.getElementById('add-product').addEventListener('click', () => {
-            if (window.adminModals) {
-                window.adminModals.showAddProductModal();
-            }
-        });
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetContent();
+            });
+        }
 
-        document.getElementById('edit-products').addEventListener('click', () => {
-            if (window.adminModals) {
-                window.adminModals.showEditProductsModal();
-            }
-        });
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Add Product button clicked');
+                
+                if (window.adminModals) {
+                    console.log('Using admin modals');
+                    window.adminModals.showAddProductModal();
+                } else {
+                    console.log('Using fallback product creation');
+                    this.createProductWithPrompts();
+                }
+            });
+        }
 
-        document.getElementById('refresh-products').addEventListener('click', () => {
-            this.loadProductsForAllUsers();
-        });
+        if (editProductsBtn) {
+            editProductsBtn.addEventListener('click', () => {
+                if (window.adminModals) {
+                    window.adminModals.showEditProductsModal();
+                } else {
+                    alert('Product management modal not available. Please refresh the page.');
+                }
+            });
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                console.log('Refreshing products...');
+                this.loadProductsForAllUsers();
+            });
+        }
+
+        console.log('Admin panel event listeners setup complete');
     }
 
     setupEditableElements() {
@@ -738,6 +778,56 @@ class AdminPanel {
             console.error('Failed to add product:', error);
             return false;
         }
+    }
+
+    // Fallback product creation with prompts
+    createProductWithPrompts() {
+        console.log('Using fallback product creation method');
+        
+        const name = prompt('Product Name:');
+        if (!name) return;
+
+        const priceStr = prompt('Product Price (e.g., 15.00):');
+        const price = parseFloat(priceStr);
+        if (!price || price <= 0) {
+            alert('Please enter a valid price');
+            return;
+        }
+
+        const description = prompt('Product Description (optional):') || `Premium ${name} with excellent quality.`;
+        
+        const category = prompt('Category (candles/wax-melts/room-sprays/diffusers/jewelry):', 'candles') || 'candles';
+        
+        const emoji = prompt('Emoji/Icon (optional):', '🕯️') || '🕯️';
+
+        const productData = {
+            id: this.generateProductId(name),
+            name: name,
+            price: price,
+            description: description,
+            category: category,
+            emoji: emoji,
+            featured: false,
+            inStock: true,
+            createdAt: new Date().toISOString(),
+            createdBy: 'admin-fallback'
+        };
+
+        // Add product using existing method
+        this.addProduct(productData).then(success => {
+            if (success) {
+                alert(`✅ Product "${name}" added successfully!`);
+            } else {
+                alert('❌ Failed to add product. Please try again.');
+            }
+        });
+    }
+
+    generateProductId(name) {
+        const timestamp = Date.now().toString(36);
+        const randomStr = Math.random().toString(36).substr(2, 5);
+        const nameSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').substr(0, 10);
+        return `${nameSlug}-${timestamp}-${randomStr}`;
     }
 
     // Cleanup on page unload

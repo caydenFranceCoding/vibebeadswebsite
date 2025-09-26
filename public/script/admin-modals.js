@@ -759,8 +759,10 @@ class AdminModals {
 
 // Initialize admin modals when admin panel is ready
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
+    // Try multiple times to ensure admin panel is ready
+    const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {
+            console.log('Initializing admin modals...');
             window.adminModals = new AdminModals(window.adminPanel);
 
             // Override the admin panel's modal methods
@@ -772,9 +774,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (existingProducts.length > 0) {
                 window.adminModals.updateProductsOnPage(existingProducts);
             }
+
+            console.log('Admin modals initialized successfully');
+            return true;
         }
-    }, 1500);
+        return false;
+    };
+
+    // Try immediately
+    if (!initializeModals()) {
+        // Try after 1 second
+        setTimeout(() => {
+            if (!initializeModals()) {
+                // Try after 2 seconds
+                setTimeout(() => {
+                    if (!initializeModals()) {
+                        console.warn('Admin modals failed to initialize - admin panel may not be ready');
+                    }
+                }, 2000);
+            }
+        }, 1000);
+    }
 });
+
+// Also make the class globally available for manual initialization
+window.AdminModals = AdminModals;
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
