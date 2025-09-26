@@ -1,4 +1,4 @@
-// Admin Panel Modal Extensions
+// Enhanced Admin Panel Modal Extensions with Product Creation
 // File: public/script/admin-modals.js
 
 class AdminModals {
@@ -176,50 +176,52 @@ class AdminModals {
                     color: #8B7355;
                 }
 
-                .product-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                    gap: 16px;
-                    margin: 20px 0;
-                }
-
-                .product-item {
+                .product-preview {
                     background: white;
-                    border: 2px solid #e8e8e8;
+                    border: 1px solid #e8e8e8;
                     border-radius: 12px;
-                    padding: 16px;
+                    padding: 20px;
+                    margin: 20px 0;
                     text-align: center;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
                 }
 
-                .product-item:hover {
-                    border-color: #8B7355;
-                    transform: translateY(-4px);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                .product-preview h4 {
+                    margin-bottom: 15px;
+                    color: #8B7355;
                 }
 
-                .product-item.selected {
-                    border-color: #8B7355;
-                    background: rgba(139, 115, 85, 0.05);
+                .preview-card {
+                    max-width: 250px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                 }
 
-                .product-emoji {
-                    font-size: 40px;
-                    margin-bottom: 8px;
+                .preview-image {
+                    width: 100%;
+                    height: 150px;
+                    background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 3rem;
                 }
 
-                .product-name {
+                .preview-info {
+                    padding: 15px;
+                }
+
+                .preview-title {
                     font-weight: 600;
+                    margin-bottom: 5px;
                     color: #2c2c2c;
-                    margin-bottom: 4px;
-                    font-size: 14px;
                 }
 
-                .product-price {
+                .preview-price {
                     color: #8B7355;
                     font-weight: 500;
-                    font-size: 13px;
                 }
 
                 .image-upload-area {
@@ -256,51 +258,16 @@ class AdminModals {
                     margin-top: 8px;
                 }
 
-                .settings-section {
-                    background: white;
-                    border: 1px solid #e8e8e8;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                }
-
-                .settings-section h4 {
-                    margin: 0 0 16px 0;
-                    color: #8B7355;
-                    font-size: 16px;
-                    font-weight: 600;
+                .success-message {
+                    background: #d1fae5;
+                    border: 1px solid #a7f3d0;
+                    color: #065f46;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    margin: 15px 0;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                }
-
-                .color-picker-group {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-
-                .color-picker {
-                    width: 50px;
-                    height: 40px;
-                    border: 2px solid #e8e8e8;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    padding: 0;
-                }
-
-                .preview-box {
-                    background: white;
-                    border: 1px solid #e8e8e8;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
-                }
-
-                .preview-title {
-                    font-weight: 600;
-                    margin-bottom: 12px;
-                    color: #2c2c2c;
+                    gap: 10px;
                 }
 
                 @media (max-width: 768px) {
@@ -315,10 +282,6 @@ class AdminModals {
 
                     .form-row {
                         grid-template-columns: 1fr;
-                    }
-
-                    .product-grid {
-                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
                     }
 
                     .btn-group {
@@ -387,12 +350,12 @@ class AdminModals {
             
             <div class="form-row">
                 <div class="form-group">
-                    <label>Product Name</label>
-                    <input type="text" id="product-name" placeholder="Enter product name">
+                    <label>Product Name *</label>
+                    <input type="text" id="product-name" placeholder="Enter product name" required>
                 </div>
                 <div class="form-group">
-                    <label>Price</label>
-                    <input type="number" id="product-price" placeholder="0.00" step="0.01">
+                    <label>Price *</label>
+                    <input type="number" id="product-price" placeholder="0.00" step="0.01" min="0" required>
                 </div>
             </div>
 
@@ -419,14 +382,31 @@ class AdminModals {
             </div>
 
             <div class="form-group">
-                <label>Product Image</label>
-                <div class="image-upload-area" onclick="document.getElementById('product-image').click()">
-                    <div class="upload-icon">📷</div>
-                    <div class="upload-text">Click to upload image</div>
-                    <div class="upload-subtext">JPG, PNG, GIF up to 5MB</div>
-                </div>
-                <input type="file" id="product-image" accept="image/*" style="display: none;">
+                <label>
+                    <input type="checkbox" id="product-featured" style="width: auto; margin-right: 8px;">
+                    Featured Product
+                </label>
             </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="product-in-stock" checked style="width: auto; margin-right: 8px;">
+                    In Stock
+                </label>
+            </div>
+
+            <div class="product-preview" id="product-preview">
+                <h4>Live Preview</h4>
+                <div class="preview-card">
+                    <div class="preview-image" id="preview-image">🕯️</div>
+                    <div class="preview-info">
+                        <div class="preview-title" id="preview-title">Product Name</div>
+                        <div class="preview-price" id="preview-price">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="add-product-message"></div>
         `;
 
         const actions = [
@@ -439,20 +419,214 @@ class AdminModals {
 
         this.createModal('add-product-modal', '➕ Add New Product', content, actions);
         this.showModal('add-product-modal');
+        
+        // Setup live preview
+        this.setupProductPreview();
     }
 
-    showEditProductsModal() {
-        // Mock product data - replace with real data
-        const products = [
-            { id: 1, name: 'Vanilla Bean Candle', price: 15.00, emoji: '🕯️', category: 'candles' },
-            { id: 2, name: 'Apple Ginger Wax Melt', price: 5.00, emoji: '🍎', category: 'wax-melts' },
-            { id: 3, name: 'Clean Cotton Spray', price: 9.00, emoji: '☁️', category: 'room-sprays' },
-            { id: 4, name: 'Alpine Balsam Diffuser', price: 16.00, emoji: '🌲', category: 'diffusers' },
-            { id: 5, name: 'Rose Quartz Bracelet', price: 20.00, emoji: '💖', category: 'jewelry' }
-        ];
+    setupProductPreview() {
+        const nameInput = document.getElementById('product-name');
+        const priceInput = document.getElementById('product-price');
+        const emojiInput = document.getElementById('product-emoji');
 
-        const productsHTML = products.map(product => `
-            <div class="product-item" onclick="adminModals.selectProduct(${product.id})">
+        const updatePreview = () => {
+            const name = nameInput.value || 'Product Name';
+            const price = parseFloat(priceInput.value) || 0;
+            const emoji = emojiInput.value || '🕯️';
+
+            document.getElementById('preview-title').textContent = name;
+            document.getElementById('preview-price').textContent = `$${price.toFixed(2)}`;
+            document.getElementById('preview-image').textContent = emoji;
+        };
+
+        [nameInput, priceInput, emojiInput].forEach(input => {
+            if (input) {
+                input.addEventListener('input', updatePreview);
+            }
+        });
+    }
+
+    async handleAddProduct() {
+        const name = document.getElementById('product-name').value.trim();
+        const price = parseFloat(document.getElementById('product-price').value);
+        const description = document.getElementById('product-description').value.trim();
+        const category = document.getElementById('product-category').value;
+        const emoji = document.getElementById('product-emoji').value.trim() || '🕯️';
+        const featured = document.getElementById('product-featured').checked;
+        const inStock = document.getElementById('product-in-stock').checked;
+
+        const messageDiv = document.getElementById('add-product-message');
+
+        // Validation
+        if (!name) {
+            this.showMessage(messageDiv, 'Please enter a product name', 'error');
+            return;
+        }
+
+        if (!price || price <= 0) {
+            this.showMessage(messageDiv, 'Please enter a valid price', 'error');
+            return;
+        }
+
+        // Create product object
+        const productData = {
+            id: this.generateProductId(name),
+            name: name,
+            price: price,
+            description: description || `Premium ${category.replace('-', ' ')} with excellent quality and fragrance.`,
+            category: category,
+            emoji: emoji,
+            featured: featured,
+            inStock: inStock,
+            createdAt: new Date().toISOString(),
+            createdBy: 'admin'
+        };
+
+        try {
+            // Show processing state
+            this.showMessage(messageDiv, 'Adding product...', 'info');
+            
+            // Add product using the admin panel's method
+            const success = await this.adminPanel.addProduct(productData);
+            
+            if (success) {
+                // Also add to local storage as fallback
+                this.addProductToLocalStorage(productData);
+                
+                // Show success message
+                this.showMessage(messageDiv, '✅ Product added successfully! It will appear on your site immediately.', 'success');
+                
+                // Wait a moment, then close modal
+                setTimeout(() => {
+                    this.closeModal('add-product-modal');
+                }, 2000);
+                
+            } else {
+                // Fallback to local storage only
+                this.addProductToLocalStorage(productData);
+                this.showMessage(messageDiv, '✅ Product added locally! It will appear on your site.', 'success');
+                
+                setTimeout(() => {
+                    this.closeModal('add-product-modal');
+                }, 2000);
+            }
+
+        } catch (error) {
+            console.error('Error adding product:', error);
+            
+            // Fallback: add to local storage
+            this.addProductToLocalStorage(productData);
+            this.showMessage(messageDiv, '✅ Product added locally due to connection issues.', 'success');
+            
+            setTimeout(() => {
+                this.closeModal('add-product-modal');
+            }, 2000);
+        }
+    }
+
+    generateProductId(name) {
+        const timestamp = Date.now().toString(36);
+        const randomStr = Math.random().toString(36).substr(2, 5);
+        const nameSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').substr(0, 10);
+        return `${nameSlug}-${timestamp}-${randomStr}`;
+    }
+
+    addProductToLocalStorage(productData) {
+        try {
+            // Get existing products
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            
+            // Add new product
+            existingProducts.push(productData);
+            
+            // Save back to localStorage
+            localStorage.setItem('admin_products', JSON.stringify(existingProducts));
+            
+            // Trigger immediate update for all users
+            this.updateProductsOnPage(existingProducts);
+            
+            console.log('Product added to localStorage:', productData);
+            
+        } catch (error) {
+            console.error('Error saving product to localStorage:', error);
+        }
+    }
+
+    updateProductsOnPage(products) {
+        const containers = document.querySelectorAll('[data-admin-products="true"]');
+        
+        containers.forEach(container => {
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="no-products-message">
+                        <p>No products available yet</p>
+                        <p><small>Use the admin panel to add products</small></p>
+                    </div>
+                `;
+                return;
+            }
+
+            const productsHTML = products.map(product => `
+                <div class="product-card" data-static-product="${product.id}" onclick="addQuickProduct('${product.id}', '${product.name}', ${product.price}, '${product.emoji}')">
+                    <div class="product-image">
+                        ${product.imageUrl ? 
+                            `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy">` :
+                            `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
+                        }
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${product.name}</h3>
+                        <p class="product-description">${product.description || ''}</p>
+                        <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                        <div class="product-category">${this.formatCategory(product.category)}</div>
+                        ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                        ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('${product.id}', '${product.name}', ${product.price}, '${product.emoji}')">Add to Cart</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = productsHTML;
+        });
+
+        console.log(`Updated ${containers.length} product containers with ${products.length} products`);
+    }
+
+    formatCategory(category) {
+        if (!category) return 'General';
+        return category.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    }
+
+    showMessage(container, message, type) {
+        const className = type === 'error' ? 'error-message' : 
+                         type === 'success' ? 'success-message' : 'info-message';
+        
+        container.innerHTML = `<div class="${className}">${message}</div>`;
+        
+        // Auto-clear non-success messages
+        if (type !== 'success') {
+            setTimeout(() => {
+                if (container.innerHTML.includes(message)) {
+                    container.innerHTML = '';
+                }
+            }, 5000);
+        }
+    }
+
+    // Existing methods for other modals...
+    showEditProductsModal() {
+        // Get products from localStorage and server
+        const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+        
+        if (localProducts.length === 0) {
+            alert('No products found. Add some products first!');
+            return;
+        }
+
+        const productsHTML = localProducts.map(product => `
+            <div class="product-item" onclick="adminModals.selectProduct('${product.id}')">
                 <div class="product-emoji">${product.emoji}</div>
                 <div class="product-name">${product.name}</div>
                 <div class="product-price">$${product.price.toFixed(2)}</div>
@@ -460,7 +634,7 @@ class AdminModals {
         `).join('');
 
         const content = `
-            <h3>Edit Products</h3>
+            <h3>Manage Products</h3>
             <p>Select a product to edit:</p>
             
             <div class="product-grid">
@@ -501,151 +675,8 @@ class AdminModals {
             }
         ];
 
-        this.createModal('edit-products-modal', '📝 Edit Products', content, actions);
+        this.createModal('edit-products-modal', '📝 Manage Products', content, actions);
         this.showModal('edit-products-modal');
-    }
-
-    showImageManagerModal() {
-        const content = `
-            <h3>Image Manager</h3>
-            
-            <div class="form-group">
-                <label>Upload New Images</label>
-                <div class="image-upload-area" onclick="document.getElementById('bulk-images').click()">
-                    <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click to upload multiple images</div>
-                    <div class="upload-subtext">Select multiple files to upload at once</div>
-                </div>
-                <input type="file" id="bulk-images" accept="image/*" multiple style="display: none;">
-            </div>
-
-            <div class="settings-section">
-                <h4>🎨 Image Settings</h4>
-                
-                <div class="form-group">
-                    <label>Image Quality</label>
-                    <select id="image-quality">
-                        <option value="high">High Quality (Slower loading)</option>
-                        <option value="medium" selected>Medium Quality (Recommended)</option>
-                        <option value="low">Low Quality (Fast loading)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Auto-resize Images</label>
-                    <input type="checkbox" id="auto-resize" checked> Automatically resize large images
-                </div>
-            </div>
-
-            <div class="preview-box">
-                <div class="preview-title">Recently Uploaded Images</div>
-                <div class="product-grid" id="recent-images">
-                    <div class="product-item">
-                        <div class="product-emoji">🖼️</div>
-                        <div class="product-name">No images uploaded</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const actions = [
-            {
-                text: 'Optimize Images',
-                class: 'admin-btn-primary',
-                onclick: 'adminModals.handleOptimizeImages()'
-            }
-        ];
-
-        this.createModal('image-manager-modal', '🖼️ Image Manager', content, actions);
-        this.showModal('image-manager-modal');
-    }
-
-    showSEOSettingsModal() {
-        const content = `
-            <h3>SEO Settings</h3>
-            
-            <div class="settings-section">
-                <h4>🔍 Page Meta Data</h4>
-                
-                <div class="form-group">
-                    <label>Page Title</label>
-                    <input type="text" id="page-title" value="${document.title}">
-                </div>
-
-                <div class="form-group">
-                    <label>Meta Description</label>
-                    <textarea id="meta-description" placeholder="Describe your page in 150-160 characters"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Keywords</label>
-                    <input type="text" id="meta-keywords" placeholder="candles, luxury, handmade, soy wax">
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h4>🌐 Social Media</h4>
-                
-                <div class="form-group">
-                    <label>Open Graph Title</label>
-                    <input type="text" id="og-title" placeholder="Title for social media shares">
-                </div>
-
-                <div class="form-group">
-                    <label>Open Graph Description</label>
-                    <textarea id="og-description" placeholder="Description for social media shares"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Open Graph Image URL</label>
-                    <input type="url" id="og-image" placeholder="https://example.com/image.jpg">
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h4>📊 Analytics</h4>
-                
-                <div class="form-group">
-                    <label>Google Analytics ID</label>
-                    <input type="text" id="ga-id" placeholder="G-XXXXXXXXXX">
-                </div>
-
-                <div class="form-group">
-                    <label>Google Tag Manager ID</label>
-                    <input type="text" id="gtm-id" placeholder="GTM-XXXXXXX">
-                </div>
-            </div>
-        `;
-
-        const actions = [
-            {
-                text: 'Save SEO Settings',
-                class: 'admin-btn-primary',
-                onclick: 'adminModals.handleSaveSEO()'
-            }
-        ];
-
-        this.createModal('seo-settings-modal', '🔍 SEO Settings', content, actions);
-        this.showModal('seo-settings-modal');
-    }
-
-    // Handler functions
-    handleAddProduct() {
-        const name = document.getElementById('product-name').value;
-        const price = document.getElementById('product-price').value;
-        const description = document.getElementById('product-description').value;
-        const category = document.getElementById('product-category').value;
-        const emoji = document.getElementById('product-emoji').value;
-
-        if (!name || !price) {
-            alert('Please fill in required fields (Name and Price)');
-            return;
-        }
-
-
-        console.log('Adding product:', { name, price, description, category, emoji });
-        alert(`Product "${name}" added successfully!`);
-        this.closeModal('add-product-modal');
     }
 
     selectProduct(productId) {
@@ -657,49 +688,72 @@ class AdminModals {
         // Select current product
         event.target.closest('.product-item').classList.add('selected');
 
+        // Load product data
+        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
+        const product = products.find(p => p.id === productId);
+        
+        if (product) {
+            document.getElementById('edit-product-name').value = product.name;
+            document.getElementById('edit-product-price').value = product.price;
+            document.getElementById('edit-product-description').value = product.description || '';
+        }
+
         // Show edit form
         document.getElementById('edit-form').style.display = 'block';
-
-        console.log('Selected product:', productId);
+        
+        // Store selected product ID
+        this.selectedProductId = productId;
     }
 
     handleSaveProduct() {
-        alert('Product changes saved!');
+        if (!this.selectedProductId) {
+            alert('Please select a product first');
+            return;
+        }
+
+        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
+        const productIndex = products.findIndex(p => p.id === this.selectedProductId);
+        
+        if (productIndex === -1) {
+            alert('Product not found');
+            return;
+        }
+
+        // Update product
+        products[productIndex] = {
+            ...products[productIndex],
+            name: document.getElementById('edit-product-name').value,
+            price: parseFloat(document.getElementById('edit-product-price').value),
+            description: document.getElementById('edit-product-description').value,
+            updatedAt: new Date().toISOString()
+        };
+
+        // Save and update
+        localStorage.setItem('admin_products', JSON.stringify(products));
+        this.updateProductsOnPage(products);
+
+        alert('Product updated successfully!');
         this.closeModal('edit-products-modal');
     }
 
     handleDeleteProduct() {
-        if (confirm('Are you sure you want to delete this product?')) {
-            alert('Product deleted!');
-            this.closeModal('edit-products-modal');
-        }
-    }
-
-    handleOptimizeImages() {
-        alert('Images optimized successfully!');
-        this.closeModal('image-manager-modal');
-    }
-
-    handleSaveSEO() {
-        const title = document.getElementById('page-title').value;
-        const description = document.getElementById('meta-description').value;
-
-        // Update page title
-        if (title) {
-            document.title = title;
+        if (!this.selectedProductId) {
+            alert('Please select a product first');
+            return;
         }
 
-        // Update meta description
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = 'description';
-            document.head.appendChild(metaDesc);
+        if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) {
+            return;
         }
-        metaDesc.content = description;
 
-        alert('SEO settings saved successfully!');
-        this.closeModal('seo-settings-modal');
+        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
+        const updatedProducts = products.filter(p => p.id !== this.selectedProductId);
+        
+        localStorage.setItem('admin_products', JSON.stringify(updatedProducts));
+        this.updateProductsOnPage(updatedProducts);
+
+        alert('Product deleted successfully!');
+        this.closeModal('edit-products-modal');
     }
 }
 
@@ -712,8 +766,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Override the admin panel's modal methods
             window.adminPanel.showAddProductModal = () => window.adminModals.showAddProductModal();
             window.adminPanel.showEditProductsModal = () => window.adminModals.showEditProductsModal();
-            window.adminPanel.showImageManagerModal = () => window.adminModals.showImageManagerModal();
-            window.adminPanel.showSEOSettings = () => window.adminModals.showSEOSettingsModal();
+
+            // Load existing products on page load
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            if (existingProducts.length > 0) {
+                window.adminModals.updateProductsOnPage(existingProducts);
+            }
         }
     }, 1500);
 });

@@ -1,3 +1,6 @@
+// Enhanced Admin Panel with Full Product Support
+// File: public/script/admin-panel.js
+
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
@@ -26,7 +29,7 @@ class AdminPanel {
     async init() {
         try {
             await this.loadContentForAllUsers();
-            await this.loadStaticProductsForAllUsers();
+            await this.loadProductsForAllUsers();
             await this.checkIPAddress();
             
             if (this.isAdmin) {
@@ -66,37 +69,56 @@ class AdminPanel {
         }
     }
 
-    async loadStaticProductsForAllUsers() {
-        // Only load in containers marked for dynamic products
+    async loadProductsForAllUsers() {
+        // Load both server and local products
         const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
         if (dynamicContainers.length === 0) {
             console.log('No dynamic product containers found');
             return;
         }
 
+        let products = [];
+
         try {
+            // Try to load from server first
             const response = await fetch(`${this.apiBaseUrl}/api/products/list`);
             if (response.ok) {
-                const products = await response.json();
-                if (products && products.length > 0) {
-                    this.renderStaticProducts(products, dynamicContainers);
-                    console.log('Static products loaded from server');
+                const serverProducts = await response.json();
+                if (serverProducts && serverProducts.length > 0) {
+                    products = [...products, ...serverProducts];
+                    console.log('Products loaded from server:', serverProducts.length);
                 }
             }
         } catch (error) {
-            const savedProducts = localStorage.getItem('cached_static_products');
-            if (savedProducts) {
-                const products = JSON.parse(savedProducts);
-                this.renderStaticProducts(products, dynamicContainers);
-                console.log('Static products loaded from localStorage');
+            console.log('Server products unavailable, using local only');
+        }
+
+        // Always load local products (admin-added products)
+        try {
+            const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            if (localProducts.length > 0) {
+                products = [...products, ...localProducts];
+                console.log('Products loaded from localStorage:', localProducts.length);
+            }
+        } catch (error) {
+            console.log('Error loading local products:', error);
+        }
+
+        // Cache combined products
+        if (products.length > 0) {
+            localStorage.setItem('cached_all_products', JSON.stringify(products));
+            this.renderProductsToContainers(products, dynamicContainers);
+        } else {
+            // Try to load cached products
+            const cachedProducts = localStorage.getItem('cached_all_products');
+            if (cachedProducts) {
+                products = JSON.parse(cachedProducts);
+                this.renderProductsToContainers(products, dynamicContainers);
             }
         }
     }
 
-    renderStaticProducts(products, containers) {
-        // Cache products for offline use
-        localStorage.setItem('cached_static_products', JSON.stringify(products));
-
+    renderProductsToContainers(products, containers) {
         containers.forEach(container => {
             if (products.length === 0) {
                 container.innerHTML = `
@@ -108,33 +130,51 @@ class AdminPanel {
                 return;
             }
 
-            const productsHTML = products.map(product => `
-                <div class="product-card" data-static-product="${product.id}">
-                    <div class="product-image">
-                        ${product.imageUrl ? 
-                            `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy">` :
-                            `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
-                        }
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">${product.name}</h3>
-                        <p class="product-description">${product.description || ''}</p>
-                        <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
-                        <div class="product-category">${this.formatCategory(product.category)}</div>
-                        ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-                        ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
-                    </div>
-                </div>
-            `).join('');
-
+            const productsHTML = products.map(product => this.createProductHTML(product)).join('');
             container.innerHTML = productsHTML;
         });
 
-        console.log(`Rendered ${products.length} static products in ${containers.length} containers`);
+        console.log(`Rendered ${products.length} products in ${containers.length} containers`);
+    }
+
+    createProductHTML(product) {
+        return `
+            <div class="product-card fade-in" data-static-product="${product.id}" onclick="addQuickProduct('${this.escapeQuotes(product.id)}', '${this.escapeQuotes(product.name)}', ${product.price}, '${this.escapeQuotes(product.emoji || '🕯️')}')">
+                <div class="product-image">
+                    ${product.imageUrl ? 
+                        `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" loading="lazy">` :
+                        `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
+                    }
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">${this.escapeHtml(product.name)}</h3>
+                    <p class="product-description">${this.escapeHtml(product.description || '')}</p>
+                    <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                    <div class="product-category">${this.formatCategory(product.category)}</div>
+                    ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                    ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
+                    <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('${this.escapeQuotes(product.id)}', '${this.escapeQuotes(product.name)}', ${product.price}, '${this.escapeQuotes(product.emoji || '🕯️')}')">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    escapeQuotes(text) {
+        if (!text) return '';
+        return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
     }
 
     formatCategory(category) {
-        if (!category) return 'Candles';
+        if (!category) return 'General';
         return category.split('-').map(word => 
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
@@ -172,7 +212,7 @@ class AdminPanel {
             if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
                 console.log('Product update detected, reloading...');
                 this.lastProductUpdate = timestamps.products;
-                await this.loadStaticProductsForAllUsers();
+                await this.loadProductsForAllUsers();
                 
                 if (!this.isAdmin) {
                     this.showUpdateNotification('Products updated!');
@@ -300,6 +340,7 @@ class AdminPanel {
 
         const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
         const hasProductContainers = dynamicContainers.length > 0;
+        const localProductCount = JSON.parse(localStorage.getItem('admin_products') || '[]').length;
 
         const adminHTML = `
             <div id="admin-panel" class="admin-panel">
@@ -323,12 +364,15 @@ class AdminPanel {
                     </div>
 
                     <div class="admin-section">
-                        <h3>Products ${hasProductContainers ? '' : '(No Containers)'}</h3>
+                        <h3>Products ${hasProductContainers ? `(${localProductCount} local)` : '(No Containers)'}</h3>
                         <button id="add-product" class="admin-action-btn" ${!hasProductContainers ? 'disabled title="Add data-admin-products=\'true\' to a container"' : ''}>
-                            Add Product
+                            ➕ Add Product
                         </button>
                         <button id="edit-products" class="admin-action-btn" ${!hasProductContainers ? 'disabled' : ''}>
-                            Manage Products
+                            📝 Manage Products
+                        </button>
+                        <button id="refresh-products" class="admin-action-btn">
+                            🔄 Refresh Products
                         </button>
                     </div>
 
@@ -337,10 +381,11 @@ class AdminPanel {
                         <div class="admin-info">
                             <div>IP: ${this.currentUserIP}</div>
                             <div>Backend: ${this.apiBaseUrl ? 'Connected' : 'Local Only'}</div>
-                            <div>Mode: Hybrid (Static + Dynamic)</div>
+                            <div>Mode: Full Admin Access</div>
                             <div>Elements: <span id="editable-count">0</span></div>
                             <div>Page: ${this.getPageIdentifier()}</div>
                             <div>Product Containers: ${dynamicContainers.length}</div>
+                            <div>Local Products: ${localProductCount}</div>
                         </div>
                     </div>
                 </div>
@@ -429,7 +474,7 @@ class AdminPanel {
                 .product-card {
                     background: white; border: 1px solid #e8e8e8; border-radius: 12px;
                     padding: 16px; text-align: center; transition: all 0.3s ease;
-                    position: relative;
+                    position: relative; margin-bottom: 16px;
                 }
                 .product-card:hover {
                     transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.1);
@@ -496,6 +541,10 @@ class AdminPanel {
             if (window.adminModals) {
                 window.adminModals.showEditProductsModal();
             }
+        });
+
+        document.getElementById('refresh-products').addEventListener('click', () => {
+            this.loadProductsForAllUsers();
         });
     }
 
@@ -648,32 +697,47 @@ class AdminPanel {
         console.log('Content reset');
     }
 
-    // Method for admin modals to add products
+    // Enhanced method for admin modals to add products
     async addProduct(productData) {
-        if (!this.isAdmin) return;
+        if (!this.isAdmin) {
+            console.error('Unauthorized product addition attempt');
+            return false;
+        }
 
-        const productId = productData.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '-');
-        
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/products`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productId,
-                    productData
-                })
-            });
+            // Try to save to server first
+            if (this.apiBaseUrl) {
+                const response = await fetch(`${this.apiBaseUrl}/api/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: productData.id,
+                        productData
+                    })
+                });
 
-            if (response.ok) {
-                console.log('Product added successfully');
-                // Trigger immediate update for all users
-                await this.loadStaticProductsForAllUsers();
-                return true;
+                if (response.ok) {
+                    console.log('Product added to server successfully');
+                    // Trigger reload for all users
+                    await this.loadProductsForAllUsers();
+                    return true;
+                }
             }
+
+            // Fallback: save locally and reload
+            console.log('Adding product locally as fallback');
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            existingProducts.push(productData);
+            localStorage.setItem('admin_products', JSON.stringify(existingProducts));
+            
+            // Reload products immediately
+            await this.loadProductsForAllUsers();
+            return true;
+
         } catch (error) {
             console.error('Failed to add product:', error);
+            return false;
         }
-        return false;
     }
 
     // Cleanup on page unload
@@ -697,3 +761,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, 1000);
 });
+
+// Make addQuickProduct globally available for product cards
+window.addQuickProduct = function(id, name, price, emoji) {
+    if (window.cartManager) {
+        const product = {
+            id: id,
+            name: name,
+            price: parseFloat(price) || 0,
+            quantity: 1,
+            size: 'Standard',
+            scent: null,
+            image: emoji,
+            isCustom: false
+        };
+
+        window.cartManager.addItem(product);
+        console.log('Added product to cart:', product);
+    } else {
+        // Fallback for when cart manager isn't available
+        console.log('Added product (fallback):', { id, name, price, emoji });
+        alert(`Added ${name} to cart! ($${price})`);
+    }
+};
