@@ -811,19 +811,10 @@ class AdminModals {
             sizes.push('Standard');
         }
 
-        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
-        const productIndex = products.findIndex(p => p.id === this.selectedProductId);
-        
-        if (productIndex === -1) {
-            this.showMessage(messageDiv, 'Product not found', 'error');
-            return;
-        }
-
         this.showMessage(messageDiv, 'Saving changes...', 'info');
 
         try {
-            products[productIndex] = {
-                ...products[productIndex],
+            const updatedProduct = {
                 name: name,
                 price: price,
                 description: description,
@@ -837,29 +828,18 @@ class AdminModals {
                 updatedAt: new Date().toISOString()
             };
 
-            localStorage.setItem('admin_products', JSON.stringify(products));
+            // Use the adminPanel's updateProduct method
+            const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
 
-            if (this.adminPanel.apiBaseUrl) {
-                try {
-                    await fetch(`${this.adminPanel.apiBaseUrl}/api/products/${this.selectedProductId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(products[productIndex])
-                    });
-                    console.log('Product also updated on server');
-                } catch (serverError) {
-                    console.warn('Server update failed, but local update succeeded');
-                }
+            if (success) {
+                this.showMessage(messageDiv, '✅ Product updated successfully! All options are now available to customers.', 'success');
+
+                setTimeout(() => {
+                    this.closeModal('edit-products-modal');
+                }, 2000);
+            } else {
+                this.showMessage(messageDiv, '❌ Failed to update product. Please try again.', 'error');
             }
-
-            await this.adminPanel.loadProductsForAllUsers();
-            this.adminPanel.updateAdminPanelInfo();
-
-            this.showMessage(messageDiv, '✅ Product updated successfully! All options are now available to customers.', 'success');
-
-            setTimeout(() => {
-                this.closeModal('edit-products-modal');
-            }, 2000);
 
         } catch (error) {
             console.error('Error updating product:', error);
@@ -889,28 +869,18 @@ class AdminModals {
         this.showMessage(messageDiv, 'Deleting product...', 'info');
 
         try {
-            const updatedProducts = products.filter(p => p.id !== this.selectedProductId);
-            localStorage.setItem('admin_products', JSON.stringify(updatedProducts));
+            // Use the adminPanel's deleteProduct method
+            const success = await this.adminPanel.deleteProduct(this.selectedProductId);
 
-            if (this.adminPanel.apiBaseUrl) {
-                try {
-                    await fetch(`${this.adminPanel.apiBaseUrl}/api/products/${this.selectedProductId}`, {
-                        method: 'DELETE'
-                    });
-                    console.log('Product also deleted from server');
-                } catch (serverError) {
-                    console.warn('Server delete failed, but local delete succeeded');
-                }
+            if (success) {
+                this.showMessage(messageDiv, '✅ Product deleted successfully!', 'success');
+
+                setTimeout(() => {
+                    this.closeModal('edit-products-modal');
+                }, 1500);
+            } else {
+                this.showMessage(messageDiv, '❌ Failed to delete product. Please try again.', 'error');
             }
-
-            await this.adminPanel.loadProductsForAllUsers();
-            this.adminPanel.updateAdminPanelInfo();
-
-            this.showMessage(messageDiv, '✅ Product deleted successfully!', 'success');
-
-            setTimeout(() => {
-                this.closeModal('edit-products-modal');
-            }, 1500);
 
         } catch (error) {
             console.error('Error deleting product:', error);

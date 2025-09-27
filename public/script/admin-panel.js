@@ -113,35 +113,54 @@ class AdminPanel {
         }
 
         let products = [];
+        let serverProducts = [];
+        let localProducts = [];
 
+        // Try to load from server first
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/products/list`);
             if (response.ok) {
-                const serverProducts = await response.json();
-                if (serverProducts && serverProducts.length > 0) {
-                    products = [...products, ...serverProducts];
-                    console.log('Server products loaded:', serverProducts.length);
-                }
+                serverProducts = await response.json();
+                console.log('Server products loaded:', serverProducts.length);
             }
         } catch (error) {
-            console.log('Server products unavailable, using local only');
+            console.log('Server products unavailable:', error.message);
         }
 
+        // Load local products
         try {
-            const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            if (localProducts.length > 0) {
-                products = [...products, ...localProducts];
-                console.log('Local products loaded:', localProducts.length);
-            }
+            localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            console.log('Local products loaded:', localProducts.length);
         } catch (error) {
             console.log('Error loading local products:', error);
         }
 
-        products = products.filter((product, index, self) => 
+        // Merge products, preferring server data but including local-only products
+        const mergedProducts = [...serverProducts];
+        
+        // Add local products that aren't on server
+        localProducts.forEach(localProduct => {
+            if (!serverProducts.find(sp => sp.id === localProduct.id)) {
+                mergedProducts.push(localProduct);
+            }
+        });
+
+        // Remove duplicates and ensure proper structure
+        products = mergedProducts.filter((product, index, self) => 
             index === self.findIndex(p => p.id === product.id)
-        );
+        ).map(product => ({
+            ...product,
+            // Ensure all required fields exist
+            sizes: product.sizes || ['Standard'],
+            scents: product.scents || [],
+            colors: product.colors || [],
+            inStock: product.inStock !== false,
+            featured: product.featured || false
+        }));
 
         this.allProducts = products;
+        
+        // Cache the merged products
         if (products.length > 0) {
             localStorage.setItem('cached_all_products', JSON.stringify(products));
         }
@@ -704,13 +723,15 @@ class AdminPanel {
         if (!this.isAdmin) return false;
 
         try {
+            // Save to localStorage first
             const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             existingProducts.push(productData);
             localStorage.setItem('admin_products', JSON.stringify(existingProducts));
             
+            // Then try to save to server
             if (this.apiBaseUrl) {
                 try {
-                    await fetch(`${this.apiBaseUrl}/api/products`, {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -718,12 +739,21 @@ class AdminPanel {
                             productData
                         })
                     });
-                    console.log('Product also saved to server');
+
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server save failed:', result.error);
+                        // Continue with local save only
+                    } else {
+                        console.log('Product saved to server successfully');
+                    }
                 } catch (serverError) {
-                    console.warn('Server save failed, but local save succeeded');
+                    console.warn('Server save failed, but local save succeeded:', serverError);
                 }
             }
             
+            // Reload products to refresh UI
             await this.loadProductsForAllUsers();
             this.updateAdminPanelInfo();
             
@@ -731,6 +761,100 @@ class AdminPanel {
 
         } catch (error) {
             console.error('Failed to add product:', error);
+            return false;
+        }
+    }
+
+    async updateProduct(productId, productData) {
+        if (!this.isAdmin) return false;
+
+        try {
+            // Update localStorage
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const productIndex = existingProducts.findIndex(p => p.id === productId);
+            
+            if (productIndex === -1) {
+                throw new Error('Product not found in localStorage');
+            }
+            
+            existingProducts[productIndex] = {
+                ...productData,
+                id: productId,
+                updatedAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem('admin_products', JSON.stringify(existingProducts));
+            
+            // Try to update on server
+            if (this.apiBaseUrl) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server update failed:', result.error);
+                    } else {
+                        console.log('Product updated on server successfully');
+                    }
+                } catch (serverError) {
+                    console.warn('Server update failed, but local update succeeded:', serverError);
+                }
+            }
+            
+            // Reload products to refresh UI
+            await this.loadProductsForAllUsers();
+            this.updateAdminPanelInfo();
+            
+            return true;
+
+        } catch (error) {
+            console.error('Failed to update product:', error);
+            return false;
+        }
+    }
+
+    // Add deleteProduct method to AdminPanel class
+    async deleteProduct(productId) {
+        if (!this.isAdmin) return false;
+
+        try {
+            // Remove from localStorage
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const filteredProducts = existingProducts.filter(p => p.id !== productId);
+            localStorage.setItem('admin_products', JSON.stringify(filteredProducts));
+            
+            // Try to delete from server
+            if (this.apiBaseUrl) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server delete failed:', result.error);
+                    } else {
+                        console.log('Product deleted from server successfully');
+                    }
+                } catch (serverError) {
+                    console.warn('Server delete failed, but local delete succeeded:', serverError);
+                }
+            }
+            
+            // Reload products to refresh UI
+            await this.loadProductsForAllUsers();
+            this.updateAdminPanelInfo();
+            
+            return true;
+
+        } catch (error) {
+            console.error('Failed to delete product:', error);
             return false;
         }
     }
