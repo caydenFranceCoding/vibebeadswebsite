@@ -469,9 +469,12 @@ class AdminModals {
         this.createModal('add-product-modal', '➕ Add New Product', content, actions);
         this.showModal('add-product-modal');
         
-        this.setupProductPreview();
-        this.setupImageUpload();
-        this.setupSizeOptionsListeners();
+        // Set up all event listeners after modal is shown
+        setTimeout(() => {
+            this.setupProductPreview();
+            this.setupImageUpload();
+            this.setupSizeOptionsListeners();
+        }, 100);
     }
 
     addSizeOption() {
@@ -494,9 +497,11 @@ class AdminModals {
         
         container.appendChild(sizeOption);
         
+        // Add event listeners to new inputs
         const inputs = sizeOption.querySelectorAll('input');
         inputs.forEach(input => {
             input.addEventListener('input', () => this.updatePreview());
+            input.addEventListener('change', () => this.updatePreview());
         });
         
         inputs[0].focus();
@@ -507,28 +512,44 @@ class AdminModals {
         const container = document.getElementById('size-options-container');
         if (!container) return;
 
-        container.addEventListener('input', () => this.updatePreview());
+        // Add event listeners to all existing size option inputs
+        const existingInputs = container.querySelectorAll('input');
+        existingInputs.forEach(input => {
+            input.addEventListener('input', () => this.updatePreview());
+            input.addEventListener('change', () => this.updatePreview());
+        });
+
+        console.log('Size options listeners set up for', existingInputs.length, 'inputs');
     }
 
     getSizeOptions() {
         const container = document.getElementById('size-options-container');
-        if (!container) return [];
+        if (!container) {
+            console.log('Size options container not found');
+            return [];
+        }
 
         const sizeItems = container.querySelectorAll('.size-option-item');
         const sizeOptions = [];
 
-        sizeItems.forEach(item => {
+        sizeItems.forEach((item, index) => {
             const nameInput = item.querySelector('.size-input input');
             const priceInput = item.querySelector('.price-input input');
             
-            if (nameInput && priceInput && nameInput.value.trim() && priceInput.value) {
-                sizeOptions.push({
-                    name: nameInput.value.trim(),
-                    price: parseFloat(priceInput.value) || 0
-                });
+            if (nameInput && priceInput) {
+                const name = nameInput.value.trim();
+                const price = parseFloat(priceInput.value) || 0;
+                
+                if (name && price > 0) {
+                    sizeOptions.push({
+                        name: name,
+                        price: price
+                    });
+                }
             }
         });
 
+        console.log('Got size options:', sizeOptions);
         return sizeOptions;
     }
 
@@ -640,35 +661,46 @@ class AdminModals {
     }
 
     setupProductPreview() {
-        const inputs = ['product-name'];
-        
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('input', () => this.updatePreview());
-                input.addEventListener('change', () => this.updatePreview());
-            }
-        });
+        // Set up listeners for basic product info
+        const productNameInput = document.getElementById('product-name');
+        if (productNameInput) {
+            productNameInput.addEventListener('input', () => this.updatePreview());
+            productNameInput.addEventListener('change', () => this.updatePreview());
+        }
 
+        // Initial preview update
         this.updatePreview();
+        console.log('Product preview setup complete');
     }
 
     updatePreview() {
-        const name = document.getElementById('product-name')?.value.trim() || 'Product Name';
+        console.log('Updating preview...');
+        
+        const nameInput = document.getElementById('product-name');
         const fileInput = document.getElementById('product-image');
+        
+        const name = nameInput?.value.trim() || 'Product Name';
         const imageUrl = fileInput?.getAttribute('data-image-url');
         const sizeOptions = this.getSizeOptions();
+
+        console.log('Preview data:', { name, imageUrl: !!imageUrl, sizeOptionsCount: sizeOptions.length });
 
         const previewTitle = document.getElementById('preview-title');
         const previewPrice = document.getElementById('preview-price');
         const previewImage = document.getElementById('preview-image');
         const previewOptions = document.getElementById('preview-options');
 
-        if (previewTitle) previewTitle.textContent = name;
+        if (previewTitle) {
+            previewTitle.textContent = name;
+        }
         
         if (previewPrice) {
-            const basePrice = sizeOptions.length > 0 ? sizeOptions[0].price : 15.00;
-            previewPrice.textContent = `From ${basePrice.toFixed(2)}`;
+            if (sizeOptions.length > 0) {
+                const lowestPrice = Math.min(...sizeOptions.map(s => s.price));
+                previewPrice.textContent = `From $${lowestPrice.toFixed(2)}`;
+            } else {
+                previewPrice.textContent = 'From $15.00';
+            }
         }
         
         if (previewImage) {
@@ -681,8 +713,14 @@ class AdminModals {
         
         if (previewOptions) {
             const optionCount = sizeOptions.length;
-            previewOptions.textContent = optionCount > 0 ? `${optionCount} size options available` : 'No size options';
+            if (optionCount > 0) {
+                previewOptions.textContent = `${optionCount} size option${optionCount !== 1 ? 's' : ''} available`;
+            } else {
+                previewOptions.textContent = 'No size options';
+            }
         }
+
+        console.log('Preview updated successfully');
     }
 
     async handleAddProduct() {
@@ -822,9 +860,12 @@ class AdminModals {
                     <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
                 </div>
             `;
+            
+            // Re-setup listeners for the new inputs
+            setTimeout(() => this.setupSizeOptionsListeners(), 100);
         }
 
-        setTimeout(() => this.updatePreview(), 100);
+        setTimeout(() => this.updatePreview(), 200);
     }
 
     showEditProductsModal() {
@@ -851,7 +892,7 @@ class AdminModals {
                 <div class="product-item" data-product-id="${product.id}">
                     ${imageDisplay}
                     <div class="product-name">${this.escapeHtml(product.name)}</div>
-                    <div class="product-price">From ${basePrice.toFixed(2)}</div>
+                    <div class="product-price">From $${basePrice.toFixed(2)}</div>
                     <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
                         ${this.formatCategory(product.category)}
                     </div>
@@ -1318,6 +1359,7 @@ class AdminModals {
     }
 }
 
+// Auto-initialization code
 document.addEventListener('DOMContentLoaded', () => {
     const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {
