@@ -338,6 +338,57 @@ class AdminPanel {
         modal.style.display = 'block';
         
         modal.setAttribute('data-current-product', product.id);
+
+        // Add event listener for the modal's add to cart button
+        const addToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
+        if (addToCartBtn) {
+            // Remove any existing event listeners
+            addToCartBtn.replaceWith(addToCartBtn.cloneNode(true));
+            const newAddToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
+            
+            newAddToCartBtn.onclick = () => this.addModalProductToCart(product);
+        }
+    }
+
+    addModalProductToCart(product) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) return;
+
+        const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
+        const activeSize = modal.querySelector('.size-btn.active');
+        
+        if (!activeSize) {
+            alert('Please select a size option');
+            return;
+        }
+
+        const sizeName = activeSize.getAttribute('data-size');
+        const sizePrice = parseFloat(activeSize.getAttribute('data-price'));
+
+        if (!product.inStock) {
+            alert('Sorry, this product is out of stock.');
+            return;
+        }
+
+        const cartItem = {
+            id: product.id,
+            name: product.name,
+            price: sizePrice,
+            quantity: quantity,
+            size: sizeName,
+            image: product.imageUrl || product.emoji || '🕯️',
+            isCustom: false
+        };
+
+        if (window.productManager) {
+            window.productManager.addToCartHandler(cartItem);
+            window.productManager.showAddToCartConfirmation(product.name, quantity);
+        } else {
+            this.addToFallbackCart(cartItem);
+            this.showAddToCartConfirmation(product.name, quantity);
+        }
+
+        modal.style.display = 'none';
     }
 
     selectSize(button, price) {
