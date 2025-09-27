@@ -641,25 +641,31 @@ class AdminPanel {
                 console.log('Modal integration complete');
                 return true;
             }
+            if (window.adminModals) {
+                this.modals = window.adminModals;
+                console.log('Modal integration complete - using existing instance');
+                return true;
+            }
             return false;
         };
 
         if (!checkModals()) {
             let attempts = 0;
-            const maxAttempts = 5;
+            const maxAttempts = 10;
             
             const retryCheck = () => {
                 attempts++;
                 if (checkModals() || attempts >= maxAttempts) {
                     if (attempts >= maxAttempts) {
                         console.warn('Modal integration failed - using fallbacks');
+                        console.log('Available on window:', Object.keys(window).filter(k => k.includes('dmin')));
                     }
                     return;
                 }
-                setTimeout(retryCheck, 500 * attempts);
+                setTimeout(retryCheck, 200 * attempts);
             };
             
-            setTimeout(retryCheck, 100);
+            setTimeout(retryCheck, 500);
         }
     }
 
