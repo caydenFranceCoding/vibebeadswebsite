@@ -80,7 +80,6 @@ class AdminModals {
                 }
                 .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
                 
-                /* Image Upload Styles */
                 .image-upload-container {
                     border: 2px dashed #8B7355; border-radius: 8px; padding: 20px;
                     text-align: center; background: white; transition: all 0.2s ease;
@@ -112,23 +111,30 @@ class AdminModals {
                     border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 8px;
                 }
                 .image-remove-btn:hover { background: #cc3333; }
-                .image-fallback-row {
-                    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
-                    margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8e8e8;
+                
+                .size-option-item {
+                    display: flex; gap: 12px; margin-bottom: 12px; padding: 12px; 
+                    background: white; border-radius: 6px; border: 1px solid #e8e8e8;
+                    align-items: end;
                 }
-                .image-fallback-label {
-                    font-size: 12px; color: #666; margin-bottom: 4px;
+                .size-option-item .size-input { flex: 2; }
+                .size-option-item .price-input { flex: 1; }
+                .size-option-item button {
+                    background: #ff4444; color: white; border: none; padding: 8px 12px;
+                    border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;
                 }
-                .image-or-text {
-                    text-align: center; color: #999; font-size: 12px; margin: 8px 0;
-                    position: relative;
+                .size-option-item button:hover { background: #cc3333; }
+                .size-option-item input {
+                    margin: 0; padding: 8px 12px; font-size: 13px;
                 }
-                .image-or-text::before, .image-or-text::after {
-                    content: ''; position: absolute; top: 50%; width: 30%; height: 1px;
-                    background: #ddd;
+                .size-option-item label {
+                    margin: 0 0 4px 0; font-size: 11px; color: #666;
                 }
-                .image-or-text::before { left: 0; }
-                .image-or-text::after { right: 0; }
+                .add-size-btn {
+                    background: #8B7355; color: white; border: none; padding: 8px 16px;
+                    border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;
+                }
+                .add-size-btn:hover { background: #6d5a42; }
                 
                 .dynamic-list {
                     border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px;
@@ -255,7 +261,7 @@ class AdminModals {
                     .form-row, .form-row-three { grid-template-columns: 1fr; }
                     .btn-group { flex-direction: column; }
                     .product-grid { grid-template-columns: 1fr; }
-                    .image-fallback-row { grid-template-columns: 1fr; }
+                    .size-option-item { flex-direction: column; align-items: stretch; }
                 }
             </style>
         `;
@@ -282,10 +288,6 @@ class AdminModals {
 
         modal.innerHTML = `
             <div class="admin-modal-content">
-                <div class="admin-modal-header">
-                    <div class="admin-modal-title">${title}</div>
-                    <button class="admin-modal-close" data-close="${id}">×</button>
-                </div>
                 <div class="admin-modal-body">
                     ${content}
                     <div class="btn-group">
@@ -341,7 +343,7 @@ class AdminModals {
     showAddProductModal() {
         const content = `
             <h3>Add New Product</h3>
-            <p>Create a comprehensive product with all e-commerce features.</p>
+            <p>Create a comprehensive product that matches your existing product modal structure.</p>
             
             <div class="form-section">
                 <div class="form-section-title">Basic Information</div>
@@ -350,18 +352,6 @@ class AdminModals {
                         <label>Product Name *</label>
                         <input type="text" id="product-name" placeholder="Enter product name" required>
                     </div>
-                    <div class="form-group">
-                        <label>Price *</label>
-                        <input type="number" id="product-price" placeholder="0.00" step="0.01" min="0" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="product-description" placeholder="Enter detailed product description" rows="3"></textarea>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>Category</label>
                         <select id="product-category">
@@ -373,6 +363,11 @@ class AdminModals {
                             <option value="accessories">Accessories</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="product-description" placeholder="Enter detailed product description" rows="3"></textarea>
                 </div>
             </div>
 
@@ -391,30 +386,45 @@ class AdminModals {
             </div>
 
             <div class="form-section">
-                <div class="form-section-title">Product Options</div>
+                <div class="form-section-title">Size Options & Pricing</div>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Add different size options with their respective prices. First option will be the default/base price.</p>
                 
-                <div class="form-group">
-                    <label>Available Sizes</label>
-                    <div class="dynamic-list" id="sizes-list">
-                        <div class="dynamic-list-item">
-                            <input type="text" value="Standard" placeholder="Size name">
-                            <button onclick="this.parentNode.remove()">Remove</button>
+                <div id="size-options-container">
+                    <div class="size-option-item">
+                        <div class="size-input">
+                            <label>Size Name</label>
+                            <input type="text" value="8oz Candle" placeholder="Size name">
                         </div>
+                        <div class="price-input">
+                            <label>Price ($)</label>
+                            <input type="number" value="15.00" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
                     </div>
-                    <button class="add-item-btn" onclick="adminModals.addListItem('sizes-list', 'Size name')">+ Add Size</button>
+                    <div class="size-option-item">
+                        <div class="size-input">
+                            <label>Size Name</label>
+                            <input type="text" value="10oz Candle" placeholder="Size name">
+                        </div>
+                        <div class="price-input">
+                            <label>Price ($)</label>
+                            <input type="number" value="16.00" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+                    </div>
+                    <div class="size-option-item">
+                        <div class="size-input">
+                            <label>Size Name</label>
+                            <input type="text" value="16oz Candle" placeholder="Size name">
+                        </div>
+                        <div class="price-input">
+                            <label>Price ($)</label>
+                            <input type="number" value="22.00" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Available Scents (optional)</label>
-                    <div class="dynamic-list" id="scents-list"></div>
-                    <button class="add-item-btn" onclick="adminModals.addListItem('scents-list', 'Scent name')">+ Add Scent</button>
-                </div>
-
-                <div class="form-group">
-                    <label>Available Colors (optional)</label>
-                    <div class="dynamic-list" id="colors-list"></div>
-                    <button class="add-item-btn" onclick="adminModals.addListItem('colors-list', 'Color name')">+ Add Color</button>
-                </div>
+                <button class="add-size-btn" onclick="adminModals.addSizeOption()">+ Add Size Option</button>
             </div>
 
             <div class="form-section">
@@ -435,12 +445,12 @@ class AdminModals {
                 <h4>Live Preview</h4>
                 <div class="preview-card">
                     <div class="preview-image" id="preview-image">
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>
-                </div>
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>
+                    </div>
                     <div class="preview-info">
                         <div class="preview-title" id="preview-title">Product Name</div>
-                        <div class="preview-price" id="preview-price">$0.00</div>
-                        <div class="preview-options" id="preview-options">Options will appear here</div>
+                        <div class="preview-price" id="preview-price">From $15.00</div>
+                        <div class="preview-options" id="preview-options">3 size options available</div>
                     </div>
                 </div>
             </div>
@@ -461,6 +471,65 @@ class AdminModals {
         
         this.setupProductPreview();
         this.setupImageUpload();
+        this.setupSizeOptionsListeners();
+    }
+
+    addSizeOption() {
+        const container = document.getElementById('size-options-container');
+        if (!container) return;
+
+        const sizeOption = document.createElement('div');
+        sizeOption.className = 'size-option-item';
+        sizeOption.innerHTML = `
+            <div class="size-input">
+                <label>Size Name</label>
+                <input type="text" value="" placeholder="Size name">
+            </div>
+            <div class="price-input">
+                <label>Price ($)</label>
+                <input type="number" value="" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+        `;
+        
+        container.appendChild(sizeOption);
+        
+        const inputs = sizeOption.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => this.updatePreview());
+        });
+        
+        inputs[0].focus();
+        this.updatePreview();
+    }
+
+    setupSizeOptionsListeners() {
+        const container = document.getElementById('size-options-container');
+        if (!container) return;
+
+        container.addEventListener('input', () => this.updatePreview());
+    }
+
+    getSizeOptions() {
+        const container = document.getElementById('size-options-container');
+        if (!container) return [];
+
+        const sizeItems = container.querySelectorAll('.size-option-item');
+        const sizeOptions = [];
+
+        sizeItems.forEach(item => {
+            const nameInput = item.querySelector('.size-input input');
+            const priceInput = item.querySelector('.price-input input');
+            
+            if (nameInput && priceInput && nameInput.value.trim() && priceInput.value) {
+                sizeOptions.push({
+                    name: nameInput.value.trim(),
+                    price: parseFloat(priceInput.value) || 0
+                });
+            }
+        });
+
+        return sizeOptions;
     }
 
     setupImageUpload() {
@@ -470,13 +539,11 @@ class AdminModals {
 
         if (!uploadArea || !fileInput || !uploadContent) return;
 
-        // Prevent default drag behaviors
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadArea.addEventListener(eventName, this.preventDefaults, false);
             document.body.addEventListener(eventName, this.preventDefaults, false);
         });
 
-        // Highlight drop area when item is dragged over it
         ['dragenter', 'dragover'].forEach(eventName => {
             uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
         });
@@ -485,14 +552,12 @@ class AdminModals {
             uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
         });
 
-        // Handle dropped files
         uploadArea.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
             const files = dt.files;
             this.handleImageFiles(files);
         }, false);
 
-        // Handle file input change
         fileInput.addEventListener('change', (e) => {
             this.handleImageFiles(e.target.files);
         });
@@ -508,13 +573,11 @@ class AdminModals {
 
         const file = files[0];
         
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             this.showMessage(document.getElementById('add-product-message'), 'Please select a valid image file', 'error');
             return;
         }
 
-        // Validate file size (5MB limit)
         if (file.size > 5 * 1024 * 1024) {
             this.showMessage(document.getElementById('add-product-message'), 'Image file must be less than 5MB', 'error');
             return;
@@ -531,7 +594,6 @@ class AdminModals {
             this.displayImagePreview(imageDataUrl, file.name);
             this.updatePreview();
             
-            // Store the image data for later use
             const fileInput = document.getElementById('product-image');
             if (fileInput) {
                 fileInput.setAttribute('data-image-url', imageDataUrl);
@@ -577,37 +639,8 @@ class AdminModals {
         this.updatePreview();
     }
 
-    addListItem(listId, placeholder) {
-        const list = document.getElementById(listId);
-        if (!list) return;
-
-        const item = document.createElement('div');
-        item.className = 'dynamic-list-item';
-        item.innerHTML = `
-            <input type="text" value="" placeholder="${placeholder}">
-            <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-        `;
-        
-        list.appendChild(item);
-        
-        const input = item.querySelector('input');
-        input.addEventListener('input', () => this.updatePreview());
-        input.focus();
-        
-        this.updatePreview();
-    }
-
-    getListValues(listId) {
-        const list = document.getElementById(listId);
-        if (!list) return [];
-        
-        return Array.from(list.querySelectorAll('input'))
-            .map(input => input.value.trim())
-            .filter(value => value.length > 0);
-    }
-
     setupProductPreview() {
-        const inputs = ['product-name', 'product-price'];
+        const inputs = ['product-name'];
         
         inputs.forEach(inputId => {
             const input = document.getElementById(inputId);
@@ -617,25 +650,14 @@ class AdminModals {
             }
         });
 
-        ['sizes-list', 'scents-list', 'colors-list'].forEach(listId => {
-            const list = document.getElementById(listId);
-            if (list) {
-                list.addEventListener('input', () => this.updatePreview());
-            }
-        });
-
         this.updatePreview();
     }
 
     updatePreview() {
         const name = document.getElementById('product-name')?.value.trim() || 'Product Name';
-        const price = parseFloat(document.getElementById('product-price')?.value) || 0;
         const fileInput = document.getElementById('product-image');
         const imageUrl = fileInput?.getAttribute('data-image-url');
-
-        const sizes = this.getListValues('sizes-list');
-        const scents = this.getListValues('scents-list');
-        const colors = this.getListValues('colors-list');
+        const sizeOptions = this.getSizeOptions();
 
         const previewTitle = document.getElementById('preview-title');
         const previewPrice = document.getElementById('preview-price');
@@ -643,7 +665,11 @@ class AdminModals {
         const previewOptions = document.getElementById('preview-options');
 
         if (previewTitle) previewTitle.textContent = name;
-        if (previewPrice) previewPrice.textContent = `${price.toFixed(2)}`;
+        
+        if (previewPrice) {
+            const basePrice = sizeOptions.length > 0 ? sizeOptions[0].price : 15.00;
+            previewPrice.textContent = `From ${basePrice.toFixed(2)}`;
+        }
         
         if (previewImage) {
             if (imageUrl) {
@@ -654,17 +680,13 @@ class AdminModals {
         }
         
         if (previewOptions) {
-            let optionsText = '';
-            if (sizes.length > 0) optionsText += `Sizes: ${sizes.join(', ')}\n`;
-            if (scents.length > 0) optionsText += `Scents: ${scents.join(', ')}\n`;
-            if (colors.length > 0) optionsText += `Colors: ${colors.join(', ')}`;
-            previewOptions.textContent = optionsText || 'Standard options';
+            const optionCount = sizeOptions.length;
+            previewOptions.textContent = optionCount > 0 ? `${optionCount} size options available` : 'No size options';
         }
     }
 
     async handleAddProduct() {
         const nameInput = document.getElementById('product-name');
-        const priceInput = document.getElementById('product-price');
         const descriptionInput = document.getElementById('product-description');
         const categoryInput = document.getElementById('product-category');
         const featuredInput = document.getElementById('product-featured');
@@ -672,32 +694,22 @@ class AdminModals {
         const fileInput = document.getElementById('product-image');
         const messageDiv = document.getElementById('add-product-message');
 
-        if (!nameInput || !priceInput || !messageDiv) {
+        if (!nameInput || !messageDiv) {
             console.error('Required form elements not found');
             return;
         }
 
         const name = nameInput.value.trim();
-        const price = parseFloat(priceInput.value);
         const description = descriptionInput?.value.trim() || '';
         const category = categoryInput?.value || 'candles';
         const featured = featuredInput?.checked || false;
         const inStock = inStockInput?.checked ?? true;
         const imageUrl = fileInput?.getAttribute('data-image-url') || null;
-
-        const sizes = this.getListValues('sizes-list');
-        const scents = this.getListValues('scents-list');
-        const colors = this.getListValues('colors-list');
+        const sizeOptions = this.getSizeOptions();
 
         if (!name) {
             this.showMessage(messageDiv, 'Please enter a product name', 'error');
             nameInput.focus();
-            return;
-        }
-
-        if (!price || price <= 0) {
-            this.showMessage(messageDiv, 'Please enter a valid price greater than $0.00', 'error');
-            priceInput.focus();
             return;
         }
 
@@ -706,22 +718,21 @@ class AdminModals {
             return;
         }
 
-        if (sizes.length === 0) {
-            sizes.push('Standard');
+        if (sizeOptions.length === 0) {
+            this.showMessage(messageDiv, 'Please add at least one size option with a valid price', 'error');
+            return;
         }
 
         const productData = {
             id: this.generateProductId(name),
             name: name,
-            price: price,
-            description: description || `Premium ${category.replace('-', ' ')} with excellent quality and options.`,
+            description: description || `Premium ${category.replace('-', ' ')} with excellent quality and multiple size options.`,
             category: category,
             imageUrl: imageUrl,
             featured: featured,
             inStock: inStock,
-            sizes: sizes,
-            scents: scents,
-            colors: colors,
+            sizeOptions: sizeOptions,
+            price: sizeOptions[0].price,
             createdAt: new Date().toISOString(),
             createdBy: 'admin',
         };
@@ -735,7 +746,7 @@ class AdminModals {
             const success = await this.adminPanel.addProduct(productData);
             
             if (success) {
-                this.showMessage(messageDiv, 'Product added successfully with image!', 'success');
+                this.showMessage(messageDiv, 'Product added successfully with size options!', 'success');
                 this.clearAddProductForm();
                 
                 setTimeout(() => {
@@ -755,7 +766,7 @@ class AdminModals {
     }
 
     clearAddProductForm() {
-        const inputs = ['product-name', 'product-price', 'product-description'];
+        const inputs = ['product-name', 'product-description'];
         inputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) element.value = '';
@@ -772,24 +783,46 @@ class AdminModals {
         const categorySelect = document.getElementById('product-category');
         if (categorySelect) categorySelect.value = 'candles';
 
-        // Clear image upload
         this.removeImage();
 
-        ['sizes-list', 'scents-list', 'colors-list'].forEach(listId => {
-            const list = document.getElementById(listId);
-            if (list) {
-                if (listId === 'sizes-list') {
-                    list.innerHTML = `
-                        <div class="dynamic-list-item">
-                            <input type="text" value="Standard" placeholder="Size name">
-                            <button onclick="this.parentNode.remove()">Remove</button>
-                        </div>
-                    `;
-                } else {
-                    list.innerHTML = '';
-                }
-            }
-        });
+        const container = document.getElementById('size-options-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="size-option-item">
+                    <div class="size-input">
+                        <label>Size Name</label>
+                        <input type="text" value="8oz Candle" placeholder="Size name">
+                    </div>
+                    <div class="price-input">
+                        <label>Price ($)</label>
+                        <input type="number" value="15.00" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+                </div>
+                <div class="size-option-item">
+                    <div class="size-input">
+                        <label>Size Name</label>
+                        <input type="text" value="10oz Candle" placeholder="Size name">
+                    </div>
+                    <div class="price-input">
+                        <label>Price ($)</label>
+                        <input type="number" value="16.00" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+                </div>
+                <div class="size-option-item">
+                    <div class="size-input">
+                        <label>Size Name</label>
+                        <input type="text" value="22oz Candle" placeholder="Size name">
+                    </div>
+                    <div class="price-input">
+                        <label>Price ($)</label>
+                        <input type="number" value="22.00" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
+                </div>
+            `;
+        }
 
         setTimeout(() => this.updatePreview(), 100);
     }
@@ -805,16 +838,20 @@ class AdminModals {
         const productsHTML = localProducts.map(product => {
             let imageDisplay;
             if (product.imageUrl && product.imageUrl.trim()) {
-                imageDisplay = `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\"background: #f0f0f0; color: #999; font-size: 12px; display: flex; align-items: center; justify-content: center; height: 80px;\\">${product.emoji || '🕯️'}</div>'"></div>`;
+                imageDisplay = `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}"></div>`;
             } else {
                 imageDisplay = `<div class="product-image" style="background: #f0f0f0; color: #999; font-size: 24px; display: flex; align-items: center; justify-content: center; height: 80px;">${product.emoji || '🕯️'}</div>`;
             }
+            
+            const basePrice = product.sizeOptions && product.sizeOptions.length > 0 
+                ? product.sizeOptions[0].price 
+                : product.price || 0;
             
             return `
                 <div class="product-item" data-product-id="${product.id}">
                     ${imageDisplay}
                     <div class="product-name">${this.escapeHtml(product.name)}</div>
-                    <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                    <div class="product-price">From ${basePrice.toFixed(2)}</div>
                     <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
                         ${this.formatCategory(product.category)}
                     </div>
@@ -827,7 +864,7 @@ class AdminModals {
 
         const content = `
             <h3>Manage Products</h3>
-            <p>Click on a product to edit its details, options, and settings:</p>
+            <p>Click on a product to edit its details, size options, and settings:</p>
             
             <div class="product-grid" id="product-selection-grid">
                 ${productsHTML}
@@ -844,18 +881,6 @@ class AdminModals {
                             <input type="text" id="edit-product-name" required>
                         </div>
                         <div class="form-group">
-                            <label>Price</label>
-                            <input type="number" id="edit-product-price" step="0.01" min="0" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="edit-product-description" rows="3"></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
                             <label>Category</label>
                             <select id="edit-product-category">
                                 <option value="candles">Candles</option>
@@ -866,6 +891,11 @@ class AdminModals {
                                 <option value="accessories">Accessories</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="edit-product-description" rows="3"></textarea>
                     </div>
                 </div>
 
@@ -884,25 +914,10 @@ class AdminModals {
                 </div>
 
                 <div class="form-section">
-                    <div class="form-section-title">Product Options</div>
+                    <div class="form-section-title">Size Options & Pricing</div>
                     
-                    <div class="form-group">
-                        <label>Available Sizes</label>
-                        <div class="dynamic-list" id="edit-sizes-list"></div>
-                        <button class="add-item-btn" onclick="adminModals.addListItem('edit-sizes-list', 'Size name')">+ Add Size</button>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Available Scents</label>
-                        <div class="dynamic-list" id="edit-scents-list"></div>
-                        <button class="add-item-btn" onclick="adminModals.addListItem('edit-scents-list', 'Scent name')">+ Add Scent</button>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Available Colors</label>
-                        <div class="dynamic-list" id="edit-colors-list"></div>
-                        <button class="add-item-btn" onclick="adminModals.addListItem('edit-colors-list', 'Color name')">+ Add Color</button>
-                    </div>
+                    <div id="edit-size-options-container"></div>
+                    <button class="add-size-btn" onclick="adminModals.addEditSizeOption()">+ Add Size Option</button>
                 </div>
 
                 <div class="form-section">
@@ -948,40 +963,79 @@ class AdminModals {
         }, 100);
     }
 
+    addEditSizeOption() {
+        const container = document.getElementById('edit-size-options-container');
+        if (!container) return;
+
+        const sizeOption = document.createElement('div');
+        sizeOption.className = 'size-option-item';
+        sizeOption.innerHTML = `
+            <div class="size-input">
+                <label>Size Name</label>
+                <input type="text" value="" placeholder="Size name">
+            </div>
+            <div class="price-input">
+                <label>Price ($)</label>
+                <input type="number" value="" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <button onclick="this.parentNode.remove()">Remove</button>
+        `;
+        
+        container.appendChild(sizeOption);
+        sizeOption.querySelector('input').focus();
+    }
+
+    getEditSizeOptions() {
+        const container = document.getElementById('edit-size-options-container');
+        if (!container) return [];
+
+        const sizeItems = container.querySelectorAll('.size-option-item');
+        const sizeOptions = [];
+
+        sizeItems.forEach(item => {
+            const nameInput = item.querySelector('.size-input input');
+            const priceInput = item.querySelector('.price-input input');
+            
+            if (nameInput && priceInput && nameInput.value.trim() && priceInput.value) {
+                sizeOptions.push({
+                    name: nameInput.value.trim(),
+                    price: parseFloat(priceInput.value) || 0
+                });
+            }
+        });
+
+        return sizeOptions;
+    }
+
     formatProductOptions(product) {
         let options = [];
-        if (product.sizes && product.sizes.length > 0) {
-            options.push(`Sizes: ${product.sizes.length}`);
-        }
-        if (product.scents && product.scents.length > 0) {
-            options.push(`Scents: ${product.scents.length}`);
-        }
-        if (product.colors && product.colors.length > 0) {
-            options.push(`Colors: ${product.colors.length}`);
+        if (product.sizeOptions && product.sizeOptions.length > 0) {
+            options.push(`${product.sizeOptions.length} size options`);
         }
         return options.join(', ') || 'Standard options';
     }
 
-    populateList(listId, items) {
-        const list = document.getElementById(listId);
-        if (!list) return;
+    populateSizeOptions(container, sizeOptions) {
+        if (!container || !sizeOptions) return;
 
-        list.innerHTML = '';
+        container.innerHTML = '';
         
-        if (items && items.length > 0) {
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'dynamic-list-item';
-                div.innerHTML = `
-                    <input type="text" value="${this.escapeHtml(item)}" placeholder="Item name">
-                    <button onclick="this.parentNode.remove()">Remove</button>
-                `;
-                list.appendChild(div);
-                
-                const input = div.querySelector('input');
-                input.addEventListener('input', () => this.updatePreview());
-            });
-        }
+        sizeOptions.forEach(option => {
+            const sizeOption = document.createElement('div');
+            sizeOption.className = 'size-option-item';
+            sizeOption.innerHTML = `
+                <div class="size-input">
+                    <label>Size Name</label>
+                    <input type="text" value="${this.escapeHtml(option.name)}" placeholder="Size name">
+                </div>
+                <div class="price-input">
+                    <label>Price ($)</label>
+                    <input type="number" value="${option.price}" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <button onclick="this.parentNode.remove()">Remove</button>
+            `;
+            container.appendChild(sizeOption);
+        });
     }
 
     selectProduct(productId) {
@@ -999,22 +1053,21 @@ class AdminModals {
         
         if (product) {
             document.getElementById('edit-product-name').value = product.name || '';
-            document.getElementById('edit-product-price').value = product.price || '';
             document.getElementById('edit-product-description').value = product.description || '';
             document.getElementById('edit-product-category').value = product.category || 'candles';
             document.getElementById('edit-product-featured').checked = product.featured || false;
             document.getElementById('edit-product-in-stock').checked = product.inStock !== false;
             
-            // Handle existing image
             if (product.imageUrl) {
                 this.displayEditImagePreview(product.imageUrl, 'Current Image');
             }
             
-            this.populateList('edit-sizes-list', product.sizes || ['Standard']);
-            this.populateList('edit-scents-list', product.scents || []);
-            this.populateList('edit-colors-list', product.colors || []);
+            const sizeContainer = document.getElementById('edit-size-options-container');
+            const defaultSizes = product.sizeOptions && product.sizeOptions.length > 0 
+                ? product.sizeOptions 
+                : [{ name: 'Standard', price: product.price || 15.00 }];
+            this.populateSizeOptions(sizeContainer, defaultSizes);
             
-            // Setup image upload for edit form
             this.setupEditImageUpload();
         }
 
@@ -1034,12 +1087,10 @@ class AdminModals {
 
         if (!uploadArea || !fileInput || !uploadContent) return;
 
-        // Remove existing listeners
         uploadArea.replaceWith(uploadArea.cloneNode(true));
         const newUploadArea = document.getElementById('edit-image-upload-area');
         const newFileInput = document.getElementById('edit-product-image');
 
-        // Setup new listeners
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             newUploadArea.addEventListener(eventName, this.preventDefaults, false);
         });
@@ -1130,7 +1181,6 @@ class AdminModals {
         }
 
         const name = document.getElementById('edit-product-name').value.trim();
-        const price = parseFloat(document.getElementById('edit-product-price').value);
         const description = document.getElementById('edit-product-description').value.trim();
         const category = document.getElementById('edit-product-category').value;
         const featured = document.getElementById('edit-product-featured').checked;
@@ -1138,50 +1188,40 @@ class AdminModals {
         const fileInput = document.getElementById('edit-product-image');
         const newImageUrl = fileInput?.getAttribute('data-image-url');
         const messageDiv = document.getElementById('edit-product-message');
-
-        const sizes = this.getListValues('edit-sizes-list');
-        const scents = this.getListValues('edit-scents-list');
-        const colors = this.getListValues('edit-colors-list');
+        const sizeOptions = this.getEditSizeOptions();
 
         if (!name) {
             this.showMessage(messageDiv, 'Please enter a product name', 'error');
             return;
         }
 
-        if (!price || price <= 0) {
-            this.showMessage(messageDiv, 'Please enter a valid price', 'error');
+        if (sizeOptions.length === 0) {
+            this.showMessage(messageDiv, 'Please add at least one size option', 'error');
             return;
-        }
-
-        if (sizes.length === 0) {
-            sizes.push('Standard');
         }
 
         this.showMessage(messageDiv, 'Saving changes...', 'info');
 
         try {
-            // Get existing product to preserve original image if no new image uploaded
             const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
             const existingProduct = products.find(p => p.id === this.selectedProductId);
             
             const updatedProduct = {
                 name: name,
-                price: price,
                 description: description,
                 category: category,
                 imageUrl: newImageUrl || (existingProduct ? existingProduct.imageUrl : null),
                 featured: featured,
                 inStock: inStock,
-                sizes: sizes,
-                scents: scents,
-                colors: colors,
+                sizeOptions: sizeOptions,
+                price: sizeOptions[0].price,
                 updatedAt: new Date().toISOString()
             };
 
             const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
 
             if (success) {
-                this.showMessage(messageDiv, 'Product updated successfully with image!', 'success');
+                this.showMessage(messageDiv, 'Product updated successfully!', 'success');
 
                 setTimeout(() => {
                     this.closeModal('edit-products-modal');
@@ -1278,7 +1318,6 @@ class AdminModals {
     }
 }
 
-// Auto-initialization code remains the same...
 document.addEventListener('DOMContentLoaded', () => {
     const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {

@@ -1,7 +1,7 @@
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
-            '172.59.196.158', '104.179.159.180', '172.58.183.6', '172.59.195.98'
+            '104.28.33.73', '172.59.196.158', '104.179.159.180', '172.58.183.6', '172.59.195.98'
         ];
 
         this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
@@ -25,13 +25,8 @@ class AdminPanel {
 
     async initializeAsync() {
         try {
-            // Load products first for all users (including non-admins)
             await this.loadProductsForAllUsers();
-            
-            // Load content for all users
             await this.loadContentForAllUsers();
-            
-            // Check IP address for admin features
             await this.checkIPAddress();
             
             if (this.isAdmin) {
@@ -56,7 +51,6 @@ class AdminPanel {
     }
 
     getProductContainers() {
-        // Get all containers that should display products
         const containers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid');
         return Array.from(containers);
     }
@@ -105,13 +99,11 @@ class AdminPanel {
 
         let products = [];
 
-        // Load from localStorage first
         try {
             const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             if (localProducts.length > 0) {
                 products = [...localProducts];
                 this.allProducts = products;
-                // Clear existing admin products before rendering to prevent duplicates
                 this.clearExistingAdminProducts(containers);
                 this.renderProductsToContainers(products, containers);
                 console.log('Local products displayed immediately:', localProducts.length);
@@ -120,7 +112,6 @@ class AdminPanel {
             console.warn('Error loading local products:', error);
         }
 
-        // Then try to get from server
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/products/list`, {
                 timeout: 5000
@@ -133,7 +124,6 @@ class AdminPanel {
                     
                     if (JSON.stringify(mergedProducts) !== JSON.stringify(products)) {
                         this.allProducts = mergedProducts;
-                        // Clear existing admin products before re-rendering
                         this.clearExistingAdminProducts(containers);
                         this.renderProductsToContainers(mergedProducts, containers);
                         localStorage.setItem('admin_products', JSON.stringify(mergedProducts));
@@ -178,10 +168,8 @@ class AdminPanel {
         requestAnimationFrame(() => {
             try {
                 containers.forEach((container, containerIndex) => {
-                    // Get category filter for this container
                     const categoryFilter = container.getAttribute('data-category');
                     
-                    // Filter products by category if specified
                     let filteredProducts = products;
                     if (categoryFilter) {
                         filteredProducts = products.filter(product => 
@@ -191,10 +179,9 @@ class AdminPanel {
                     }
                     
                     if (filteredProducts.length === 0) {
-                        return; // Don't show "no products" message if there are static products
+                        return;
                     }
 
-                    // Always append admin products to containers
                     const containerFragment = document.createDocumentFragment();
                     
                     filteredProducts.forEach((product, productIndex) => {
@@ -203,7 +190,6 @@ class AdminPanel {
                         containerFragment.appendChild(productElement);
                     });
                     
-                    // Append admin products to the container
                     container.appendChild(containerFragment);
                 });
 
@@ -221,7 +207,6 @@ class AdminPanel {
         });
     }
 
-    // Map category names between different formats
     mapCategoryName(category) {
         const categoryMap = {
             'wax-melts': 'wax-melts',
@@ -239,14 +224,12 @@ class AdminPanel {
 
     createProductElement(product, uniqueId) {
         const div = document.createElement('div');
-        div.className = 'product-card'; // Start without fade-in to avoid opacity issues
+        div.className = 'product-card';
         div.setAttribute('data-product-id', product.id);
         div.setAttribute('data-unique-id', uniqueId);
-        div.onclick = () => window.productManager?.openProductDetail(product.id);
+        div.onclick = () => this.openProductModal(product);
         
         div.innerHTML = this.createProductHTML(product, uniqueId);
-        
-        // Set opacity to 1 immediately to ensure visibility
         div.style.opacity = '1';
         
         return div;
@@ -260,15 +243,17 @@ class AdminPanel {
 
         const productId = this.escapeHtml(product.id);
         const productName = this.escapeHtml(product.name);
-        const productPrice = (product.price || 0).toFixed(2);
-        const productEmoji = this.escapeHtml(product.emoji || '🕯️');
         const productDescription = this.escapeHtml(product.description || '');
+        
+        const basePrice = product.sizeOptions && product.sizeOptions.length > 0 
+            ? product.sizeOptions[0].price 
+            : product.price || 0;
 
         let imageContent;
         if (product.imageUrl && product.imageUrl.trim()) {
             imageContent = `<img src="${product.imageUrl}" alt="${productName}" loading="lazy">`;
         } else {
-            imageContent = productEmoji;
+            imageContent = product.emoji || '🕯️';
         }
 
         const html = `
@@ -277,7 +262,7 @@ class AdminPanel {
             </div>
             <div class="product-info">
                 <h3 class="product-title">${productName}</h3>
-                <p class="product-price">From $${productPrice} USD</p>
+                <p class="product-price">From $${basePrice.toFixed(2)} USD</p>
                 <p class="product-description">${productDescription}</p>
                 <button class="add-to-cart-btn" onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">Add to Cart</button>
             </div>
@@ -293,6 +278,56 @@ class AdminPanel {
         }
 
         return html;
+    }
+
+    openProductModal(product) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) {
+            console.error('Product modal not found');
+            return;
+        }
+
+        document.getElementById('modal-product-image').src = product.imageUrl || '';
+        document.getElementById('modal-product-title').textContent = product.name;
+        document.getElementById('modal-product-description').textContent = product.description || '';
+
+        const sizeButtons = modal.querySelector('.size-buttons');
+        if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
+            sizeButtons.innerHTML = '';
+            product.sizeOptions.forEach((size, index) => {
+                const button = document.createElement('button');
+                button.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                button.setAttribute('data-size', size.name);
+                button.setAttribute('data-price', size.price);
+                button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
+                button.onclick = () => this.selectSize(button, size.price);
+                sizeButtons.appendChild(button);
+            });
+            
+            document.getElementById('modal-product-price').textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
+            document.getElementById('total-price').textContent = product.sizeOptions[0].price.toFixed(2);
+        } else {
+            const defaultPrice = product.price || 15.00;
+            sizeButtons.innerHTML = `
+                <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">Standard - $${defaultPrice.toFixed(2)}</button>
+            `;
+            document.getElementById('modal-product-price').textContent = `$${defaultPrice.toFixed(2)}`;
+            document.getElementById('total-price').textContent = defaultPrice.toFixed(2);
+        }
+
+        document.getElementById('quantity').value = 1;
+        modal.style.display = 'block';
+        
+        modal.setAttribute('data-current-product', product.id);
+    }
+
+    selectSize(button, price) {
+        document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+        const total = (price * quantity).toFixed(2);
+        document.getElementById('total-price').textContent = total;
     }
 
     async checkIPAddress() {
@@ -986,9 +1021,11 @@ class AdminPanel {
             emoji: emoji,
             featured: false,
             inStock: true,
-            sizes: ['Standard'],
-            scents: [],
-            colors: [],
+            sizeOptions: [
+                { name: '8oz Candle', price: price },
+                { name: '10oz Candle', price: price + 1 },
+                { name: '16oz Candle', price: price + 7 }
+            ],
             createdAt: new Date().toISOString(),
             createdBy: 'admin-fallback'
         };
@@ -1082,7 +1119,7 @@ class ProductManager {
             return;
         }
 
-        this.showProductModal(product);
+        this.adminPanel.openProductModal(product);
     }
 
     quickAddToCart(productId) {
@@ -1097,14 +1134,16 @@ class ProductManager {
             return;
         }
 
+        const defaultSize = product.sizeOptions && product.sizeOptions.length > 0 
+            ? product.sizeOptions[0] 
+            : { name: 'Standard', price: product.price || 15.00 };
+
         const cartItem = {
             id: product.id,
             name: product.name,
-            price: product.price,
+            price: defaultSize.price,
             quantity: 1,
-            size: product.sizes?.[0] || 'Standard',
-            scent: product.scents?.[0] || null,
-            color: product.colors?.[0] || null,
+            size: defaultSize.name,
             image: product.emoji || '🕯️',
             isCustom: false
         };
@@ -1115,210 +1154,6 @@ class ProductManager {
 
     findProduct(productId) {
         return this.adminPanel.allProducts.find(p => p.id === productId);
-    }
-
-    showProductModal(product) {
-        const existingModal = document.getElementById('product-detail-modal');
-        if (existingModal) existingModal.remove();
-
-        const sizesHTML = product.sizes && product.sizes.length > 1 ? `
-            <div class="product-option">
-                <label>Size:</label>
-                <select id="product-size">
-                    ${product.sizes.map(size => `<option value="${size}">${size}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        const scentsHTML = product.scents && product.scents.length > 0 ? `
-            <div class="product-option">
-                <label>Scent:</label>
-                <select id="product-scent">
-                    <option value="">Select Scent</option>
-                    ${product.scents.map(scent => `<option value="${scent}">${scent}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        const colorsHTML = product.colors && product.colors.length > 0 ? `
-            <div class="product-option">
-                <label>Color:</label>
-                <select id="product-color">
-                    <option value="">Select Color</option>
-                    ${product.colors.map(color => `<option value="${color}">${color}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        // Fixed modal image display
-        let modalImageContent;
-        if (product.imageUrl && product.imageUrl.trim()) {
-            modalImageContent = `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\"product-detail-emoji\\">${product.emoji || '🕯️'}</div>'">`;
-        } else {
-            modalImageContent = `<div class="product-detail-emoji">${product.emoji || '🕯️'}</div>`;
-        }
-
-        const modal = document.createElement('div');
-        modal.id = 'product-detail-modal';
-        modal.className = 'product-modal';
-        modal.innerHTML = `
-            <div class="product-modal-content">
-                <div class="product-modal-header">
-                    <h2>${this.escapeHtml(product.name)}</h2>
-                    <button class="close-modal" onclick="this.closest('.product-modal').remove()">×</button>
-                </div>
-                <div class="product-modal-body">
-                    <div class="product-detail-image">
-                        ${modalImageContent}
-                    </div>
-                    <div class="product-detail-info">
-                        <div class="product-detail-price">$${(product.price || 0).toFixed(2)}</div>
-                        <div class="product-detail-category">${this.adminPanel.formatCategory(product.category)}</div>
-                        <div class="product-detail-description">
-                            ${product.description || 'No description available.'}
-                        </div>
-                        ${!product.inStock ? '<div class="out-of-stock-large">Out of Stock</div>' : ''}
-                        
-                        <div class="product-options">
-                            ${sizesHTML}
-                            ${scentsHTML}
-                            ${colorsHTML}
-                            <div class="product-option">
-                                <label>Quantity:</label>
-                                <select id="product-quantity">
-                                    ${[1,2,3,4,5,6,7,8,9,10].map(i => `<option value="${i}">${i}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="product-actions">
-                            <button class="add-to-cart-large" onclick="productManager.addToCartFromModal('${product.id}')" ${!product.inStock ? 'disabled' : ''}>
-                                ${product.inStock ? 'Add to Cart' : 'Out of Stock'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Add modal styles if not present
-        if (!document.getElementById('product-modal-styles')) {
-            const modalStyles = document.createElement('style');
-            modalStyles.id = 'product-modal-styles';
-            modalStyles.textContent = `
-                .product-modal {
-                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0,0,0,0.8); z-index: 10002; display: flex;
-                    align-items: center; justify-content: center; backdrop-filter: blur(5px);
-                }
-                .product-modal-content {
-                    background: white; border-radius: 16px; max-width: 700px; width: 90%;
-                    max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-                }
-                .product-modal-header {
-                    display: flex; justify-content: space-between; align-items: center;
-                    padding: 20px 30px; border-bottom: 1px solid #eee; background: #8B7355;
-                    color: white; border-radius: 16px 16px 0 0;
-                }
-                .product-modal-header h2 { margin: 0; font-size: 24px; }
-                .close-modal {
-                    background: rgba(255,255,255,0.2); border: none; color: white;
-                    width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 20px;
-                }
-                .product-modal-body { padding: 30px; display: flex; gap: 30px; }
-                .product-detail-image { flex: 1; text-align: center; }
-                .product-detail-image img { width: 100%; max-width: 300px; border-radius: 12px; }
-                .product-detail-emoji { font-size: 120px; }
-                .product-detail-info { flex: 1; }
-                .product-detail-price { 
-                    font-size: 28px; font-weight: 700; color: #8B7355; margin-bottom: 10px; 
-                }
-                .product-detail-category {
-                    font-size: 14px; color: #999; text-transform: uppercase;
-                    letter-spacing: 0.5px; margin-bottom: 20px;
-                }
-                .product-detail-description {
-                    font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 25px;
-                }
-                .product-options { 
-                    border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 25px;
-                    background: #fafafa;
-                }
-                .product-option { 
-                    margin-bottom: 15px; display: flex; align-items: center; gap: 15px;
-                }
-                .product-option:last-child { margin-bottom: 0; }
-                .product-option label { font-weight: 600; min-width: 80px; }
-                .product-option select {
-                    flex: 1; padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px;
-                    font-size: 14px;
-                }
-                .product-option select:focus { outline: none; border-color: #8B7355; }
-                .add-to-cart-large {
-                    width: 100%; padding: 15px; background: #8B7355; color: white;
-                    border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-                    cursor: pointer; transition: background 0.2s;
-                }
-                .add-to-cart-large:hover:not(:disabled) { background: #6d5a42; }
-                .add-to-cart-large:disabled { background: #ccc; cursor: not-allowed; }
-                .out-of-stock-large {
-                    background: #ff4444; color: white; padding: 10px 20px; border-radius: 6px;
-                    text-align: center; font-weight: 600; margin-bottom: 20px;
-                }
-                @media (max-width: 768px) {
-                    .product-modal-body { flex-direction: column; padding: 20px; }
-                    .product-option { flex-direction: column; align-items: flex-start; gap: 8px; }
-                    .product-option label { min-width: auto; }
-                    .product-option select { width: 100%; }
-                }
-            `;
-            document.head.appendChild(modalStyles);
-        }
-
-        document.body.appendChild(modal);
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
-
-    addToCartFromModal(productId) {
-        const product = this.findProduct(productId);
-        if (!product) {
-            console.error('Product not found for cart:', productId);
-            return;
-        }
-
-        if (!product.inStock) {
-            alert('Sorry, this product is out of stock.');
-            return;
-        }
-
-        const quantity = parseInt(document.getElementById('product-quantity')?.value || '1');
-        const size = document.getElementById('product-size')?.value || product.sizes?.[0] || 'Standard';
-        const scent = document.getElementById('product-scent')?.value || null;
-        const color = document.getElementById('product-color')?.value || null;
-
-        const cartItem = {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: quantity,
-            size: size,
-            scent: scent,
-            color: color,
-            image: product.emoji || '🕯️',
-            isCustom: false
-        };
-
-        this.addToCartHandler(cartItem);
-
-        const modal = document.getElementById('product-detail-modal');
-        if (modal) modal.remove();
-
-        this.showAddToCartConfirmation(product.name, quantity);
     }
 
     addToCartHandler(item) {
@@ -1334,9 +1169,7 @@ class ProductManager {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingIndex = cart.findIndex(cartItem => 
             cartItem.id === item.id && 
-            cartItem.size === item.size && 
-            cartItem.scent === item.scent && 
-            cartItem.color === item.color
+            cartItem.size === item.size
         );
         
         if (existingIndex >= 0) {
@@ -1381,7 +1214,6 @@ class ProductManager {
     }
 }
 
-// Initialize for everyone (admins and non-admins)
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
