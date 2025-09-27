@@ -111,6 +111,8 @@ class AdminPanel {
             if (localProducts.length > 0) {
                 products = [...localProducts];
                 this.allProducts = products;
+                // Clear existing admin products before rendering to prevent duplicates
+                this.clearExistingAdminProducts(containers);
                 this.renderProductsToContainers(products, containers);
                 console.log('Local products displayed immediately:', localProducts.length);
             }
