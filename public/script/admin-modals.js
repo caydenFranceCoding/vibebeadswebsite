@@ -1,13 +1,15 @@
-// Enhanced Admin Panel Modal Extensions with Full E-commerce Features
-// File: public/script/admin-modals.js
-
 class AdminModals {
     constructor(adminPanel) {
         this.adminPanel = adminPanel;
         this.currentModal = null;
         this.selectedProductId = null;
+        
+        this.modalCache = new Map();
+        this.eventListeners = new Map();
+        this.debounceTimers = new Map();
+        
         this.setupModalStyles();
-        console.log('Admin Modals initialized');
+        console.log('Admin Modals initialized with performance optimizations');
     }
 
     setupModalStyles() {
@@ -19,95 +21,102 @@ class AdminModals {
                     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
                     background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
                     z-index: 10001; display: flex; align-items: center; justify-content: center;
-                    opacity: 0; visibility: hidden; transition: all 0.3s ease;
+                    opacity: 0; visibility: hidden; 
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    transform: translateZ(0);
                 }
                 .admin-modal.active { opacity: 1; visibility: visible; }
                 .admin-modal-content {
                     background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
                     border-radius: 16px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
                     max-width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;
-                    transform: translateY(50px); transition: transform 0.3s ease;
+                    transform: translateY(30px) translateZ(0); 
+                    transition: transform 0.2s ease;
+                    will-change: transform;
                 }
-                .admin-modal.active .admin-modal-content { transform: translateY(0); }
+                .admin-modal.active .admin-modal-content { transform: translateY(0) translateZ(0); }
                 .admin-modal-header {
                     display: flex; justify-content: space-between; align-items: center;
-                    padding: 24px 30px; background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
+                    padding: 20px 24px; background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
                     border-radius: 16px 16px 0 0; color: white;
                 }
                 .admin-modal-title {
-                    font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+                    font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;
                 }
                 .admin-modal-close {
                     background: rgba(255, 255, 255, 0.2); border: none; color: white;
-                    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-                    font-size: 18px; transition: background 0.2s ease;
+                    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+                    font-size: 16px; transition: background 0.15s ease;
                 }
                 .admin-modal-close:hover { background: rgba(255, 255, 255, 0.3); }
-                .admin-modal-body { padding: 30px; }
+                .admin-modal-body { padding: 24px; }
+                
                 .form-section { 
-                    background: #f8f6f3; border-radius: 8px; padding: 20px; margin-bottom: 20px;
-                    border: 1px solid #e8e8e8;
+                    background: #f8f6f3; border-radius: 8px; padding: 18px; margin-bottom: 18px;
+                    border: 1px solid #e8e8e8; transform: translateZ(0);
                 }
                 .form-section-title {
-                    font-size: 16px; font-weight: 600; color: #8B7355; margin-bottom: 15px;
+                    font-size: 14px; font-weight: 600; color: #8B7355; margin-bottom: 12px;
                     text-transform: uppercase; letter-spacing: 0.5px;
                 }
-                .form-group { margin-bottom: 20px; }
+                .form-group { margin-bottom: 16px; }
                 .form-group label {
-                    display: block; font-weight: 600; color: #2c2c2c; margin-bottom: 8px;
-                    font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+                    display: block; font-weight: 600; color: #2c2c2c; margin-bottom: 6px;
+                    font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
                 }
                 .form-group input, .form-group textarea, .form-group select {
-                    width: 100%; padding: 12px 16px; border: 2px solid #e8e8e8;
-                    border-radius: 8px; font-size: 14px; transition: border-color 0.3s ease;
+                    width: 100%; padding: 10px 14px; border: 2px solid #e8e8e8;
+                    border-radius: 6px; font-size: 14px; transition: border-color 0.2s ease;
                     font-family: 'Inter', sans-serif; box-sizing: border-box;
                 }
                 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-                    outline: none; border-color: #8B7355; box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+                    outline: none; border-color: #8B7355; box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.1);
                 }
-                .form-group textarea { min-height: 80px; resize: vertical; }
-                .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+                .form-group textarea { min-height: 70px; resize: vertical; }
+                .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
                 .form-row-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
                 .checkbox-group {
                     display: flex; align-items: center; gap: 8px; margin-top: 8px;
                 }
                 .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+                
                 .dynamic-list {
-                    border: 1px solid #e8e8e8; border-radius: 6px; padding: 15px;
-                    background: white; margin-top: 10px;
+                    border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px;
+                    background: white; margin-top: 8px; transform: translateZ(0);
                 }
                 .dynamic-list-item {
-                    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-                    padding: 8px; background: #fafafa; border-radius: 4px;
+                    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+                    padding: 6px; background: #fafafa; border-radius: 4px;
                 }
                 .dynamic-list-item:last-child { margin-bottom: 0; }
                 .dynamic-list-item input {
-                    flex: 1; margin: 0; padding: 6px 10px; font-size: 13px;
+                    flex: 1; margin: 0; padding: 5px 8px; font-size: 13px;
                 }
                 .dynamic-list-item button {
-                    background: #ff4444; color: white; border: none; padding: 6px 10px;
-                    border-radius: 4px; cursor: pointer; font-size: 12px;
+                    background: #ff4444; color: white; border: none; padding: 5px 8px;
+                    border-radius: 3px; cursor: pointer; font-size: 11px;
                 }
                 .dynamic-list-item button:hover { background: #cc3333; }
                 .add-item-btn {
-                    background: #8B7355; color: white; border: none; padding: 8px 15px;
-                    border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 10px;
+                    background: #8B7355; color: white; border: none; padding: 6px 12px;
+                    border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;
                 }
                 .add-item-btn:hover { background: #6d5a42; }
+                
                 .btn-group {
-                    display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;
-                    padding-top: 20px; border-top: 1px solid #e8e8e8;
+                    display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
+                    padding-top: 16px; border-top: 1px solid #e8e8e8;
                 }
                 .admin-btn-primary, .admin-btn-secondary, .admin-btn-danger {
-                    padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
-                    cursor: pointer; transition: all 0.3s ease; border: none;
+                    padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 500;
+                    cursor: pointer; transition: all 0.2s ease; border: none;
                     text-transform: uppercase; letter-spacing: 0.5px;
                 }
                 .admin-btn-primary {
                     background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%); color: white;
                 }
                 .admin-btn-primary:hover {
-                    transform: translateY(-2px); box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3);
+                    transform: translateY(-1px); box-shadow: 0 6px 16px rgba(139, 115, 85, 0.3);
                 }
                 .admin-btn-secondary {
                     background: transparent; color: #666; border: 2px solid #e8e8e8;
@@ -119,30 +128,54 @@ class AdminModals {
                     background: #dc3545; color: white;
                 }
                 .admin-btn-danger:hover {
-                    background: #c82333; transform: translateY(-2px);
+                    background: #c82333; transform: translateY(-1px);
                 }
+                
                 .product-preview {
-                    background: white; border: 1px solid #e8e8e8; border-radius: 12px;
-                    padding: 20px; margin: 20px 0; text-align: center;
+                    background: white; border: 1px solid #e8e8e8; border-radius: 10px;
+                    padding: 16px; margin: 16px 0; text-align: center; transform: translateZ(0);
                 }
-                .product-preview h4 { margin-bottom: 15px; color: #8B7355; }
                 .preview-card {
-                    max-width: 250px; margin: 0 auto; background: white;
-                    border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                    max-width: 200px; margin: 0 auto; background: white;
+                    border-radius: 6px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,0.1);
                 }
                 .preview-image {
-                    width: 100%; height: 150px; background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
-                    display: flex; align-items: center; justify-content: center; font-size: 3rem;
+                    width: 100%; height: 120px; background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
+                    display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
                 }
-                .preview-info { padding: 15px; }
-                .preview-title { font-weight: 600; margin-bottom: 5px; color: #2c2c2c; }
-                .preview-price { color: #8B7355; font-weight: 500; }
+                .preview-info { padding: 12px; }
+                .preview-title { font-weight: 600; margin-bottom: 4px; color: #2c2c2c; font-size: 14px; }
+                .preview-price { color: #8B7355; font-weight: 500; font-size: 16px; }
                 .preview-options {
-                    font-size: 12px; color: #666; margin-top: 8px; line-height: 1.4;
+                    font-size: 11px; color: #666; margin-top: 6px; line-height: 1.3;
                 }
+                
+                .product-grid {
+                    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                    gap: 12px; margin: 16px 0;
+                }
+                .product-item {
+                    background: white; border: 2px solid #e8e8e8; border-radius: 6px;
+                    padding: 12px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+                    transform: translateZ(0);
+                }
+                .product-item:hover, .product-item.selected {
+                    border-color: #8B7355; box-shadow: 0 3px 12px rgba(139, 115, 85, 0.2);
+                    transform: translateY(-1px) translateZ(0);
+                }
+                .product-item.selected {
+                    background: rgba(139, 115, 85, 0.05);
+                }
+                .product-item .product-emoji { font-size: 1.8rem; margin-bottom: 6px; }
+                .product-item .product-name { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+                .product-item .product-price { color: #8B7355; font-weight: 500; font-size: 14px; }
+                .product-item .product-options {
+                    font-size: 10px; color: #666; margin-top: 4px; line-height: 1.2;
+                }
+                
                 .success-message, .error-message, .info-message {
-                    padding: 12px 20px; border-radius: 8px; margin: 15px 0;
-                    display: flex; align-items: center; gap: 10px;
+                    padding: 10px 16px; border-radius: 6px; margin: 12px 0;
+                    display: flex; align-items: center; gap: 8px; font-size: 13px;
                 }
                 .success-message {
                     background: #d1fae5; border: 1px solid #a7f3d0; color: #065f46;
@@ -153,34 +186,10 @@ class AdminModals {
                 .info-message {
                     background: #dbeafe; border: 1px solid #bfdbfe; color: #1d4ed8;
                 }
-                .product-grid {
-                    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                    gap: 15px; margin: 20px 0;
-                }
-                .product-item {
-                    background: white; border: 2px solid #e8e8e8; border-radius: 8px;
-                    padding: 15px; cursor: pointer; transition: all 0.3s ease; text-align: center;
-                }
-                .product-item:hover, .product-item.selected {
-                    border-color: #8B7355; box-shadow: 0 4px 15px rgba(139, 115, 85, 0.2);
-                    transform: translateY(-2px);
-                }
-                .product-item.selected {
-                    background: rgba(139, 115, 85, 0.05);
-                }
-                .product-item .product-emoji { font-size: 2rem; margin-bottom: 8px; }
-                .product-item .product-name { font-weight: 600; margin-bottom: 5px; }
-                .product-item .product-price { color: #8B7355; font-weight: 500; }
-                .product-item .product-options {
-                    font-size: 11px; color: #666; margin-top: 5px; line-height: 1.3;
-                }
-                #edit-form { 
-                    background: #f8f6f3; border-radius: 8px; padding: 20px; margin-top: 20px; 
-                }
-                #edit-form h4 { margin-top: 0; color: #8B7355; }
+                
                 @media (max-width: 768px) {
-                    .admin-modal-content { margin: 20px; max-width: calc(100vw - 40px); }
-                    .admin-modal-body { padding: 20px; }
+                    .admin-modal-content { margin: 16px; max-width: calc(100vw - 32px); }
+                    .admin-modal-body { padding: 16px; }
                     .form-row, .form-row-three { grid-template-columns: 1fr; }
                     .btn-group { flex-direction: column; }
                     .product-grid { grid-template-columns: 1fr; }
@@ -192,6 +201,13 @@ class AdminModals {
     }
 
     createModal(id, title, content, actions = []) {
+        const cacheKey = `${id}-${title}`;
+        if (this.modalCache.has(cacheKey)) {
+            const modal = this.modalCache.get(cacheKey);
+            modal.querySelector('.admin-modal-body').innerHTML = content + this.createActionsHTML(actions);
+            return modal;
+        }
+
         const existingModal = document.getElementById(id);
         if (existingModal) existingModal.remove();
 
@@ -199,41 +215,50 @@ class AdminModals {
         modal.className = 'admin-modal';
         modal.id = id;
 
-        const actionsHTML = actions.map(action =>
-            `<button class="${action.class}" onclick="${action.onclick}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>`
-        ).join('');
+        const actionsHTML = this.createActionsHTML(actions);
 
         modal.innerHTML = `
             <div class="admin-modal-content">
                 <div class="admin-modal-header">
                     <div class="admin-modal-title">${title}</div>
-                    <button class="admin-modal-close" onclick="adminModals.closeModal('${id}')">×</button>
+                    <button class="admin-modal-close" data-close="${id}">×</button>
                 </div>
                 <div class="admin-modal-body">
                     ${content}
                     <div class="btn-group">
                         ${actionsHTML}
-                        <button class="admin-btn-secondary" onclick="adminModals.closeModal('${id}')">Cancel</button>
+                        <button class="admin-btn-secondary" data-close="${id}">Cancel</button>
                     </div>
                 </div>
             </div>
         `;
 
+        this.modalCache.set(cacheKey, modal);
+
         document.body.appendChild(modal);
         return modal;
+    }
+
+    createActionsHTML(actions) {
+        return actions.map(action =>
+            `<button class="${action.class}" onclick="${action.onclick}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>`
+        ).join('');
     }
 
     showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
             this.currentModal = modalId;
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
             
-            setTimeout(() => {
-                const firstInput = modal.querySelector('input, textarea, select');
-                if (firstInput) firstInput.focus();
-            }, 100);
+            requestAnimationFrame(() => {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    const firstInput = modal.querySelector('input, textarea, select');
+                    if (firstInput) firstInput.focus();
+                }, 50);
+            });
         }
     }
 
@@ -244,7 +269,7 @@ class AdminModals {
             document.body.style.overflow = '';
             setTimeout(() => {
                 modal.remove();
-            }, 300);
+            }, 200);
         }
         this.currentModal = null;
         this.selectedProductId = null;
@@ -402,7 +427,6 @@ class AdminModals {
             }
         });
 
-        // Setup dynamic list inputs
         ['sizes-list', 'scents-list', 'colors-list'].forEach(listId => {
             const list = document.getElementById(listId);
             if (list) {
@@ -467,7 +491,6 @@ class AdminModals {
         const scents = this.getListValues('scents-list');
         const colors = this.getListValues('colors-list');
 
-        // Validation
         if (!name) {
             this.showMessage(messageDiv, 'Please enter a product name', 'error');
             nameInput.focus();
@@ -550,7 +573,6 @@ class AdminModals {
         const emojiInput = document.getElementById('product-emoji');
         if (emojiInput) emojiInput.value = '🕯️';
 
-        // Clear dynamic lists
         ['sizes-list', 'scents-list', 'colors-list'].forEach(listId => {
             const list = document.getElementById(listId);
             if (list) {
@@ -763,7 +785,6 @@ class AdminModals {
             document.getElementById('edit-product-featured').checked = product.featured || false;
             document.getElementById('edit-product-in-stock').checked = product.inStock !== false;
             
-            // Populate dynamic lists
             this.populateList('edit-sizes-list', product.sizes || ['Standard']);
             this.populateList('edit-scents-list', product.scents || []);
             this.populateList('edit-colors-list', product.colors || []);
@@ -828,7 +849,6 @@ class AdminModals {
                 updatedAt: new Date().toISOString()
             };
 
-            // Use the adminPanel's updateProduct method
             const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
 
             if (success) {
@@ -869,7 +889,6 @@ class AdminModals {
         this.showMessage(messageDiv, 'Deleting product...', 'info');
 
         try {
-            // Use the adminPanel's deleteProduct method
             const success = await this.adminPanel.deleteProduct(this.selectedProductId);
 
             if (success) {
@@ -930,7 +949,6 @@ class AdminModals {
     }
 }
 
-// Enhanced initialization with better error handling
 document.addEventListener('DOMContentLoaded', () => {
     const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {

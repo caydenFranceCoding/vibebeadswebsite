@@ -1,6 +1,3 @@
-// Enhanced Admin Panel with Full E-commerce Integration
-// File: public/script/admin-panel.js
-
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
@@ -17,31 +14,42 @@ class AdminPanel {
         this.updateCheckInterval = null;
         this.allProducts = [];
         this.modals = null;
-
-        this.init();
+        
+        this.renderQueue = [];
+        this.isRendering = false;
+        this.cache = new Map();
+        this.debounceTimers = new Map();
+        
+        this.initializeAsync();
     }
 
-    getPageIdentifier() {
-        const path = window.location.pathname;
-        let page = path.split('/').pop() || 'index.html';
-        if (!page.includes('.')) page += '.html';
-        return page.replace('.html', '');
-    }
-
-    async init() {
+    async initializeAsync() {
         try {
-            await this.loadContentForAllUsers();
-            await this.loadProductsForAllUsers();
-            await this.checkIPAddress();
+            const [contentPromise, productsPromise, ipPromise] = [
+                this.loadContentForAllUsers(),
+                this.loadProductsForAllUsers(),
+                this.checkIPAddress()
+            ];
+
+            this.showCachedProducts();
+
+            await ipPromise;
             
             if (this.isAdmin) {
-                await this.checkServerConnection();
-                this.createAdminPanel();
-                this.setupEditableElements();
-                this.setupEventListeners();
-                this.setupModalIntegration();
-                console.log('Admin panel initialized for IP:', this.currentUserIP);
+                const adminPromises = [
+                    this.checkServerConnection(),
+                    this.createAdminPanel(),
+                    this.setupEditableElements(),
+                    this.setupEventListeners(),
+                    this.setupModalIntegration()
+                ];
+                
+                Promise.all(adminPromises).then(() => {
+                    console.log('Admin panel initialized for IP:', this.currentUserIP);
+                });
             }
+            
+            await Promise.all([contentPromise, productsPromise]);
             
             this.startUpdateChecking();
             
@@ -50,203 +58,230 @@ class AdminPanel {
         }
     }
 
-    setupModalIntegration() {
-        const checkModals = () => {
-            if (window.AdminModals) {
-                this.modals = new window.AdminModals(this);
-                console.log('Modal integration complete');
-                return true;
-            }
-            return false;
-        };
-
-        if (!checkModals()) {
-            let attempts = 0;
-            const maxAttempts = 5;
-            
-            const retryCheck = () => {
-                attempts++;
-                if (checkModals() || attempts >= maxAttempts) {
-                    if (attempts >= maxAttempts) {
-                        console.warn('Modal integration failed - using fallbacks');
-                    }
-                    return;
+    showCachedProducts() {
+        try {
+            const cachedProducts = localStorage.getItem('cached_all_products');
+            if (cachedProducts) {
+                const products = JSON.parse(cachedProducts);
+                if (products.length > 0) {
+                    const containers = this.getProductContainers();
+                    this.renderProductsToContainers(products, containers, true);
+                    console.log('Showing cached products for instant loading');
                 }
-                setTimeout(retryCheck, 500 * attempts);
-            };
-            
-            setTimeout(retryCheck, 100);
+            }
+        } catch (error) {
+            console.warn('Error loading cached products:', error);
         }
+    }
+
+    getProductContainers() {
+        const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
+        const regularContainers = document.querySelectorAll('.products-grid, .product-grid, .featured-products');
+        return [...dynamicContainers, ...regularContainers];
     }
 
     async loadContentForAllUsers() {
         const pageName = this.getPageIdentifier();
         
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/content`);
-            if (response.ok) {
-                const serverContent = await response.json();
-                if (serverContent[pageName]) {
-                    this.applyContentToPage(serverContent[pageName]);
-                    console.log('Content loaded from server for page:', pageName);
-                }
-            }
-        } catch (error) {
+            const serverPromise = fetch(`${this.apiBaseUrl}/api/content`, { 
+                timeout: 3000 
+            }).then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Server unavailable');
+            });
+
             const savedContent = localStorage.getItem(`admin_content_${pageName}`);
             if (savedContent) {
                 this.applyContentToPage(JSON.parse(savedContent));
                 console.log('Content loaded from localStorage');
             }
+
+            try {
+                const serverContent = await serverPromise;
+                if (serverContent[pageName]) {
+                    this.applyContentToPage(serverContent[pageName]);
+                    console.log('Content updated from server');
+                }
+            } catch (error) {
+                console.log('Using local content only');
+            }
+        } catch (error) {
+            console.warn('Content loading error:', error);
         }
     }
 
     async loadProductsForAllUsers() {
         console.log('Loading products for all users...');
         
-        const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
-        const regularContainers = document.querySelectorAll('.products-grid, .product-grid, .featured-products');
-        const allContainers = [...dynamicContainers, ...regularContainers];
+        const containers = this.getProductContainers();
         
-        if (allContainers.length === 0) {
+        if (containers.length === 0) {
             console.log('No product containers found');
             return;
         }
 
         let products = [];
-        let serverProducts = [];
-        let localProducts = [];
 
-        // Try to load from server first
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/products/list`);
+            const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            if (localProducts.length > 0) {
+                products = [...localProducts];
+                this.allProducts = products;
+                this.renderProductsToContainers(products, containers);
+                console.log('Local products displayed immediately:', localProducts.length);
+            }
+        } catch (error) {
+            console.warn('Error loading local products:', error);
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/products/list`, {
+                timeout: 5000
+            });
+            
             if (response.ok) {
-                serverProducts = await response.json();
-                console.log('Server products loaded:', serverProducts.length);
+                const serverProducts = await response.json();
+                if (serverProducts && serverProducts.length > 0) {
+                    const mergedProducts = this.mergeProducts(products, serverProducts);
+                    
+                    if (JSON.stringify(mergedProducts) !== JSON.stringify(products)) {
+                        this.allProducts = mergedProducts;
+                        this.renderProductsToContainers(mergedProducts, containers);
+                        localStorage.setItem('cached_all_products', JSON.stringify(mergedProducts));
+                        console.log('Products updated from server:', serverProducts.length);
+                    }
+                }
             }
         } catch (error) {
-            console.log('Server products unavailable:', error.message);
+            console.log('Server products unavailable, using local only:', error.message);
         }
-
-        // Load local products
-        try {
-            localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            console.log('Local products loaded:', localProducts.length);
-        } catch (error) {
-            console.log('Error loading local products:', error);
-        }
-
-        // Merge products, preferring server data but including local-only products
-        const mergedProducts = [...serverProducts];
-        
-        // Add local products that aren't on server
-        localProducts.forEach(localProduct => {
-            if (!serverProducts.find(sp => sp.id === localProduct.id)) {
-                mergedProducts.push(localProduct);
-            }
-        });
-
-        // Remove duplicates and ensure proper structure
-        products = mergedProducts.filter((product, index, self) => 
-            index === self.findIndex(p => p.id === product.id)
-        ).map(product => ({
-            ...product,
-            // Ensure all required fields exist
-            sizes: product.sizes || ['Standard'],
-            scents: product.scents || [],
-            colors: product.colors || [],
-            inStock: product.inStock !== false,
-            featured: product.featured || false
-        }));
-
-        this.allProducts = products;
-        
-        // Cache the merged products
-        if (products.length > 0) {
-            localStorage.setItem('cached_all_products', JSON.stringify(products));
-        }
-
-        this.renderProductsToContainers(products, allContainers);
     }
 
-    renderProductsToContainers(products, containers) {
-        console.log(`Rendering ${products.length} products to ${containers.length} containers`);
+    mergeProducts(localProducts, serverProducts) {
+        const merged = [...serverProducts];
         
-        containers.forEach((container, containerIndex) => {
-            if (products.length === 0) {
-                container.innerHTML = `
-                    <div class="no-products-message">
-                        <p>No products available yet</p>
-                        ${this.isAdmin ? '<p><small>Use the admin panel to add products</small></p>' : ''}
-                    </div>
-                `;
-                return;
+        localProducts.forEach(localProduct => {
+            if (!serverProducts.find(sp => sp.id === localProduct.id)) {
+                merged.push(localProduct);
             }
-
-            const productsHTML = products.map((product, productIndex) => 
-                this.createProductHTML(product, `${containerIndex}-${productIndex}`)
-            ).join('');
-            
-            container.innerHTML = productsHTML;
         });
 
-        console.log(`Successfully rendered products to ${containers.length} containers`);
+        return merged.filter((product, index, self) => 
+            index === self.findIndex(p => p.id === product.id)
+        );
+    }
+
+    renderProductsToContainers(products, containers, isCached = false) {
+        if (this.isRendering && !isCached) {
+            this.renderQueue.push({ products, containers });
+            return;
+        }
+
+        this.isRendering = true;
+        
+        requestAnimationFrame(() => {
+            try {
+                containers.forEach((container, containerIndex) => {
+                    if (products.length === 0) {
+                        container.innerHTML = this.createNoProductsMessage();
+                        return;
+                    }
+
+                    const containerFragment = document.createDocumentFragment();
+                    
+                    products.forEach((product, productIndex) => {
+                        const productElement = this.createProductElement(product, `${containerIndex}-${productIndex}`);
+                        containerFragment.appendChild(productElement);
+                    });
+                    
+                    container.innerHTML = '';
+                    container.appendChild(containerFragment);
+                });
+
+                console.log(`Rendered ${products.length} products to ${containers.length} containers`);
+                
+                this.isRendering = false;
+                if (this.renderQueue.length > 0) {
+                    const next = this.renderQueue.shift();
+                    this.renderProductsToContainers(next.products, next.containers);
+                }
+            } catch (error) {
+                console.error('Rendering error:', error);
+                this.isRendering = false;
+            }
+        });
+    }
+
+    createProductElement(product, uniqueId) {
+        const div = document.createElement('div');
+        div.className = 'product-card fade-in';
+        div.setAttribute('data-product-id', product.id);
+        div.setAttribute('data-unique-id', uniqueId);
+        div.onclick = () => window.productManager?.openProductDetail(product.id);
+        
+        div.innerHTML = this.createProductHTML(product, uniqueId);
+        return div;
+    }
+
+    createNoProductsMessage() {
+        return `
+            <div class="no-products-message">
+                <p>No products available yet</p>
+                ${this.isAdmin ? '<p><small>Use the admin panel to add products</small></p>' : ''}
+            </div>
+        `;
     }
 
     createProductHTML(product, uniqueId) {
+        const cacheKey = `${product.id}-${product.lastModified || 'static'}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
         const productId = this.escapeHtml(product.id);
         const productName = this.escapeHtml(product.name);
         const productPrice = (product.price || 0).toFixed(2);
         const productEmoji = this.escapeHtml(product.emoji || '🕯️');
         const productDescription = this.escapeHtml(product.description || '');
 
-        return `
-            <div class="product-card fade-in" 
-                 data-product-id="${productId}" 
-                 data-unique-id="${uniqueId}"
-                 onclick="productManager.openProductDetail('${productId}')">
+        const html = `
+            <div class="product-image">
+                ${product.imageUrl ? 
+                    `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">` :
+                    `<div class="product-emoji">${productEmoji}</div>`
+                }
+            </div>
+            
+            <div class="product-info">
+                <h3 class="product-title">${productName}</h3>
+                <p class="product-description">${productDescription}</p>
+                <div class="product-price">$${productPrice}</div>
+                <div class="product-category">${this.formatCategory(product.category)}</div>
                 
-                <div class="product-image">
-                    ${product.imageUrl ? 
-                        `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">` :
-                        `<div class="product-emoji">${productEmoji}</div>`
-                    }
-                </div>
+                ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
                 
-                <div class="product-info">
-                    <h3 class="product-title">${productName}</h3>
-                    <p class="product-description">${productDescription}</p>
-                    <div class="product-price">$${productPrice}</div>
-                    <div class="product-category">${this.formatCategory(product.category)}</div>
-                    
-                    ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-                    ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
-                    
-                    <button class="add-to-cart-btn quick-add" 
-                            onclick="event.stopPropagation(); productManager.quickAddToCart('${productId}')">
-                        Quick Add
-                    </button>
-                    
-                    <button class="view-details-btn" 
-                            onclick="event.stopPropagation(); productManager.openProductDetail('${productId}')">
-                        View Details
-                    </button>
-                </div>
+                <button class="add-to-cart-btn quick-add" 
+                        onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">
+                    Quick Add
+                </button>
+                
+                <button class="view-details-btn" 
+                        onclick="event.stopPropagation(); window.productManager?.openProductDetail('${productId}')">
+                    View Details
+                </button>
             </div>
         `;
-    }
 
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+        this.cache.set(cacheKey, html);
+        
+        if (this.cache.size > 100) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
 
-    formatCategory(category) {
-        if (!category) return 'General';
-        return category.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
+        return html;
     }
 
     async checkIPAddress() {
@@ -257,14 +292,21 @@ class AdminPanel {
                 'https://ipinfo.io/json'
             ];
 
-            for (const source of ipSources) {
+            const promises = ipSources.map(async (source) => {
                 try {
-                    const response = await fetch(source);
+                    const response = await fetch(source, { timeout: 2000 });
                     const data = await response.json();
-                    this.currentUserIP = data.ip || data.query;
-                    if (this.currentUserIP) break;
-                } catch (err) {
-                    continue;
+                    return data.ip || data.query;
+                } catch {
+                    return null;
+                }
+            });
+
+            const results = await Promise.allSettled(promises);
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value) {
+                    this.currentUserIP = result.value;
+                    break;
                 }
             }
 
@@ -281,11 +323,13 @@ class AdminPanel {
 
             if (this.apiBaseUrl && this.currentUserIP) {
                 try {
-                    const response = await fetch(`${this.apiBaseUrl}/api/admin/status`);
+                    const response = await fetch(`${this.apiBaseUrl}/api/admin/status`, {
+                        timeout: 3000
+                    });
                     const result = await response.json();
                     this.isAdmin = response.ok && result.authorized;
                 } catch (error) {
-                    console.warn('Backend admin verification failed:', error);
+                    console.warn('Backend admin verification failed, using local check');
                 }
             }
 
@@ -294,6 +338,84 @@ class AdminPanel {
             console.error('IP check failed:', error);
             this.isAdmin = false;
         }
+    }
+
+    debounce(func, wait, key) {
+        if (this.debounceTimers.has(key)) {
+            clearTimeout(this.debounceTimers.get(key));
+        }
+        
+        const timer = setTimeout(() => {
+            this.debounceTimers.delete(key);
+            func();
+        }, wait);
+        
+        this.debounceTimers.set(key, timer);
+    }
+
+    async startUpdateChecking() {
+        let interval = 30000;
+        const maxInterval = 300000;
+        
+        const checkUpdates = async () => {
+            try {
+                const success = await this.checkForUpdates();
+                if (success) {
+                    interval = 30000;
+                } else {
+                    interval = Math.min(interval * 1.5, maxInterval);
+                }
+            } catch (error) {
+                interval = Math.min(interval * 2, maxInterval);
+                console.warn('Update check failed, increasing interval to:', interval);
+            }
+            
+            this.updateCheckInterval = setTimeout(checkUpdates, interval);
+        };
+
+        checkUpdates();
+    }
+
+    async checkForUpdates() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/timestamps`, {
+                timeout: 5000
+            });
+            
+            if (!response.ok) return false;
+
+            const timestamps = await response.json();
+            
+            if (timestamps.content && timestamps.content !== this.lastContentUpdate) {
+                this.lastContentUpdate = timestamps.content;
+                this.debounce(() => this.loadContentForAllUsers(), 1000, 'content');
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Content updated!');
+                }
+            }
+
+            if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
+                this.lastProductUpdate = timestamps.products;
+                this.debounce(() => this.loadProductsForAllUsers(), 1000, 'products');
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Products updated!');
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Update check failed:', error);
+            return false;
+        }
+    }
+
+    getPageIdentifier() {
+        const path = window.location.pathname;
+        let page = path.split('/').pop() || 'index.html';
+        if (!page.includes('.')) page += '.html';
+        return page.replace('.html', '');
     }
 
     async checkServerConnection() {
@@ -577,6 +699,35 @@ class AdminPanel {
         document.getElementById('editable-count').textContent = this.editableElements.size;
     }
 
+    setupModalIntegration() {
+        const checkModals = () => {
+            if (window.AdminModals) {
+                this.modals = new window.AdminModals(this);
+                console.log('Modal integration complete');
+                return true;
+            }
+            return false;
+        };
+
+        if (!checkModals()) {
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            const retryCheck = () => {
+                attempts++;
+                if (checkModals() || attempts >= maxAttempts) {
+                    if (attempts >= maxAttempts) {
+                        console.warn('Modal integration failed - using fallbacks');
+                    }
+                    return;
+                }
+                setTimeout(retryCheck, 500 * attempts);
+            };
+            
+            setTimeout(retryCheck, 100);
+        }
+    }
+
     toggleEditMode() {
         if (!this.isAdmin) return;
 
@@ -723,12 +874,10 @@ class AdminPanel {
         if (!this.isAdmin) return false;
 
         try {
-            // Save to localStorage first
             const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             existingProducts.push(productData);
             localStorage.setItem('admin_products', JSON.stringify(existingProducts));
             
-            // Then try to save to server
             if (this.apiBaseUrl) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/products`, {
@@ -744,7 +893,6 @@ class AdminPanel {
                     
                     if (!response.ok) {
                         console.error('Server save failed:', result.error);
-                        // Continue with local save only
                     } else {
                         console.log('Product saved to server successfully');
                     }
@@ -753,7 +901,6 @@ class AdminPanel {
                 }
             }
             
-            // Reload products to refresh UI
             await this.loadProductsForAllUsers();
             this.updateAdminPanelInfo();
             
@@ -769,7 +916,6 @@ class AdminPanel {
         if (!this.isAdmin) return false;
 
         try {
-            // Update localStorage
             const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             const productIndex = existingProducts.findIndex(p => p.id === productId);
             
@@ -785,7 +931,6 @@ class AdminPanel {
             
             localStorage.setItem('admin_products', JSON.stringify(existingProducts));
             
-            // Try to update on server
             if (this.apiBaseUrl) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
@@ -806,7 +951,6 @@ class AdminPanel {
                 }
             }
             
-            // Reload products to refresh UI
             await this.loadProductsForAllUsers();
             this.updateAdminPanelInfo();
             
@@ -818,17 +962,14 @@ class AdminPanel {
         }
     }
 
-    // Add deleteProduct method to AdminPanel class
     async deleteProduct(productId) {
         if (!this.isAdmin) return false;
 
         try {
-            // Remove from localStorage
             const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             const filteredProducts = existingProducts.filter(p => p.id !== productId);
             localStorage.setItem('admin_products', JSON.stringify(filteredProducts));
             
-            // Try to delete from server
             if (this.apiBaseUrl) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
@@ -847,7 +988,6 @@ class AdminPanel {
                 }
             }
             
-            // Reload products to refresh UI
             await this.loadProductsForAllUsers();
             this.updateAdminPanelInfo();
             
@@ -937,44 +1077,6 @@ class AdminPanel {
         });
     }
 
-    async startUpdateChecking() {
-        this.updateCheckInterval = setInterval(() => {
-            this.checkForUpdates();
-        }, 30000);
-
-        this.checkForUpdates();
-    }
-
-    async checkForUpdates() {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/api/timestamps`);
-            if (!response.ok) return;
-
-            const timestamps = await response.json();
-            
-            if (timestamps.content && timestamps.content !== this.lastContentUpdate) {
-                this.lastContentUpdate = timestamps.content;
-                await this.loadContentForAllUsers();
-                
-                if (!this.isAdmin) {
-                    this.showUpdateNotification('Content updated!');
-                }
-            }
-
-            if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
-                this.lastProductUpdate = timestamps.products;
-                await this.loadProductsForAllUsers();
-                
-                if (!this.isAdmin) {
-                    this.showUpdateNotification('Products updated!');
-                }
-            }
-
-        } catch (error) {
-            console.error('Update check failed:', error);
-        }
-    }
-
     showUpdateNotification(message) {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -985,26 +1087,39 @@ class AdminPanel {
         `;
         notification.textContent = message;
 
-        const style = document.createElement('style');
-        style.textContent = '@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }';
-        document.head.appendChild(style);
-
         document.body.appendChild(notification);
 
         setTimeout(() => {
             notification.remove();
-            style.remove();
         }, 3000);
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    formatCategory(category) {
+        if (!category) return 'General';
+        return category.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
     }
 
     destroy() {
         if (this.updateCheckInterval) {
-            clearInterval(this.updateCheckInterval);
+            clearTimeout(this.updateCheckInterval);
         }
+        
+        this.debounceTimers.forEach(timer => clearTimeout(timer));
+        this.debounceTimers.clear();
+        
+        this.cache.clear();
     }
 }
 
-// Enhanced Product Manager for E-commerce Features
 class ProductManager {
     constructor(adminPanel) {
         this.adminPanel = adminPanel;
@@ -1032,7 +1147,6 @@ class ProductManager {
             return;
         }
 
-        // Quick add with default options
         const cartItem = {
             id: product.id,
             name: product.name,
@@ -1278,7 +1392,6 @@ class ProductManager {
         localStorage.setItem('cart', JSON.stringify(cart));
         console.log('Added to fallback cart:', item);
         
-        // Update cart UI if available
         if (window.updateCartUI) {
             window.updateCartUI();
         }
@@ -1312,21 +1425,20 @@ class ProductManager {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.adminPanel = new AdminPanel();
+            window.productManager = new ProductManager(window.adminPanel);
+        }, 100);
+    });
+} else {
     setTimeout(() => {
         window.adminPanel = new AdminPanel();
         window.productManager = new ProductManager(window.adminPanel);
-        
-        window.addEventListener('beforeunload', () => {
-            if (window.adminPanel) {
-                window.adminPanel.destroy();
-            }
-        });
-    }, 1000);
-});
+    }, 100);
+}
 
-// Legacy support
 window.addQuickProduct = function(id, name, price, emoji) {
     if (window.productManager) {
         window.productManager.quickAddToCart(id);
