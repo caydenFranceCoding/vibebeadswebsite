@@ -264,17 +264,20 @@ class AdminPanel {
         const productEmoji = this.escapeHtml(product.emoji || '🕯️');
         const productDescription = this.escapeHtml(product.description || '');
 
-        // Match the exact structure of your static products
+        let imageContent;
+        if (product.imageUrl && product.imageUrl.trim()) {
+            imageContent = `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">`;
+        } else {
+            imageContent = `<div class="product-emoji">${productEmoji}</div>`;
+        }
+
         const html = `
             <div class="product-image">
-                ${product.imageUrl ? 
-                    `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">` :
-                    productEmoji
-                }
+                ${imageContent}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${productName}</h3>
-                <p class="product-price">From ${productPrice} USD</p>
+                <p class="product-price">From $${productPrice} USD</p>
                 <p class="product-description">${productDescription}</p>
                 <button class="add-to-cart-btn" onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">Add to Cart</button>
             </div>
@@ -1147,6 +1150,14 @@ class ProductManager {
             </div>
         ` : '';
 
+        // Fixed modal image display
+        let modalImageContent;
+        if (product.imageUrl && product.imageUrl.trim()) {
+            modalImageContent = `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\"product-detail-emoji\\">${product.emoji || '🕯️'}</div>'">`;
+        } else {
+            modalImageContent = `<div class="product-detail-emoji">${product.emoji || '🕯️'}</div>`;
+        }
+
         const modal = document.createElement('div');
         modal.id = 'product-detail-modal';
         modal.className = 'product-modal';
@@ -1158,13 +1169,10 @@ class ProductManager {
                 </div>
                 <div class="product-modal-body">
                     <div class="product-detail-image">
-                        ${product.imageUrl ? 
-                            `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}">` :
-                            `<div class="product-detail-emoji">${product.emoji || '🕯️'}</div>`
-                        }
+                        ${modalImageContent}
                     </div>
                     <div class="product-detail-info">
-                        <div class="product-detail-price">${(product.price || 0).toFixed(2)}</div>
+                        <div class="product-detail-price">$${(product.price || 0).toFixed(2)}</div>
                         <div class="product-detail-category">${this.adminPanel.formatCategory(product.category)}</div>
                         <div class="product-detail-description">
                             ${product.description || 'No description available.'}
@@ -1193,6 +1201,7 @@ class ProductManager {
             </div>
         `;
 
+        // Add modal styles if not present
         if (!document.getElementById('product-modal-styles')) {
             const modalStyles = document.createElement('style');
             modalStyles.id = 'product-modal-styles';
