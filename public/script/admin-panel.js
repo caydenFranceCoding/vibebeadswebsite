@@ -25,15 +25,14 @@ class AdminPanel {
 
     async initializeAsync() {
         try {
-            const [contentPromise, productsPromise, ipPromise] = [
-                this.loadContentForAllUsers(),
-                this.loadProductsForAllUsers(),
-                this.checkIPAddress()
-            ];
-
-            this.showCachedProducts();
-
-            await ipPromise;
+            // Load products first for all users (including non-admins)
+            await this.loadProductsForAllUsers();
+            
+            // Load content for all users
+            await this.loadContentForAllUsers();
+            
+            // Check IP address for admin features
+            await this.checkIPAddress();
             
             if (this.isAdmin) {
                 const adminPromises = [
@@ -49,28 +48,10 @@ class AdminPanel {
                 });
             }
             
-            await Promise.all([contentPromise, productsPromise]);
-            
             this.startUpdateChecking();
             
         } catch (error) {
             console.error('Initialization failed:', error);
-        }
-    }
-
-    showCachedProducts() {
-        try {
-            const cachedProducts = localStorage.getItem('cached_all_products');
-            if (cachedProducts) {
-                const products = JSON.parse(cachedProducts);
-                if (products.length > 0) {
-                    const containers = this.getProductContainers();
-                    this.renderProductsToContainers(products, containers, true);
-                    console.log('Showing cached products for instant loading');
-                }
-            }
-        } catch (error) {
-            console.warn('Error loading cached products:', error);
         }
     }
 
@@ -101,6 +82,7 @@ class AdminPanel {
                 const serverContent = await serverPromise;
                 if (serverContent[pageName]) {
                     this.applyContentToPage(serverContent[pageName]);
+                    localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(serverContent[pageName]));
                     console.log('Content updated from server');
                 }
             } catch (error) {
@@ -123,6 +105,7 @@ class AdminPanel {
 
         let products = [];
 
+        // Load from localStorage first
         try {
             const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
             if (localProducts.length > 0) {
@@ -135,6 +118,7 @@ class AdminPanel {
             console.warn('Error loading local products:', error);
         }
 
+        // Then try to get from server
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/products/list`, {
                 timeout: 5000
@@ -147,8 +131,10 @@ class AdminPanel {
                     
                     if (JSON.stringify(mergedProducts) !== JSON.stringify(products)) {
                         this.allProducts = mergedProducts;
+                        // Clear existing admin products before re-rendering
+                        this.clearExistingAdminProducts(containers);
                         this.renderProductsToContainers(mergedProducts, containers);
-                        localStorage.setItem('cached_all_products', JSON.stringify(mergedProducts));
+                        localStorage.setItem('admin_products', JSON.stringify(mergedProducts));
                         console.log('Products updated from server:', serverProducts.length);
                     }
                 }
@@ -156,6 +142,13 @@ class AdminPanel {
         } catch (error) {
             console.log('Server products unavailable, using local only:', error.message);
         }
+    }
+
+    clearExistingAdminProducts(containers) {
+        containers.forEach(container => {
+            const adminProducts = container.querySelectorAll('[data-admin-product="true"]');
+            adminProducts.forEach(product => product.remove());
+        });
     }
 
     mergeProducts(localProducts, serverProducts) {
@@ -195,43 +188,21 @@ class AdminPanel {
                         );
                     }
                     
-                    // Check if container already has static products
-                    const existingStaticProducts = container.querySelectorAll('.product-card:not([data-admin-product])');
-                    const hasStaticProducts = existingStaticProducts.length > 0;
-                    
-                    if (filteredProducts.length === 0 && !hasStaticProducts) {
-                        if (!hasStaticProducts) {
-                            container.innerHTML = this.createNoProductsMessage();
-                        }
-                        return;
+                    if (filteredProducts.length === 0) {
+                        return; // Don't show "no products" message if there are static products
                     }
 
-                    // Only add admin products to containers with static products
-                    if (hasStaticProducts && filteredProducts.length > 0) {
-                        const containerFragment = document.createDocumentFragment();
-                        
-                        filteredProducts.forEach((product, productIndex) => {
-                            const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
-                            productElement.setAttribute('data-admin-product', 'true');
-                            containerFragment.appendChild(productElement);
-                        });
-                        
-                        // Append admin products after static products
-                        container.appendChild(containerFragment);
-                    } 
-                    // For containers without static products, show all filtered products
-                    else if (!hasStaticProducts) {
-                        const containerFragment = document.createDocumentFragment();
-                        
-                        filteredProducts.forEach((product, productIndex) => {
-                            const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
-                            productElement.setAttribute('data-admin-product', 'true');
-                            containerFragment.appendChild(productElement);
-                        });
-                        
-                        container.innerHTML = '';
-                        container.appendChild(containerFragment);
-                    }
+                    // Always append admin products to containers
+                    const containerFragment = document.createDocumentFragment();
+                    
+                    filteredProducts.forEach((product, productIndex) => {
+                        const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
+                        productElement.setAttribute('data-admin-product', 'true');
+                        containerFragment.appendChild(productElement);
+                    });
+                    
+                    // Append admin products to the container
+                    container.appendChild(containerFragment);
                 });
 
                 console.log(`Rendered admin products to ${containers.length} containers`);
@@ -273,15 +244,6 @@ class AdminPanel {
         
         div.innerHTML = this.createProductHTML(product, uniqueId);
         return div;
-    }
-
-    createNoProductsMessage() {
-        return `
-            <div class="no-products-message">
-                <p>No products available yet</p>
-                ${this.isAdmin ? '<p><small>Use the admin panel to add products</small></p>' : ''}
-            </div>
-        `;
     }
 
     createProductHTML(product, uniqueId) {
@@ -390,15 +352,6 @@ class AdminPanel {
             this.isAdmin = false;
         }
     }
-
-    // Rest of the methods remain the same...
-    // (Including debounce, startUpdateChecking, checkForUpdates, getPageIdentifier, 
-    // checkServerConnection, createAdminPanel, addAdminStyles, setupEventListeners, 
-    // setupEditableElements, setupModalIntegration, toggleEditMode, exitEditMode, 
-    // editElement, saveChanges, resetContent, showAddProductModal, showEditProductsModal, 
-    // addProduct, updateProduct, deleteProduct, updateAdminPanelInfo, createProductWithPrompts, 
-    // generateProductId, applyContentToPage, showUpdateNotification, escapeHtml, 
-    // formatCategory, destroy)
 
     debounce(func, wait, key) {
         if (this.debounceTimers.has(key)) {
@@ -559,8 +512,10 @@ class AdminPanel {
     }
 
     addAdminStyles() {
+        if (document.getElementById('admin-panel-styles')) return;
+        
         const styles = `
-            <style>
+            <style id="admin-panel-styles">
                 .admin-panel {
                     position: fixed; top: 20px; right: 20px; width: 320px;
                     background: #1a1a1a; color: white; border-radius: 12px;
@@ -619,78 +574,6 @@ class AdminPanel {
                 .editable-element {
                     position: relative; cursor: pointer !important;
                     outline: 2px dashed #8B7355 !important; background: rgba(139,115,85,0.1) !important;
-                }
-                .product-card {
-                    background: white; border: 1px solid #e8e8e8; border-radius: 12px;
-                    padding: 16px; text-align: center; transition: all 0.3s ease;
-                    position: relative; margin-bottom: 16px; cursor: pointer;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-                .product-card:hover {
-                    transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-                }
-                .product-emoji {
-                    font-size: 48px; margin-bottom: 12px; display: block;
-                }
-                .product-image img {
-                    width: 100%; height: 200px; object-fit: cover; border-radius: 8px;
-                    margin-bottom: 12px;
-                }
-                .product-info { text-align: left; }
-                .product-title { 
-                    font-size: 18px; font-weight: 600; margin: 0 0 8px 0; 
-                    color: #2c2c2c; text-align: center;
-                }
-                .product-description { 
-                    font-size: 14px; color: #666; margin: 0 0 12px 0; 
-                    line-height: 1.4; text-align: center;
-                }
-                .product-price { 
-                    font-size: 20px; font-weight: 700; color: #8B7355; 
-                    text-align: center; margin: 12px 0;
-                }
-                .product-category {
-                    font-size: 12px; color: #999; text-transform: uppercase;
-                    letter-spacing: 0.5px; text-align: center; margin-bottom: 15px;
-                }
-                .add-to-cart-btn, .view-details-btn {
-                    width: 48%; padding: 10px; border: none; border-radius: 6px;
-                    font-size: 12px; font-weight: 600; cursor: pointer;
-                    transition: all 0.2s ease; margin: 2px 1%;
-                }
-                .add-to-cart-btn {
-                    background: #8B7355; color: white;
-                }
-                .add-to-cart-btn:hover {
-                    background: #6d5a42; transform: translateY(-1px);
-                }
-                .view-details-btn {
-                    background: transparent; color: #8B7355; border: 2px solid #8B7355;
-                }
-                .view-details-btn:hover {
-                    background: #8B7355; color: white;
-                }
-                .out-of-stock {
-                    background: #ff4444; color: white; padding: 4px 8px;
-                    border-radius: 4px; font-size: 12px; margin: 8px auto;
-                    display: inline-block;
-                }
-                .featured-badge {
-                    position: absolute; top: 8px; right: 8px;
-                    background: #8B7355; color: white; padding: 4px 8px;
-                    border-radius: 4px; font-size: 10px; font-weight: 600;
-                }
-                .no-products-message {
-                    text-align: center; padding: 40px 20px; color: #666;
-                    border: 2px dashed #e0e0e0; border-radius: 12px;
-                    background: #fafafa;
-                }
-                .fade-in {
-                    animation: fadeIn 0.5s ease-in-out;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
                 }
             </style>
         `;
@@ -756,7 +639,10 @@ class AdminPanel {
             });
         });
 
-        document.getElementById('editable-count').textContent = this.editableElements.size;
+        const editableCountElement = document.getElementById('editable-count');
+        if (editableCountElement) {
+            editableCountElement.textContent = this.editableElements.size;
+        }
     }
 
     setupModalIntegration() {
@@ -1178,4 +1064,23 @@ class AdminPanel {
         
         this.cache.clear();
     }
+}
+
+// Initialize for everyone (admins and non-admins)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.adminPanel = new AdminPanel();
+            if (window.adminPanel.allProducts) {
+                window.productManager = new ProductManager(window.adminPanel);
+            }
+        }, 100);
+    });
+} else {
+    setTimeout(() => {
+        window.adminPanel = new AdminPanel();
+        if (window.adminPanel.allProducts) {
+            window.productManager = new ProductManager(window.adminPanel);
+        }
+    }, 100);
 }
