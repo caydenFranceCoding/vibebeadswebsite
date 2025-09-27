@@ -227,7 +227,17 @@ class AdminPanel {
         div.className = 'product-card';
         div.setAttribute('data-product-id', product.id);
         div.setAttribute('data-unique-id', uniqueId);
-        div.onclick = () => this.openProductModal(product);
+        
+        const isShopAllPage = window.location.pathname.includes('shop-all') || 
+                            window.location.pathname.includes('shop_all') ||
+                            document.title.toLowerCase().includes('shop all') ||
+                            document.querySelector('body').classList.contains('shop-all-page');
+        
+        if (isShopAllPage) {
+            div.onclick = () => window.productManager?.quickAddToCart(product.id);
+        } else {
+            div.onclick = () => this.openProductModal(product);
+        }
         
         div.innerHTML = this.createProductHTML(product, uniqueId);
         div.style.opacity = '1';
@@ -256,6 +266,15 @@ class AdminPanel {
             imageContent = product.emoji || '🕯️';
         }
 
+        const isShopAllPage = window.location.pathname.includes('shop-all') || 
+                            window.location.pathname.includes('shop_all') ||
+                            document.title.toLowerCase().includes('shop all') ||
+                            document.querySelector('body').classList.contains('shop-all-page');
+
+        const buttonOnClick = isShopAllPage 
+            ? `event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')`
+            : `event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')`;
+
         const html = `
             <div class="product-image">
                 ${imageContent}
@@ -264,7 +283,7 @@ class AdminPanel {
                 <h3 class="product-title">${productName}</h3>
                 <p class="product-price">From $${basePrice.toFixed(2)} USD</p>
                 <p class="product-description">${productDescription}</p>
-                <button class="add-to-cart-btn" onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">Add to Cart</button>
+                <button class="add-to-cart-btn" onclick="${buttonOnClick}">Add to Cart</button>
             </div>
             ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
             ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
