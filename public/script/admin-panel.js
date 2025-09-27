@@ -1,7 +1,7 @@
 class AdminPanel {
     constructor() {
         this.allowedIPs = [
-            '104.28.33.73', '172.59.196.158', '104.179.159.180', '172.58.183.6', '172.59.195.98'
+            '172.59.196.158', '104.179.159.180', '172.58.183.6', '172.59.195.98'
         ];
 
         this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
