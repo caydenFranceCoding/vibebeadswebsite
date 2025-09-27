@@ -80,6 +80,56 @@ class AdminModals {
                 }
                 .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
                 
+                /* Image Upload Styles */
+                .image-upload-container {
+                    border: 2px dashed #8B7355; border-radius: 8px; padding: 20px;
+                    text-align: center; background: white; transition: all 0.2s ease;
+                    cursor: pointer; position: relative; min-height: 120px;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                }
+                .image-upload-container:hover {
+                    border-color: #6d5a42; background: #fafafa;
+                }
+                .image-upload-container.dragover {
+                    border-color: #6d5a42; background: #f0f8e8;
+                }
+                .image-upload-input {
+                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                    opacity: 0; cursor: pointer; z-index: 2;
+                }
+                .image-upload-preview {
+                    max-width: 200px; max-height: 200px; border-radius: 8px;
+                    margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
+                .image-upload-text {
+                    color: #8B7355; font-weight: 500; margin: 8px 0;
+                }
+                .image-upload-hint {
+                    color: #666; font-size: 12px; margin-top: 4px;
+                }
+                .image-remove-btn {
+                    background: #ff4444; color: white; border: none; padding: 4px 8px;
+                    border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 8px;
+                }
+                .image-remove-btn:hover { background: #cc3333; }
+                .image-fallback-row {
+                    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+                    margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8e8e8;
+                }
+                .image-fallback-label {
+                    font-size: 12px; color: #666; margin-bottom: 4px;
+                }
+                .image-or-text {
+                    text-align: center; color: #999; font-size: 12px; margin: 8px 0;
+                    position: relative;
+                }
+                .image-or-text::before, .image-or-text::after {
+                    content: ''; position: absolute; top: 50%; width: 30%; height: 1px;
+                    background: #ddd;
+                }
+                .image-or-text::before { left: 0; }
+                .image-or-text::after { right: 0; }
+                
                 .dynamic-list {
                     border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px;
                     background: white; margin-top: 8px; transform: translateZ(0);
@@ -142,6 +192,10 @@ class AdminModals {
                 .preview-image {
                     width: 100%; height: 120px; background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
                     display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+                    overflow: hidden;
+                }
+                .preview-image img {
+                    width: 100%; height: 100%; object-fit: cover;
                 }
                 .preview-info { padding: 12px; }
                 .preview-title { font-weight: 600; margin-bottom: 4px; color: #2c2c2c; font-size: 14px; }
@@ -167,6 +221,14 @@ class AdminModals {
                     background: rgba(139, 115, 85, 0.05);
                 }
                 .product-item .product-emoji { font-size: 1.8rem; margin-bottom: 6px; }
+                .product-item .product-image {
+                    width: 80px; height: 80px; margin: 0 auto 8px auto; border-radius: 6px;
+                    overflow: hidden; background: #f8f6f3; display: flex; align-items: center;
+                    justify-content: center;
+                }
+                .product-item .product-image img {
+                    width: 100%; height: 100%; object-fit: cover;
+                }
                 .product-item .product-name { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
                 .product-item .product-price { color: #8B7355; font-weight: 500; font-size: 14px; }
                 .product-item .product-options {
@@ -193,6 +255,7 @@ class AdminModals {
                     .form-row, .form-row-three { grid-template-columns: 1fr; }
                     .btn-group { flex-direction: column; }
                     .product-grid { grid-template-columns: 1fr; }
+                    .image-fallback-row { grid-template-columns: 1fr; }
                 }
             </style>
         `;
@@ -310,9 +373,26 @@ class AdminModals {
                             <option value="accessories">Accessories</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Emoji/Icon</label>
-                        <input type="text" id="product-emoji" placeholder="🕯️" maxlength="4" value="🕯️">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-title">Product Image</div>
+                <div class="form-group">
+                    <label>Upload Product Image</label>
+                    <div class="image-upload-container" id="image-upload-area">
+                        <input type="file" id="product-image" class="image-upload-input" accept="image/*">
+                        <div id="image-upload-content">
+                            <div class="image-upload-text">Click or drag image here</div>
+                            <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
+                        </div>
+                    </div>
+                    <div class="image-or-text">OR</div>
+                    <div class="image-fallback-row">
+                        <div>
+                            <div class="image-fallback-label">Fallback Emoji/Icon</div>
+                            <input type="text" id="product-emoji" placeholder="🕯️" maxlength="4" value="🕯️">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -385,6 +465,121 @@ class AdminModals {
         this.showModal('add-product-modal');
         
         this.setupProductPreview();
+        this.setupImageUpload();
+    }
+
+    setupImageUpload() {
+        const uploadArea = document.getElementById('image-upload-area');
+        const fileInput = document.getElementById('product-image');
+        const uploadContent = document.getElementById('image-upload-content');
+
+        if (!uploadArea || !fileInput || !uploadContent) return;
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, this.preventDefaults, false);
+            document.body.addEventListener(eventName, this.preventDefaults, false);
+        });
+
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+        });
+
+        // Handle dropped files
+        uploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            this.handleImageFiles(files);
+        }, false);
+
+        // Handle file input change
+        fileInput.addEventListener('change', (e) => {
+            this.handleImageFiles(e.target.files);
+        });
+    }
+
+    preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    handleImageFiles(files) {
+        if (files.length === 0) return;
+
+        const file = files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            this.showMessage(document.getElementById('add-product-message'), 'Please select a valid image file', 'error');
+            return;
+        }
+
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            this.showMessage(document.getElementById('add-product-message'), 'Image file must be less than 5MB', 'error');
+            return;
+        }
+
+        this.processImageFile(file);
+    }
+
+    processImageFile(file) {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const imageDataUrl = e.target.result;
+            this.displayImagePreview(imageDataUrl, file.name);
+            this.updatePreview();
+            
+            // Store the image data for later use
+            const fileInput = document.getElementById('product-image');
+            if (fileInput) {
+                fileInput.setAttribute('data-image-url', imageDataUrl);
+                fileInput.setAttribute('data-file-name', file.name);
+            }
+        };
+
+        reader.onerror = () => {
+            this.showMessage(document.getElementById('add-product-message'), 'Error reading image file', 'error');
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    displayImagePreview(imageUrl, fileName) {
+        const uploadContent = document.getElementById('image-upload-content');
+        if (!uploadContent) return;
+
+        uploadContent.innerHTML = `
+            <img src="${imageUrl}" alt="Preview" class="image-upload-preview">
+            <div class="image-upload-text">${fileName}</div>
+            <button type="button" class="image-remove-btn" onclick="adminModals.removeImage()">Remove Image</button>
+        `;
+    }
+
+    removeImage() {
+        const uploadContent = document.getElementById('image-upload-content');
+        const fileInput = document.getElementById('product-image');
+        
+        if (uploadContent) {
+            uploadContent.innerHTML = `
+                <div class="image-upload-text">Click or drag image here</div>
+                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
+            `;
+        }
+        
+        if (fileInput) {
+            fileInput.value = '';
+            fileInput.removeAttribute('data-image-url');
+            fileInput.removeAttribute('data-file-name');
+        }
+        
+        this.updatePreview();
     }
 
     addListItem(listId, placeholder) {
@@ -441,6 +636,8 @@ class AdminModals {
         const name = document.getElementById('product-name')?.value.trim() || 'Product Name';
         const price = parseFloat(document.getElementById('product-price')?.value) || 0;
         const emoji = document.getElementById('product-emoji')?.value.trim() || '🕯️';
+        const fileInput = document.getElementById('product-image');
+        const imageUrl = fileInput?.getAttribute('data-image-url');
 
         const sizes = this.getListValues('sizes-list');
         const scents = this.getListValues('scents-list');
@@ -452,8 +649,15 @@ class AdminModals {
         const previewOptions = document.getElementById('preview-options');
 
         if (previewTitle) previewTitle.textContent = name;
-        if (previewPrice) previewPrice.textContent = `${price.toFixed(2)}`;
-        if (previewImage) previewImage.textContent = emoji;
+        if (previewPrice) previewPrice.textContent = `$${price.toFixed(2)}`;
+        
+        if (previewImage) {
+            if (imageUrl) {
+                previewImage.innerHTML = `<img src="${imageUrl}" alt="${name}">`;
+            } else {
+                previewImage.textContent = emoji;
+            }
+        }
         
         if (previewOptions) {
             let optionsText = '';
@@ -472,6 +676,7 @@ class AdminModals {
         const emojiInput = document.getElementById('product-emoji');
         const featuredInput = document.getElementById('product-featured');
         const inStockInput = document.getElementById('product-in-stock');
+        const fileInput = document.getElementById('product-image');
         const messageDiv = document.getElementById('add-product-message');
 
         if (!nameInput || !priceInput || !messageDiv) {
@@ -486,6 +691,7 @@ class AdminModals {
         const emoji = emojiInput?.value.trim() || '🕯️';
         const featured = featuredInput?.checked || false;
         const inStock = inStockInput?.checked ?? true;
+        const imageUrl = fileInput?.getAttribute('data-image-url') || null;
 
         const sizes = this.getListValues('sizes-list');
         const scents = this.getListValues('scents-list');
@@ -514,6 +720,7 @@ class AdminModals {
             description: description || `Premium ${category.replace('-', ' ')} with excellent quality and options.`,
             category: category,
             emoji: emoji,
+            imageUrl: imageUrl,
             featured: featured,
             inStock: inStock,
             sizes: sizes,
@@ -521,7 +728,6 @@ class AdminModals {
             colors: colors,
             createdAt: new Date().toISOString(),
             createdBy: 'admin',
-            imageUrl: null
         };
 
         try {
@@ -533,7 +739,7 @@ class AdminModals {
             const success = await this.adminPanel.addProduct(productData);
             
             if (success) {
-                this.showMessage(messageDiv, '✅ Product added successfully! Customers can now select sizes, scents, and colors.', 'success');
+                this.showMessage(messageDiv, '✅ Product added successfully! Image and options are now available.', 'success');
                 this.clearAddProductForm();
                 
                 setTimeout(() => {
@@ -573,6 +779,9 @@ class AdminModals {
         const emojiInput = document.getElementById('product-emoji');
         if (emojiInput) emojiInput.value = '🕯️';
 
+        // Clear image upload
+        this.removeImage();
+
         ['sizes-list', 'scents-list', 'colors-list'].forEach(listId => {
             const list = document.getElementById(listId);
             if (list) {
@@ -602,9 +811,12 @@ class AdminModals {
 
         const productsHTML = localProducts.map(product => `
             <div class="product-item" data-product-id="${product.id}">
-                <div class="product-emoji">${product.emoji || '🕯️'}</div>
+                ${product.imageUrl ? 
+                    `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}"></div>` :
+                    `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
+                }
                 <div class="product-name">${this.escapeHtml(product.name)}</div>
-                <div class="product-price">${(product.price || 0).toFixed(2)}</div>
+                <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
                 <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
                     ${this.formatCategory(product.category)}
                 </div>
@@ -655,9 +867,26 @@ class AdminModals {
                                 <option value="accessories">Accessories</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Emoji/Icon</label>
-                            <input type="text" id="edit-product-emoji" maxlength="4">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">Product Image</div>
+                    <div class="form-group">
+                        <label>Update Product Image</label>
+                        <div class="image-upload-container" id="edit-image-upload-area">
+                            <input type="file" id="edit-product-image" class="image-upload-input" accept="image/*">
+                            <div id="edit-image-upload-content">
+                                <div class="image-upload-text">Click or drag image here</div>
+                                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
+                            </div>
+                        </div>
+                        <div class="image-or-text">OR</div>
+                        <div class="image-fallback-row">
+                            <div>
+                                <div class="image-fallback-label">Fallback Emoji/Icon</div>
+                                <input type="text" id="edit-product-emoji" maxlength="4">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -785,9 +1014,17 @@ class AdminModals {
             document.getElementById('edit-product-featured').checked = product.featured || false;
             document.getElementById('edit-product-in-stock').checked = product.inStock !== false;
             
+            // Handle existing image
+            if (product.imageUrl) {
+                this.displayEditImagePreview(product.imageUrl, 'Current Image');
+            }
+            
             this.populateList('edit-sizes-list', product.sizes || ['Standard']);
             this.populateList('edit-scents-list', product.scents || []);
             this.populateList('edit-colors-list', product.colors || []);
+            
+            // Setup image upload for edit form
+            this.setupEditImageUpload();
         }
 
         const editForm = document.getElementById('edit-form');
@@ -797,6 +1034,102 @@ class AdminModals {
         }
         
         this.selectedProductId = productId;
+    }
+
+    setupEditImageUpload() {
+        const uploadArea = document.getElementById('edit-image-upload-area');
+        const fileInput = document.getElementById('edit-product-image');
+        const uploadContent = document.getElementById('edit-image-upload-content');
+
+        if (!uploadArea || !fileInput || !uploadContent) return;
+
+        // Remove existing listeners
+        uploadArea.replaceWith(uploadArea.cloneNode(true));
+        const newUploadArea = document.getElementById('edit-image-upload-area');
+        const newFileInput = document.getElementById('edit-product-image');
+
+        // Setup new listeners
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            newUploadArea.addEventListener(eventName, this.preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            newUploadArea.addEventListener(eventName, () => newUploadArea.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            newUploadArea.addEventListener(eventName, () => newUploadArea.classList.remove('dragover'), false);
+        });
+
+        newUploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            this.handleEditImageFiles(files);
+        }, false);
+
+        newFileInput.addEventListener('change', (e) => {
+            this.handleEditImageFiles(e.target.files);
+        });
+    }
+
+    handleEditImageFiles(files) {
+        if (files.length === 0) return;
+
+        const file = files[0];
+        
+        if (!file.type.startsWith('image/')) {
+            this.showMessage(document.getElementById('edit-product-message'), 'Please select a valid image file', 'error');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            this.showMessage(document.getElementById('edit-product-message'), 'Image file must be less than 5MB', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const imageDataUrl = e.target.result;
+            this.displayEditImagePreview(imageDataUrl, file.name);
+            
+            const fileInput = document.getElementById('edit-product-image');
+            if (fileInput) {
+                fileInput.setAttribute('data-image-url', imageDataUrl);
+                fileInput.setAttribute('data-file-name', file.name);
+            }
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    displayEditImagePreview(imageUrl, fileName) {
+        const uploadContent = document.getElementById('edit-image-upload-content');
+        if (!uploadContent) return;
+
+        uploadContent.innerHTML = `
+            <img src="${imageUrl}" alt="Preview" class="image-upload-preview">
+            <div class="image-upload-text">${fileName}</div>
+            <button type="button" class="image-remove-btn" onclick="adminModals.removeEditImage()">Remove Image</button>
+        `;
+    }
+
+    removeEditImage() {
+        const uploadContent = document.getElementById('edit-image-upload-content');
+        const fileInput = document.getElementById('edit-product-image');
+        
+        if (uploadContent) {
+            uploadContent.innerHTML = `
+                <div class="image-upload-text">Click or drag image here</div>
+                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
+            `;
+        }
+        
+        if (fileInput) {
+            fileInput.value = '';
+            fileInput.removeAttribute('data-image-url');
+            fileInput.removeAttribute('data-file-name');
+        }
     }
 
     async handleSaveProduct() {
@@ -812,6 +1145,8 @@ class AdminModals {
         const emoji = document.getElementById('edit-product-emoji').value.trim();
         const featured = document.getElementById('edit-product-featured').checked;
         const inStock = document.getElementById('edit-product-in-stock').checked;
+        const fileInput = document.getElementById('edit-product-image');
+        const newImageUrl = fileInput?.getAttribute('data-image-url');
         const messageDiv = document.getElementById('edit-product-message');
 
         const sizes = this.getListValues('edit-sizes-list');
@@ -835,12 +1170,17 @@ class AdminModals {
         this.showMessage(messageDiv, 'Saving changes...', 'info');
 
         try {
+            // Get existing product to preserve original image if no new image uploaded
+            const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const existingProduct = products.find(p => p.id === this.selectedProductId);
+            
             const updatedProduct = {
                 name: name,
                 price: price,
                 description: description,
                 category: category,
                 emoji: emoji,
+                imageUrl: newImageUrl || (existingProduct ? existingProduct.imageUrl : null),
                 featured: featured,
                 inStock: inStock,
                 sizes: sizes,
@@ -852,7 +1192,7 @@ class AdminModals {
             const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
 
             if (success) {
-                this.showMessage(messageDiv, '✅ Product updated successfully! All options are now available to customers.', 'success');
+                this.showMessage(messageDiv, '✅ Product updated successfully! All options and image are now available.', 'success');
 
                 setTimeout(() => {
                     this.closeModal('edit-products-modal');
@@ -949,6 +1289,7 @@ class AdminModals {
     }
 }
 
+// Auto-initialization code remains the same...
 document.addEventListener('DOMContentLoaded', () => {
     const initializeModals = () => {
         if (window.adminPanel && window.adminPanel.isAdmin) {
