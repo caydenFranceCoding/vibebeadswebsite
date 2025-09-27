@@ -203,14 +203,6 @@ class AdminPanel {
                     
                     // Append admin products to the container
                     container.appendChild(containerFragment);
-                    
-                    // Trigger fade-in animation after elements are in DOM
-                    setTimeout(() => {
-                        container.querySelectorAll('[data-admin-product="true"]:not(.fade-in)').forEach(element => {
-                            element.classList.add('fade-in');
-                            element.style.opacity = '1'; // Ensure visibility
-                        });
-                    }, 100);
                 });
 
                 console.log(`Rendered admin products to ${containers.length} containers`);
@@ -245,17 +237,15 @@ class AdminPanel {
 
     createProductElement(product, uniqueId) {
         const div = document.createElement('div');
-        div.className = 'product-card'; // Removed fade-in class to prevent opacity issues
+        div.className = 'product-card'; // Start without fade-in to avoid opacity issues
         div.setAttribute('data-product-id', product.id);
         div.setAttribute('data-unique-id', uniqueId);
         div.onclick = () => window.productManager?.openProductDetail(product.id);
         
         div.innerHTML = this.createProductHTML(product, uniqueId);
         
-        // Manually trigger fade-in effect after element is added to DOM
-        setTimeout(() => {
-            div.classList.add('fade-in');
-        }, 50);
+        // Set opacity to 1 immediately to ensure visibility
+        div.style.opacity = '1';
         
         return div;
     }
