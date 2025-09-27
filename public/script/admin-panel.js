@@ -75,9 +75,9 @@ class AdminPanel {
     }
 
     getProductContainers() {
-        const dynamicContainers = document.querySelectorAll('[data-admin-products="true"]');
-        const regularContainers = document.querySelectorAll('.products-grid, .product-grid, .featured-products');
-        return [...dynamicContainers, ...regularContainers];
+        // Get all containers that should display products
+        const containers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid');
+        return Array.from(containers);
     }
 
     async loadContentForAllUsers() {
@@ -183,23 +183,58 @@ class AdminPanel {
         requestAnimationFrame(() => {
             try {
                 containers.forEach((container, containerIndex) => {
-                    if (products.length === 0) {
-                        container.innerHTML = this.createNoProductsMessage();
+                    // Get category filter for this container
+                    const categoryFilter = container.getAttribute('data-category');
+                    
+                    // Filter products by category if specified
+                    let filteredProducts = products;
+                    if (categoryFilter) {
+                        filteredProducts = products.filter(product => 
+                            product.category === categoryFilter || 
+                            this.mapCategoryName(product.category) === categoryFilter
+                        );
+                    }
+                    
+                    // Check if container already has static products
+                    const existingStaticProducts = container.querySelectorAll('.product-card:not([data-admin-product])');
+                    const hasStaticProducts = existingStaticProducts.length > 0;
+                    
+                    if (filteredProducts.length === 0 && !hasStaticProducts) {
+                        if (!hasStaticProducts) {
+                            container.innerHTML = this.createNoProductsMessage();
+                        }
                         return;
                     }
 
-                    const containerFragment = document.createDocumentFragment();
-                    
-                    products.forEach((product, productIndex) => {
-                        const productElement = this.createProductElement(product, `${containerIndex}-${productIndex}`);
-                        containerFragment.appendChild(productElement);
-                    });
-                    
-                    container.innerHTML = '';
-                    container.appendChild(containerFragment);
+                    // Only add admin products to containers with static products
+                    if (hasStaticProducts && filteredProducts.length > 0) {
+                        const containerFragment = document.createDocumentFragment();
+                        
+                        filteredProducts.forEach((product, productIndex) => {
+                            const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
+                            productElement.setAttribute('data-admin-product', 'true');
+                            containerFragment.appendChild(productElement);
+                        });
+                        
+                        // Append admin products after static products
+                        container.appendChild(containerFragment);
+                    } 
+                    // For containers without static products, show all filtered products
+                    else if (!hasStaticProducts) {
+                        const containerFragment = document.createDocumentFragment();
+                        
+                        filteredProducts.forEach((product, productIndex) => {
+                            const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
+                            productElement.setAttribute('data-admin-product', 'true');
+                            containerFragment.appendChild(productElement);
+                        });
+                        
+                        container.innerHTML = '';
+                        container.appendChild(containerFragment);
+                    }
                 });
 
-                console.log(`Rendered ${products.length} products to ${containers.length} containers`);
+                console.log(`Rendered admin products to ${containers.length} containers`);
                 
                 this.isRendering = false;
                 if (this.renderQueue.length > 0) {
@@ -211,6 +246,22 @@ class AdminPanel {
                 this.isRendering = false;
             }
         });
+    }
+
+    // Map category names between different formats
+    mapCategoryName(category) {
+        const categoryMap = {
+            'wax-melts': 'wax-melts',
+            'waxmelts': 'wax-melts',
+            'room-sprays': 'room-sprays',
+            'roomsprays': 'room-sprays',
+            'candles': 'candles',
+            'diffusers': 'diffusers',
+            'jewelry': 'jewelry',
+            'accessories': 'jewelry'
+        };
+        
+        return categoryMap[category] || category;
     }
 
     createProductElement(product, uniqueId) {
@@ -340,6 +391,15 @@ class AdminPanel {
         }
     }
 
+    // Rest of the methods remain the same...
+    // (Including debounce, startUpdateChecking, checkForUpdates, getPageIdentifier, 
+    // checkServerConnection, createAdminPanel, addAdminStyles, setupEventListeners, 
+    // setupEditableElements, setupModalIntegration, toggleEditMode, exitEditMode, 
+    // editElement, saveChanges, resetContent, showAddProductModal, showEditProductsModal, 
+    // addProduct, updateProduct, deleteProduct, updateAdminPanelInfo, createProductWithPrompts, 
+    // generateProductId, applyContentToPage, showUpdateNotification, escapeHtml, 
+    // formatCategory, destroy)
+
     debounce(func, wait, key) {
         if (this.debounceTimers.has(key)) {
             clearTimeout(this.debounceTimers.get(key));
@@ -432,7 +492,7 @@ class AdminPanel {
     createAdminPanel() {
         if (!this.isAdmin) return;
 
-        const productContainers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid, .featured-products');
+        const productContainers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid');
         const localProductCount = this.allProducts.length;
 
         const adminHTML = `
@@ -1119,331 +1179,3 @@ class AdminPanel {
         this.cache.clear();
     }
 }
-
-class ProductManager {
-    constructor(adminPanel) {
-        this.adminPanel = adminPanel;
-    }
-
-    openProductDetail(productId) {
-        const product = this.findProduct(productId);
-        if (!product) {
-            console.error('Product not found:', productId);
-            return;
-        }
-
-        this.showProductModal(product);
-    }
-
-    quickAddToCart(productId) {
-        const product = this.findProduct(productId);
-        if (!product) {
-            console.error('Product not found for quick add:', productId);
-            return;
-        }
-
-        if (!product.inStock) {
-            alert('Sorry, this product is out of stock.');
-            return;
-        }
-
-        const cartItem = {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: 1,
-            size: product.sizes?.[0] || 'Standard',
-            scent: product.scents?.[0] || null,
-            color: product.colors?.[0] || null,
-            image: product.emoji || '🕯️',
-            isCustom: false
-        };
-
-        this.addToCartHandler(cartItem);
-        this.showAddToCartConfirmation(product.name, 1);
-    }
-
-    findProduct(productId) {
-        return this.adminPanel.allProducts.find(p => p.id === productId);
-    }
-
-    showProductModal(product) {
-        const existingModal = document.getElementById('product-detail-modal');
-        if (existingModal) existingModal.remove();
-
-        const sizesHTML = product.sizes && product.sizes.length > 1 ? `
-            <div class="product-option">
-                <label>Size:</label>
-                <select id="product-size">
-                    ${product.sizes.map(size => `<option value="${size}">${size}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        const scentsHTML = product.scents && product.scents.length > 0 ? `
-            <div class="product-option">
-                <label>Scent:</label>
-                <select id="product-scent">
-                    <option value="">Select Scent</option>
-                    ${product.scents.map(scent => `<option value="${scent}">${scent}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        const colorsHTML = product.colors && product.colors.length > 0 ? `
-            <div class="product-option">
-                <label>Color:</label>
-                <select id="product-color">
-                    <option value="">Select Color</option>
-                    ${product.colors.map(color => `<option value="${color}">${color}</option>`).join('')}
-                </select>
-            </div>
-        ` : '';
-
-        const modal = document.createElement('div');
-        modal.id = 'product-detail-modal';
-        modal.className = 'product-modal';
-        modal.innerHTML = `
-            <div class="product-modal-content">
-                <div class="product-modal-header">
-                    <h2>${this.escapeHtml(product.name)}</h2>
-                    <button class="close-modal" onclick="this.closest('.product-modal').remove()">×</button>
-                </div>
-                <div class="product-modal-body">
-                    <div class="product-detail-image">
-                        ${product.imageUrl ? 
-                            `<img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}">` :
-                            `<div class="product-detail-emoji">${product.emoji || '🕯️'}</div>`
-                        }
-                    </div>
-                    <div class="product-detail-info">
-                        <div class="product-detail-price">$${(product.price || 0).toFixed(2)}</div>
-                        <div class="product-detail-category">${this.adminPanel.formatCategory(product.category)}</div>
-                        <div class="product-detail-description">
-                            ${product.description || 'No description available.'}
-                        </div>
-                        ${!product.inStock ? '<div class="out-of-stock-large">Out of Stock</div>' : ''}
-                        
-                        <div class="product-options">
-                            ${sizesHTML}
-                            ${scentsHTML}
-                            ${colorsHTML}
-                            <div class="product-option">
-                                <label>Quantity:</label>
-                                <select id="product-quantity">
-                                    ${[1,2,3,4,5,6,7,8,9,10].map(i => `<option value="${i}">${i}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="product-actions">
-                            <button class="add-to-cart-large" onclick="productManager.addToCartFromModal('${product.id}')" ${!product.inStock ? 'disabled' : ''}>
-                                ${product.inStock ? 'Add to Cart' : 'Out of Stock'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        if (!document.getElementById('product-modal-styles')) {
-            const modalStyles = document.createElement('style');
-            modalStyles.id = 'product-modal-styles';
-            modalStyles.textContent = `
-                .product-modal {
-                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0,0,0,0.8); z-index: 10002; display: flex;
-                    align-items: center; justify-content: center; backdrop-filter: blur(5px);
-                }
-                .product-modal-content {
-                    background: white; border-radius: 16px; max-width: 700px; width: 90%;
-                    max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-                }
-                .product-modal-header {
-                    display: flex; justify-content: space-between; align-items: center;
-                    padding: 20px 30px; border-bottom: 1px solid #eee; background: #8B7355;
-                    color: white; border-radius: 16px 16px 0 0;
-                }
-                .product-modal-header h2 { margin: 0; font-size: 24px; }
-                .close-modal {
-                    background: rgba(255,255,255,0.2); border: none; color: white;
-                    width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 20px;
-                }
-                .product-modal-body { padding: 30px; display: flex; gap: 30px; }
-                .product-detail-image { flex: 1; text-align: center; }
-                .product-detail-image img { width: 100%; max-width: 300px; border-radius: 12px; }
-                .product-detail-emoji { font-size: 120px; }
-                .product-detail-info { flex: 1; }
-                .product-detail-price { 
-                    font-size: 28px; font-weight: 700; color: #8B7355; margin-bottom: 10px; 
-                }
-                .product-detail-category {
-                    font-size: 14px; color: #999; text-transform: uppercase;
-                    letter-spacing: 0.5px; margin-bottom: 20px;
-                }
-                .product-detail-description {
-                    font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 25px;
-                }
-                .product-options { 
-                    border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 25px;
-                    background: #fafafa;
-                }
-                .product-option { 
-                    margin-bottom: 15px; display: flex; align-items: center; gap: 15px;
-                }
-                .product-option:last-child { margin-bottom: 0; }
-                .product-option label { font-weight: 600; min-width: 80px; }
-                .product-option select {
-                    flex: 1; padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px;
-                    font-size: 14px;
-                }
-                .product-option select:focus { outline: none; border-color: #8B7355; }
-                .add-to-cart-large {
-                    width: 100%; padding: 15px; background: #8B7355; color: white;
-                    border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-                    cursor: pointer; transition: background 0.2s;
-                }
-                .add-to-cart-large:hover:not(:disabled) { background: #6d5a42; }
-                .add-to-cart-large:disabled { background: #ccc; cursor: not-allowed; }
-                .out-of-stock-large {
-                    background: #ff4444; color: white; padding: 10px 20px; border-radius: 6px;
-                    text-align: center; font-weight: 600; margin-bottom: 20px;
-                }
-                @media (max-width: 768px) {
-                    .product-modal-body { flex-direction: column; padding: 20px; }
-                    .product-option { flex-direction: column; align-items: flex-start; gap: 8px; }
-                    .product-option label { min-width: auto; }
-                    .product-option select { width: 100%; }
-                }
-            `;
-            document.head.appendChild(modalStyles);
-        }
-
-        document.body.appendChild(modal);
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
-
-    addToCartFromModal(productId) {
-        const product = this.findProduct(productId);
-        if (!product) {
-            console.error('Product not found for cart:', productId);
-            return;
-        }
-
-        if (!product.inStock) {
-            alert('Sorry, this product is out of stock.');
-            return;
-        }
-
-        const quantity = parseInt(document.getElementById('product-quantity')?.value || '1');
-        const size = document.getElementById('product-size')?.value || product.sizes?.[0] || 'Standard';
-        const scent = document.getElementById('product-scent')?.value || null;
-        const color = document.getElementById('product-color')?.value || null;
-
-        const cartItem = {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: quantity,
-            size: size,
-            scent: scent,
-            color: color,
-            image: product.emoji || '🕯️',
-            isCustom: false
-        };
-
-        this.addToCartHandler(cartItem);
-
-        const modal = document.getElementById('product-detail-modal');
-        if (modal) modal.remove();
-
-        this.showAddToCartConfirmation(product.name, quantity);
-    }
-
-    addToCartHandler(item) {
-        if (window.cartManager) {
-            window.cartManager.addItem(item);
-            console.log('Added to cart via cartManager:', item);
-        } else {
-            this.addToFallbackCart(item);
-        }
-    }
-
-    addToFallbackCart(item) {
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingIndex = cart.findIndex(cartItem => 
-            cartItem.id === item.id && 
-            cartItem.size === item.size && 
-            cartItem.scent === item.scent && 
-            cartItem.color === item.color
-        );
-        
-        if (existingIndex >= 0) {
-            cart[existingIndex].quantity += item.quantity;
-        } else {
-            cart.push(item);
-        }
-        
-        localStorage.setItem('cart', JSON.stringify(cart));
-        console.log('Added to fallback cart:', item);
-        
-        if (window.updateCartUI) {
-            window.updateCartUI();
-        }
-    }
-
-    showAddToCartConfirmation(productName, quantity) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed; top: 20px; right: 20px; background: #4CAF50;
-            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
-            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.innerHTML = `
-            <strong>✅ Added to Cart!</strong><br>
-            ${quantity}x ${this.escapeHtml(productName)}
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            window.adminPanel = new AdminPanel();
-            window.productManager = new ProductManager(window.adminPanel);
-        }, 100);
-    });
-} else {
-    setTimeout(() => {
-        window.adminPanel = new AdminPanel();
-        window.productManager = new ProductManager(window.adminPanel);
-    }, 100);
-}
-
-window.addQuickProduct = function(id, name, price, emoji) {
-    if (window.productManager) {
-        window.productManager.quickAddToCart(id);
-    } else {
-        console.log('Added product (legacy):', { id, name, price, emoji });
-        alert(`Added ${name} to cart! ($${price})`);
-    }
-};

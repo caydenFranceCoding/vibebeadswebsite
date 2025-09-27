@@ -82,18 +82,9 @@
     <!-- Products Section -->
     <section class="shop-section" id="products">
         <div class="container">
-            <div class="products-grid" id="products-grid">
-                <!-- Products will be populated by JavaScript -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Featured Candles Section -->
-    <section class="shop-section featured-section">
-        <div class="container">
-            <h2 class="section-title">Featured Candles</h2>
-            <div class="products-grid" data-admin-products="true">
-                <!-- Admin-managed featured candles will appear here -->
+            <!-- Add data-admin-products="true" and data-category="candles" to main grid -->
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="candles">
+                <!-- Products will be populated by JavaScript (both static and admin) -->
             </div>
         </div>
     </section>
