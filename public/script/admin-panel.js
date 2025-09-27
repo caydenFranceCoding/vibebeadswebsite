@@ -237,12 +237,18 @@ class AdminPanel {
 
     createProductElement(product, uniqueId) {
         const div = document.createElement('div');
-        div.className = 'product-card fade-in';
+        div.className = 'product-card'; // Removed fade-in class to prevent opacity issues
         div.setAttribute('data-product-id', product.id);
         div.setAttribute('data-unique-id', uniqueId);
         div.onclick = () => window.productManager?.openProductDetail(product.id);
         
         div.innerHTML = this.createProductHTML(product, uniqueId);
+        
+        // Manually trigger fade-in effect after element is added to DOM
+        setTimeout(() => {
+            div.classList.add('fade-in');
+        }, 50);
+        
         return div;
     }
 
