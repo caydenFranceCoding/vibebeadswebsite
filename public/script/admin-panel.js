@@ -1,1371 +1,1220 @@
-class AdminModals {
-    constructor(adminPanel) {
-        this.adminPanel = adminPanel;
-        this.currentModal = null;
-        this.selectedProductId = null;
+class AdminPanel {
+    constructor() {
+        this.allowedIPs = [
+            '104.28.33.73', '172.59.196.158', '104.179.159.180', '172.58.183.6', '172.59.195.98'
+        ];
+
+        this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
+        this.currentUserIP = null;
+        this.isAdmin = false;
+        this.editableElements = new Map();
+        this.originalContent = new Map();
+        this.lastContentUpdate = null;
+        this.lastProductUpdate = null;
+        this.updateCheckInterval = null;
+        this.allProducts = [];
+        this.modals = null;
         
-        this.modalCache = new Map();
-        this.eventListeners = new Map();
+        this.renderQueue = [];
+        this.isRendering = false;
+        this.cache = new Map();
         this.debounceTimers = new Map();
         
-        this.setupModalStyles();
-        console.log('Admin Modals initialized with performance optimizations');
+        this.initializeAsync();
     }
 
-    setupModalStyles() {
-        if (document.getElementById('admin-modal-styles')) return;
+    async initializeAsync() {
+        try {
+            await this.loadProductsForAllUsers();
+            await this.loadContentForAllUsers();
+            await this.checkIPAddress();
+            
+            if (this.isAdmin) {
+                const adminPromises = [
+                    this.checkServerConnection(),
+                    this.createAdminPanel(),
+                    this.setupEditableElements(),
+                    this.setupEventListeners(),
+                    this.setupModalIntegration()
+                ];
+                
+                Promise.all(adminPromises).then(() => {
+                    console.log('Admin panel initialized for IP:', this.currentUserIP);
+                });
+            }
+            
+            this.startUpdateChecking();
+            
+        } catch (error) {
+            console.error('Initialization failed:', error);
+        }
+    }
 
-        const modalStyles = `
-            <style id="admin-modal-styles">
-                .admin-modal {
-                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
-                    z-index: 10001; display: flex; align-items: center; justify-content: center;
-                    opacity: 0; visibility: hidden; 
-                    transition: opacity 0.2s ease, visibility 0.2s ease;
-                    transform: translateZ(0);
+    getProductContainers() {
+        const containers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid');
+        return Array.from(containers);
+    }
+
+    async loadContentForAllUsers() {
+        const pageName = this.getPageIdentifier();
+        
+        try {
+            const serverPromise = fetch(`${this.apiBaseUrl}/api/content`, { 
+                timeout: 3000 
+            }).then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Server unavailable');
+            });
+
+            const savedContent = localStorage.getItem(`admin_content_${pageName}`);
+            if (savedContent) {
+                this.applyContentToPage(JSON.parse(savedContent));
+                console.log('Content loaded from localStorage');
+            }
+
+            try {
+                const serverContent = await serverPromise;
+                if (serverContent[pageName]) {
+                    this.applyContentToPage(serverContent[pageName]);
+                    localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(serverContent[pageName]));
+                    console.log('Content updated from server');
                 }
-                .admin-modal.active { opacity: 1; visibility: visible; }
-                .admin-modal-content {
-                    background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
-                    border-radius: 16px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-                    max-width: 90vw; max-height: 90vh; overflow-y: auto; position: relative;
-                    transform: translateY(30px) translateZ(0); 
-                    transition: transform 0.2s ease;
-                    will-change: transform;
+            } catch (error) {
+                console.log('Using local content only');
+            }
+        } catch (error) {
+            console.warn('Content loading error:', error);
+        }
+    }
+
+    async loadProductsForAllUsers() {
+        console.log('Loading products for all users...');
+        
+        const containers = this.getProductContainers();
+        
+        if (containers.length === 0) {
+            console.log('No product containers found');
+            return;
+        }
+
+        let products = [];
+
+        try {
+            const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            if (localProducts.length > 0) {
+                products = [...localProducts];
+                this.allProducts = products;
+                this.clearExistingAdminProducts(containers);
+                this.renderProductsToContainers(products, containers);
+                console.log('Local products displayed immediately:', localProducts.length);
+            }
+        } catch (error) {
+            console.warn('Error loading local products:', error);
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/products/list`, {
+                timeout: 5000
+            });
+            
+            if (response.ok) {
+                const serverProducts = await response.json();
+                if (serverProducts && serverProducts.length > 0) {
+                    const mergedProducts = this.mergeProducts(products, serverProducts);
+                    
+                    if (JSON.stringify(mergedProducts) !== JSON.stringify(products)) {
+                        this.allProducts = mergedProducts;
+                        this.clearExistingAdminProducts(containers);
+                        this.renderProductsToContainers(mergedProducts, containers);
+                        localStorage.setItem('admin_products', JSON.stringify(mergedProducts));
+                        console.log('Products updated from server:', serverProducts.length);
+                    }
                 }
-                .admin-modal.active .admin-modal-content { transform: translateY(0) translateZ(0); }
-                .admin-modal-header {
+            }
+        } catch (error) {
+            console.log('Server products unavailable, using local only:', error.message);
+        }
+    }
+
+    clearExistingAdminProducts(containers) {
+        containers.forEach(container => {
+            const adminProducts = container.querySelectorAll('[data-admin-product="true"]');
+            adminProducts.forEach(product => product.remove());
+        });
+    }
+
+    mergeProducts(localProducts, serverProducts) {
+        const merged = [...serverProducts];
+        
+        localProducts.forEach(localProduct => {
+            if (!serverProducts.find(sp => sp.id === localProduct.id)) {
+                merged.push(localProduct);
+            }
+        });
+
+        return merged.filter((product, index, self) => 
+            index === self.findIndex(p => p.id === product.id)
+        );
+    }
+
+    renderProductsToContainers(products, containers, isCached = false) {
+        if (this.isRendering && !isCached) {
+            this.renderQueue.push({ products, containers });
+            return;
+        }
+
+        this.isRendering = true;
+        
+        requestAnimationFrame(() => {
+            try {
+                containers.forEach((container, containerIndex) => {
+                    const categoryFilter = container.getAttribute('data-category');
+                    
+                    let filteredProducts = products;
+                    if (categoryFilter) {
+                        filteredProducts = products.filter(product => 
+                            product.category === categoryFilter || 
+                            this.mapCategoryName(product.category) === categoryFilter
+                        );
+                    }
+                    
+                    if (filteredProducts.length === 0) {
+                        return;
+                    }
+
+                    const containerFragment = document.createDocumentFragment();
+                    
+                    filteredProducts.forEach((product, productIndex) => {
+                        const productElement = this.createProductElement(product, `admin-${containerIndex}-${productIndex}`);
+                        productElement.setAttribute('data-admin-product', 'true');
+                        containerFragment.appendChild(productElement);
+                    });
+                    
+                    container.appendChild(containerFragment);
+                });
+
+                console.log(`Rendered admin products to ${containers.length} containers`);
+                
+                this.isRendering = false;
+                if (this.renderQueue.length > 0) {
+                    const next = this.renderQueue.shift();
+                    this.renderProductsToContainers(next.products, next.containers);
+                }
+            } catch (error) {
+                console.error('Rendering error:', error);
+                this.isRendering = false;
+            }
+        });
+    }
+
+    mapCategoryName(category) {
+        const categoryMap = {
+            'wax-melts': 'wax-melts',
+            'waxmelts': 'wax-melts',
+            'room-sprays': 'room-sprays',
+            'roomsprays': 'room-sprays',
+            'candles': 'candles',
+            'diffusers': 'diffusers',
+            'jewelry': 'jewelry',
+            'accessories': 'jewelry'
+        };
+        
+        return categoryMap[category] || category;
+    }
+
+    createProductElement(product, uniqueId) {
+        const div = document.createElement('div');
+        div.className = 'product-card';
+        div.setAttribute('data-product-id', product.id);
+        div.setAttribute('data-unique-id', uniqueId);
+        
+        const isShopAllPage = window.location.pathname.includes('shop-all') || 
+                            window.location.pathname.includes('shop_all') ||
+                            document.title.toLowerCase().includes('shop all') ||
+                            document.querySelector('body').classList.contains('shop-all-page');
+        
+        if (isShopAllPage) {
+            div.onclick = () => window.productManager?.quickAddToCart(product.id);
+        } else {
+            div.onclick = () => this.openProductModal(product);
+        }
+        
+        div.innerHTML = this.createProductHTML(product, uniqueId);
+        div.style.opacity = '1';
+        
+        return div;
+    }
+
+    createProductHTML(product, uniqueId) {
+        const cacheKey = `${product.id}-${product.lastModified || 'static'}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        const productId = this.escapeHtml(product.id);
+        const productName = this.escapeHtml(product.name);
+        const productDescription = this.escapeHtml(product.description || '');
+        
+        const basePrice = product.sizeOptions && product.sizeOptions.length > 0 
+            ? product.sizeOptions[0].price 
+            : product.price || 0;
+
+        let imageContent;
+        if (product.imageUrl && product.imageUrl.trim()) {
+            imageContent = `<img src="${product.imageUrl}" alt="${productName}" loading="lazy">`;
+        } else {
+            imageContent = product.emoji || '🕯️';
+        }
+
+        const isShopAllPage = window.location.pathname.includes('shop-all') || 
+                            window.location.pathname.includes('shop_all') ||
+                            document.title.toLowerCase().includes('shop all') ||
+                            document.querySelector('body').classList.contains('shop-all-page');
+
+        const buttonOnClick = isShopAllPage 
+            ? `event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')`
+            : `event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')`;
+
+        const html = `
+            <div class="product-image">
+                ${imageContent}
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${productName}</h3>
+                <p class="product-price">From $${basePrice.toFixed(2)} USD</p>
+                <p class="product-description">${productDescription}</p>
+                <button class="add-to-cart-btn" onclick="${buttonOnClick}">Add to Cart</button>
+            </div>
+            ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+            ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
+        `;
+
+        this.cache.set(cacheKey, html);
+        
+        if (this.cache.size > 100) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+
+        return html;
+    }
+
+    // Method to check if a product is admin-added vs static
+    isAdminProduct(product) {
+        // Check if this is an admin-added product by looking for admin-specific properties
+        return product && (
+            product.createdBy === 'admin' || 
+            product.createdBy === 'admin-fallback' ||
+            product.id.includes('-admin-') ||
+            (product.sizeOptions && Array.isArray(product.sizeOptions) && product.sizeOptions.length > 0 && product.createdAt)
+        );
+    }
+
+    openProductModal(product) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) {
+            console.error('Product modal not found');
+            return;
+        }
+
+        // Set basic product info that all products share
+        const modalImage = document.getElementById('modal-product-image');
+        const modalTitle = document.getElementById('modal-product-title');
+        const modalDescription = document.getElementById('modal-product-description');
+
+        if (modalImage) modalImage.src = product.imageUrl || '';
+        if (modalTitle) modalTitle.textContent = product.name;
+        if (modalDescription) modalDescription.textContent = product.description || '';
+
+        // Handle size options differently for admin vs static products
+        const sizeButtons = modal.querySelector('.size-buttons');
+        
+        if (this.isAdminProduct(product)) {
+            // This is an admin-added product - dynamically populate size options
+            console.log('Opening admin product modal:', product.name);
+            
+            if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
+                sizeButtons.innerHTML = '';
+                product.sizeOptions.forEach((size, index) => {
+                    const button = document.createElement('button');
+                    button.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                    button.setAttribute('data-size', size.name);
+                    button.setAttribute('data-price', size.price);
+                    button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
+                    button.onclick = () => this.selectSize(button, size.price);
+                    sizeButtons.appendChild(button);
+                });
+                
+                const modalPrice = document.getElementById('modal-product-price');
+                const totalPrice = document.getElementById('total-price');
+                if (modalPrice) modalPrice.textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
+                if (totalPrice) totalPrice.textContent = product.sizeOptions[0].price.toFixed(2);
+            } else {
+                // Fallback for admin products without proper size options
+                const defaultPrice = product.price || 15.00;
+                if (sizeButtons) {
+                    sizeButtons.innerHTML = `
+                        <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">Standard - $${defaultPrice.toFixed(2)}</button>
+                    `;
+                }
+                const modalPrice = document.getElementById('modal-product-price');
+                const totalPrice = document.getElementById('total-price');
+                if (modalPrice) modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
+                if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
+            }
+        } else {
+            // This is a static product - DON'T modify the size buttons
+            // Just update the price display if needed
+            console.log('Opening static product modal:', product.name);
+            
+            // For static products, preserve existing size options in the HTML
+            // Just make sure the first size option is selected
+            const existingSizeBtns = modal.querySelectorAll('.size-btn');
+            if (existingSizeBtns.length > 0) {
+                // Reset all size buttons
+                existingSizeBtns.forEach(btn => btn.classList.remove('active'));
+                // Activate the first one
+                existingSizeBtns[0].classList.add('active');
+                
+                // Update price display based on first button
+                const firstPrice = parseFloat(existingSizeBtns[0].getAttribute('data-price')) || product.price || 15.00;
+                const modalPrice = document.getElementById('modal-product-price');
+                const totalPrice = document.getElementById('total-price');
+                if (modalPrice) modalPrice.textContent = `$${firstPrice.toFixed(2)}`;
+                if (totalPrice) totalPrice.textContent = firstPrice.toFixed(2);
+            } else {
+                // Fallback if no size buttons exist
+                const defaultPrice = product.price || 15.00;
+                const modalPrice = document.getElementById('modal-product-price');
+                const totalPrice = document.getElementById('total-price');
+                if (modalPrice) modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
+                if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
+            }
+        }
+
+        // Reset quantity to 1
+        const quantityInput = document.getElementById('quantity');
+        if (quantityInput) quantityInput.value = 1;
+
+        // Show the modal
+        modal.style.display = 'block';
+        modal.setAttribute('data-current-product', product.id);
+
+        // Set up the add to cart button for this specific product
+        const addToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
+        if (addToCartBtn) {
+            // Remove any existing event listeners by cloning the button
+            addToCartBtn.replaceWith(addToCartBtn.cloneNode(true));
+            const newAddToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
+            
+            newAddToCartBtn.onclick = () => this.addModalProductToCart(product);
+        }
+    }
+
+    addModalProductToCart(product) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) return;
+
+        const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
+        const activeSize = modal.querySelector('.size-btn.active');
+        
+        if (!activeSize) {
+            alert('Please select a size option');
+            return;
+        }
+
+        const sizeName = activeSize.getAttribute('data-size');
+        const sizePrice = parseFloat(activeSize.getAttribute('data-price'));
+
+        if (!product.inStock) {
+            alert('Sorry, this product is out of stock.');
+            return;
+        }
+
+        const cartItem = {
+            id: product.id,
+            name: product.name,
+            price: sizePrice,
+            quantity: quantity,
+            size: sizeName,
+            image: product.imageUrl || '', 
+            isCustom: this.isAdminProduct(product) // Mark admin products as custom
+        };
+
+        if (window.productManager) {
+            window.productManager.addToCartHandler(cartItem);
+            window.productManager.showAddToCartConfirmation(product.name, quantity);
+        } else {
+            this.addToFallbackCart(cartItem);
+            this.showAddToCartConfirmation(product.name, quantity);
+        }
+
+        modal.style.display = 'none';
+    }
+
+    addToFallbackCart(item) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingIndex = cart.findIndex(cartItem => 
+            cartItem.id === item.id && 
+            cartItem.size === item.size
+        );
+        
+        if (existingIndex >= 0) {
+            cart[existingIndex].quantity += item.quantity;
+        } else {
+            cart.push(item);
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        console.log('Added to fallback cart:', item);
+        
+        if (window.updateCartUI) {
+            window.updateCartUI();
+        }
+    }
+
+    showAddToCartConfirmation(productName, quantity) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #4CAF50;
+            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.innerHTML = `
+            <strong>✅ Added to Cart!</strong><br>
+            ${quantity}x ${this.escapeHtml(productName)}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    selectSize(button, price) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) return;
+        
+        modal.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
+        const total = (price * quantity).toFixed(2);
+        const totalPriceElement = document.getElementById('total-price');
+        if (totalPriceElement) {
+            totalPriceElement.textContent = total;
+        }
+    }
+
+    async checkIPAddress() {
+        try {
+            const ipSources = [
+                'https://api.ipify.org?format=json',
+                'https://ipapi.co/json/',
+                'https://ipinfo.io/json'
+            ];
+
+            const promises = ipSources.map(async (source) => {
+                try {
+                    const response = await fetch(source, { timeout: 2000 });
+                    const data = await response.json();
+                    return data.ip || data.query;
+                } catch {
+                    return null;
+                }
+            });
+
+            const results = await Promise.allSettled(promises);
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value) {
+                    this.currentUserIP = result.value;
+                    break;
+                }
+            }
+
+            if (!this.currentUserIP) {
+                console.error('Failed to detect IP address');
+                this.isAdmin = false;
+                return;
+            }
+
+            const isLocalhost = window.location.hostname === 'localhost' ||
+                               window.location.hostname === '127.0.0.1';
+
+            this.isAdmin = this.allowedIPs.includes(this.currentUserIP) || isLocalhost;
+
+            if (this.apiBaseUrl && this.currentUserIP) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/admin/status`, {
+                        timeout: 3000
+                    });
+                    const result = await response.json();
+                    this.isAdmin = response.ok && result.authorized;
+                } catch (error) {
+                    console.warn('Backend admin verification failed, using local check');
+                }
+            }
+
+            console.log(`IP: ${this.currentUserIP}, Is Admin: ${this.isAdmin}`);
+        } catch (error) {
+            console.error('IP check failed:', error);
+            this.isAdmin = false;
+        }
+    }
+
+    debounce(func, wait, key) {
+        if (this.debounceTimers.has(key)) {
+            clearTimeout(this.debounceTimers.get(key));
+        }
+        
+        const timer = setTimeout(() => {
+            this.debounceTimers.delete(key);
+            func();
+        }, wait);
+        
+        this.debounceTimers.set(key, timer);
+    }
+
+    async startUpdateChecking() {
+        let interval = 30000;
+        const maxInterval = 300000;
+        
+        const checkUpdates = async () => {
+            try {
+                const success = await this.checkForUpdates();
+                if (success) {
+                    interval = 30000;
+                } else {
+                    interval = Math.min(interval * 1.5, maxInterval);
+                }
+            } catch (error) {
+                interval = Math.min(interval * 2, maxInterval);
+                console.warn('Update check failed, increasing interval to:', interval);
+            }
+            
+            this.updateCheckInterval = setTimeout(checkUpdates, interval);
+        };
+
+        checkUpdates();
+    }
+
+    async checkForUpdates() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/timestamps`, {
+                timeout: 5000
+            });
+            
+            if (!response.ok) return false;
+
+            const timestamps = await response.json();
+            
+            if (timestamps.content && timestamps.content !== this.lastContentUpdate) {
+                this.lastContentUpdate = timestamps.content;
+                this.debounce(() => this.loadContentForAllUsers(), 1000, 'content');
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Content updated!');
+                }
+            }
+
+            if (timestamps.products && timestamps.products !== this.lastProductUpdate) {
+                this.lastProductUpdate = timestamps.products;
+                this.debounce(() => this.loadProductsForAllUsers(), 1000, 'products');
+                
+                if (!this.isAdmin) {
+                    this.showUpdateNotification('Products updated!');
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Update check failed:', error);
+            return false;
+        }
+    }
+
+    getPageIdentifier() {
+        const path = window.location.pathname;
+        let page = path.split('/').pop() || 'index.html';
+        if (!page.includes('.')) page += '.html';
+        return page.replace('.html', '');
+    }
+
+    async checkServerConnection() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/health`);
+            if (!response.ok) throw new Error('Server not responding');
+            console.log('Backend connected');
+        } catch (error) {
+            console.warn('Backend not available, using localStorage fallback');
+            this.apiBaseUrl = null;
+        }
+    }
+
+    createAdminPanel() {
+        if (!this.isAdmin) return;
+
+        const productContainers = document.querySelectorAll('[data-admin-products="true"], .products-grid, .product-grid');
+        const localProductCount = this.allProducts.length;
+
+        const adminHTML = `
+            <div id="admin-panel" class="admin-panel">
+                <div class="admin-header">
+                    <div class="admin-title">ADMIN PANEL</div>
+                    <button id="close-btn" class="admin-btn">×</button>
+                </div>
+                
+                <div class="admin-content">
+                    <div class="admin-section">
+                        <h3>Content Editor</h3>
+                        <button id="toggle-edit-mode" class="admin-action-btn">
+                            Enable Edit Mode
+                        </button>
+                        <button id="save-changes" class="admin-action-btn" disabled>
+                            Save Changes
+                        </button>
+                        <button id="reset-content" class="admin-action-btn">
+                            Reset Content
+                        </button>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3>Products (${localProductCount} total)</h3>
+                        <button id="add-product" class="admin-action-btn">
+                            ➕ Add Product
+                        </button>
+                        <button id="edit-products" class="admin-action-btn" ${localProductCount === 0 ? 'disabled' : ''}>
+                            📝 Manage Products
+                        </button>
+                        <button id="refresh-products" class="admin-action-btn">
+                            🔄 Refresh Products
+                        </button>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3>Status</h3>
+                        <div class="admin-info">
+                            <div>IP: ${this.currentUserIP}</div>
+                            <div>Backend: ${this.apiBaseUrl ? 'Connected' : 'Local Only'}</div>
+                            <div>Mode: Full Admin Access</div>
+                            <div>Elements: <span id="editable-count">0</span></div>
+                            <div>Page: ${this.getPageIdentifier()}</div>
+                            <div>Product Containers: ${productContainers.length}</div>
+                            <div>Total Products: ${localProductCount}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-toggle" class="admin-toggle">Admin</div>
+            
+            <div id="edit-overlay" class="edit-overlay" style="display: none;">
+                <div class="edit-toolbar">
+                    <span>Edit Mode Active - Click elements to edit</span>
+                    <button id="exit-edit-mode">Exit</button>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', adminHTML);
+        this.addAdminStyles();
+    }
+
+    addAdminStyles() {
+        if (document.getElementById('admin-panel-styles')) return;
+        
+        const styles = `
+            <style id="admin-panel-styles">
+                .admin-panel {
+                    position: fixed; top: 20px; right: 20px; width: 320px;
+                    background: #1a1a1a; color: white; border-radius: 12px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10000;
+                    font-family: 'Inter', sans-serif; backdrop-filter: blur(10px);
+                }
+                .admin-header {
                     display: flex; justify-content: space-between; align-items: center;
-                    padding: 20px 24px; background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
-                    border-radius: 16px 16px 0 0; color: white;
+                    padding: 12px 16px; background: #8B7355; border-radius: 12px 12px 0 0;
+                    cursor: move; font-weight: 600; font-size: 14px;
                 }
-                .admin-modal-title {
-                    font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+                .admin-btn {
+                    width: 24px; height: 24px; border: none; background: rgba(255,255,255,0.2);
+                    color: white; border-radius: 4px; cursor: pointer; display: flex;
+                    align-items: center; justify-content: center; transition: background 0.2s;
                 }
-                .admin-modal-close {
-                    background: rgba(255, 255, 255, 0.2); border: none; color: white;
-                    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
-                    font-size: 16px; transition: background 0.15s ease;
-                }
-                .admin-modal-close:hover { background: rgba(255, 255, 255, 0.3); }
-                .admin-modal-body { padding: 24px; }
-                
-                .form-section { 
-                    background: #f8f6f3; border-radius: 8px; padding: 18px; margin-bottom: 18px;
-                    border: 1px solid #e8e8e8; transform: translateZ(0);
-                }
-                .form-section-title {
-                    font-size: 14px; font-weight: 600; color: #8B7355; margin-bottom: 12px;
+                .admin-btn:hover { background: rgba(255,255,255,0.3); }
+                .admin-content { padding: 16px; }
+                .admin-section { margin-bottom: 20px; }
+                .admin-section h3 {
+                    font-size: 14px; margin: 0 0 12px 0; color: #8B7355;
                     text-transform: uppercase; letter-spacing: 0.5px;
                 }
-                .form-group { margin-bottom: 16px; }
-                .form-group label {
-                    display: block; font-weight: 600; color: #2c2c2c; margin-bottom: 6px;
-                    font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+                .admin-action-btn {
+                    display: block; width: 100%; padding: 8px 12px; margin-bottom: 8px;
+                    background: #333; border: 1px solid #555; border-radius: 6px;
+                    color: white; font-size: 12px; cursor: pointer; transition: all 0.2s;
                 }
-                .form-group input, .form-group textarea, .form-group select {
-                    width: 100%; padding: 10px 14px; border: 2px solid #e8e8e8;
-                    border-radius: 6px; font-size: 14px; transition: border-color 0.2s ease;
-                    font-family: 'Inter', sans-serif; box-sizing: border-box;
+                .admin-action-btn:hover:not(:disabled) {
+                    background: #444; border-color: #8B7355; transform: translateY(-1px);
                 }
-                .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-                    outline: none; border-color: #8B7355; box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.1);
+                .admin-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+                .admin-info { font-size: 12px; line-height: 1.6; }
+                .admin-toggle {
+                    position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+                    background: #8B7355; border-radius: 8px; display: flex; align-items: center;
+                    justify-content: center; font-size: 12px; cursor: pointer; z-index: 9999;
+                    transition: all 0.3s; box-shadow: 0 4px 20px rgba(139,115,85,0.3);
+                    color: white; font-weight: 600;
                 }
-                .form-group textarea { min-height: 70px; resize: vertical; }
-                .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-                .form-row-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-                .checkbox-group {
-                    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+                .admin-toggle:hover { transform: scale(1.05); }
+                .admin-panel.hidden { display: none; }
+                .edit-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(139,115,85,0.1); z-index: 9998; pointer-events: none;
                 }
-                .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
-                
-                .image-upload-container {
-                    border: 2px dashed #8B7355; border-radius: 8px; padding: 20px;
-                    text-align: center; background: white; transition: all 0.2s ease;
-                    cursor: pointer; position: relative; min-height: 120px;
-                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                .edit-toolbar {
+                    position: fixed; top: 20px; left: 20px; background: #8B7355;
+                    color: white; padding: 12px 20px; border-radius: 8px; display: flex;
+                    align-items: center; gap: 15px; z-index: 9999; pointer-events: all;
                 }
-                .image-upload-container:hover {
-                    border-color: #6d5a42; background: #fafafa;
+                .edit-toolbar button {
+                    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+                    color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer;
                 }
-                .image-upload-container.dragover {
-                    border-color: #6d5a42; background: #f0f8e8;
-                }
-                .image-upload-input {
-                    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                    opacity: 0; cursor: pointer; z-index: 2;
-                }
-                .image-upload-preview {
-                    max-width: 200px; max-height: 200px; border-radius: 8px;
-                    margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                }
-                .image-upload-text {
-                    color: #8B7355; font-weight: 500; margin: 8px 0;
-                }
-                .image-upload-hint {
-                    color: #666; font-size: 12px; margin-top: 4px;
-                }
-                .image-remove-btn {
-                    background: #ff4444; color: white; border: none; padding: 4px 8px;
-                    border-radius: 4px; cursor: pointer; font-size: 11px; margin-top: 8px;
-                }
-                .image-remove-btn:hover { background: #cc3333; }
-                
-                .size-option-item {
-                    display: flex; gap: 12px; margin-bottom: 12px; padding: 12px; 
-                    background: white; border-radius: 6px; border: 1px solid #e8e8e8;
-                    align-items: end;
-                }
-                .size-option-item .size-input { flex: 2; }
-                .size-option-item .price-input { flex: 1; }
-                .size-option-item button {
-                    background: #ff4444; color: white; border: none; padding: 8px 12px;
-                    border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;
-                }
-                .size-option-item button:hover { background: #cc3333; }
-                .size-option-item input {
-                    margin: 0; padding: 8px 12px; font-size: 13px;
-                }
-                .size-option-item label {
-                    margin: 0 0 4px 0; font-size: 11px; color: #666;
-                }
-                .add-size-btn {
-                    background: #8B7355; color: white; border: none; padding: 8px 16px;
-                    border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;
-                }
-                .add-size-btn:hover { background: #6d5a42; }
-                
-                .dynamic-list {
-                    border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px;
-                    background: white; margin-top: 8px; transform: translateZ(0);
-                }
-                .dynamic-list-item {
-                    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-                    padding: 6px; background: #fafafa; border-radius: 4px;
-                }
-                .dynamic-list-item:last-child { margin-bottom: 0; }
-                .dynamic-list-item input {
-                    flex: 1; margin: 0; padding: 5px 8px; font-size: 13px;
-                }
-                .dynamic-list-item button {
-                    background: #ff4444; color: white; border: none; padding: 5px 8px;
-                    border-radius: 3px; cursor: pointer; font-size: 11px;
-                }
-                .dynamic-list-item button:hover { background: #cc3333; }
-                .add-item-btn {
-                    background: #8B7355; color: white; border: none; padding: 6px 12px;
-                    border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;
-                }
-                .add-item-btn:hover { background: #6d5a42; }
-                
-                .btn-group {
-                    display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
-                    padding-top: 16px; border-top: 1px solid #e8e8e8;
-                }
-                .admin-btn-primary, .admin-btn-secondary, .admin-btn-danger {
-                    padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 500;
-                    cursor: pointer; transition: all 0.2s ease; border: none;
-                    text-transform: uppercase; letter-spacing: 0.5px;
-                }
-                .admin-btn-primary {
-                    background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%); color: white;
-                }
-                .admin-btn-primary:hover {
-                    transform: translateY(-1px); box-shadow: 0 6px 16px rgba(139, 115, 85, 0.3);
-                }
-                .admin-btn-secondary {
-                    background: transparent; color: #666; border: 2px solid #e8e8e8;
-                }
-                .admin-btn-secondary:hover {
-                    background: #f8f6f3; border-color: #8B7355; color: #8B7355;
-                }
-                .admin-btn-danger {
-                    background: #dc3545; color: white;
-                }
-                .admin-btn-danger:hover {
-                    background: #c82333; transform: translateY(-1px);
-                }
-                
-                .product-preview {
-                    background: white; border: 1px solid #e8e8e8; border-radius: 10px;
-                    padding: 16px; margin: 16px 0; text-align: center; transform: translateZ(0);
-                }
-                .preview-card {
-                    max-width: 200px; margin: 0 auto; background: white;
-                    border-radius: 6px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-                }
-                .preview-image {
-                    width: 100%; height: 120px; background: linear-gradient(45deg, #f8f6f3, #e8e6e0);
-                    display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
-                    overflow: hidden;
-                }
-                .preview-image img {
-                    width: 100%; height: 100%; object-fit: cover;
-                }
-                .preview-info { padding: 12px; }
-                .preview-title { font-weight: 600; margin-bottom: 4px; color: #2c2c2c; font-size: 14px; }
-                .preview-price { color: #8B7355; font-weight: 500; font-size: 16px; }
-                .preview-options {
-                    font-size: 11px; color: #666; margin-top: 6px; line-height: 1.3;
-                }
-                
-                .product-grid {
-                    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                    gap: 12px; margin: 16px 0;
-                }
-                .product-item {
-                    background: white; border: 2px solid #e8e8e8; border-radius: 6px;
-                    padding: 12px; cursor: pointer; transition: all 0.2s ease; text-align: center;
-                    transform: translateZ(0);
-                }
-                .product-item:hover, .product-item.selected {
-                    border-color: #8B7355; box-shadow: 0 3px 12px rgba(139, 115, 85, 0.2);
-                    transform: translateY(-1px) translateZ(0);
-                }
-                .product-item.selected {
-                    background: rgba(139, 115, 85, 0.05);
-                }
-                .product-item .product-emoji { font-size: 1.8rem; margin-bottom: 6px; }
-                .product-item .product-image {
-                    width: 80px; height: 80px; margin: 0 auto 8px auto; border-radius: 6px;
-                    overflow: hidden; background: #f8f6f3; display: flex; align-items: center;
-                    justify-content: center;
-                }
-                .product-item .product-image img {
-                    width: 100%; height: 100%; object-fit: cover;
-                }
-                .product-item .product-name { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
-                .product-item .product-price { color: #8B7355; font-weight: 500; font-size: 14px; }
-                .product-item .product-options {
-                    font-size: 10px; color: #666; margin-top: 4px; line-height: 1.2;
-                }
-                
-                .success-message, .error-message, .info-message {
-                    padding: 10px 16px; border-radius: 6px; margin: 12px 0;
-                    display: flex; align-items: center; gap: 8px; font-size: 13px;
-                }
-                .success-message {
-                    background: #d1fae5; border: 1px solid #a7f3d0; color: #065f46;
-                }
-                .error-message {
-                    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
-                }
-                .info-message {
-                    background: #dbeafe; border: 1px solid #bfdbfe; color: #1d4ed8;
-                }
-                
-                @media (max-width: 768px) {
-                    .admin-modal-content { margin: 16px; max-width: calc(100vw - 32px); }
-                    .admin-modal-body { padding: 16px; }
-                    .form-row, .form-row-three { grid-template-columns: 1fr; }
-                    .btn-group { flex-direction: column; }
-                    .product-grid { grid-template-columns: 1fr; }
-                    .size-option-item { flex-direction: column; align-items: stretch; }
+                .editable-element {
+                    position: relative; cursor: pointer !important;
+                    outline: 2px dashed #8B7355 !important; background: rgba(139,115,85,0.1) !important;
                 }
             </style>
         `;
-
-        document.head.insertAdjacentHTML('beforeend', modalStyles);
+        document.head.insertAdjacentHTML('beforeend', styles);
     }
 
-    createModal(id, title, content, actions = []) {
-        const cacheKey = `${id}-${title}`;
-        if (this.modalCache.has(cacheKey)) {
-            const modal = this.modalCache.get(cacheKey);
-            modal.querySelector('.admin-modal-body').innerHTML = content + this.createActionsHTML(actions);
-            return modal;
-        }
+    setupEventListeners() {
+        if (!this.isAdmin) return;
 
-        const existingModal = document.getElementById(id);
-        if (existingModal) existingModal.remove();
+        document.getElementById('close-btn')?.addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.add('hidden');
+        });
 
-        const modal = document.createElement('div');
-        modal.className = 'admin-modal';
-        modal.id = id;
+        document.getElementById('admin-toggle')?.addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.remove('hidden');
+        });
 
-        const actionsHTML = this.createActionsHTML(actions);
+        document.getElementById('toggle-edit-mode')?.addEventListener('click', () => {
+            this.toggleEditMode();
+        });
 
-        modal.innerHTML = `
-            <div class="admin-modal-content">
-                <div class="admin-modal-body">
-                    ${content}
-                    <div class="btn-group">
-                        ${actionsHTML}
-                        <button class="admin-btn-secondary" data-close="${id}">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        `;
+        document.getElementById('exit-edit-mode')?.addEventListener('click', () => {
+            this.exitEditMode();
+        });
 
-        this.modalCache.set(cacheKey, modal);
+        document.getElementById('save-changes')?.addEventListener('click', () => {
+            this.saveChanges();
+        });
 
-        document.body.appendChild(modal);
-        return modal;
+        document.getElementById('reset-content')?.addEventListener('click', () => {
+            this.resetContent();
+        });
+
+        document.getElementById('add-product')?.addEventListener('click', () => {
+            this.showAddProductModal();
+        });
+
+        document.getElementById('edit-products')?.addEventListener('click', () => {
+            this.showEditProductsModal();
+        });
+
+        document.getElementById('refresh-products')?.addEventListener('click', () => {
+            this.loadProductsForAllUsers();
+        });
     }
 
-    createActionsHTML(actions) {
-        return actions.map(action =>
-            `<button class="${action.class}" onclick="${action.onclick}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>`
-        ).join('');
-    }
+    setupEditableElements() {
+        if (!this.isAdmin) return;
 
-    showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            this.currentModal = modalId;
-            
-            requestAnimationFrame(() => {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+        const selectors = [
+            '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+        ];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach((element, index) => {
+                if (element.closest('.product-card')) return;
                 
-                setTimeout(() => {
-                    const firstInput = modal.querySelector('input, textarea, select');
-                    if (firstInput) firstInput.focus();
-                }, 50);
+                const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
+                element.setAttribute('data-admin-id', elementId);
+                this.editableElements.set(elementId, element);
+                this.originalContent.set(elementId, element.innerHTML);
             });
+        });
+
+        const editableCountElement = document.getElementById('editable-count');
+        if (editableCountElement) {
+            editableCountElement.textContent = this.editableElements.size;
         }
     }
 
-    closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-            setTimeout(() => {
-                modal.remove();
-            }, 200);
+    setupModalIntegration() {
+        const checkModals = () => {
+            if (window.AdminModals) {
+                this.modals = new window.AdminModals(this);
+                console.log('Modal integration complete');
+                return true;
+            }
+            if (window.adminModals) {
+                this.modals = window.adminModals;
+                console.log('Modal integration complete - using existing instance');
+                return true;
+            }
+            return false;
+        };
+
+        if (!checkModals()) {
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            const retryCheck = () => {
+                attempts++;
+                if (checkModals() || attempts >= maxAttempts) {
+                    if (attempts >= maxAttempts) {
+                        console.warn('Modal integration failed - using fallbacks');
+                        console.log('Available on window:', Object.keys(window).filter(k => k.includes('dmin')));
+                    }
+                    return;
+                }
+                setTimeout(retryCheck, 200 * attempts);
+            };
+            
+            setTimeout(retryCheck, 500);
         }
-        this.currentModal = null;
-        this.selectedProductId = null;
+    }
+
+    toggleEditMode() {
+        if (!this.isAdmin) return;
+
+        const editMode = !document.body.classList.contains('edit-mode');
+        const toggleBtn = document.getElementById('toggle-edit-mode');
+        const saveBtn = document.getElementById('save-changes');
+        const overlay = document.getElementById('edit-overlay');
+
+        if (editMode) {
+            document.body.classList.add('edit-mode');
+            toggleBtn.textContent = 'Disable Edit Mode';
+            saveBtn.disabled = false;
+            overlay.style.display = 'block';
+
+            this.editableElements.forEach((element, id) => {
+                element.classList.add('editable-element');
+                element.addEventListener('click', () => this.editElement(id));
+            });
+        } else {
+            this.exitEditMode();
+        }
+    }
+
+    exitEditMode() {
+        if (!this.isAdmin) return;
+
+        document.body.classList.remove('edit-mode');
+        document.getElementById('toggle-edit-mode').textContent = 'Enable Edit Mode';
+        document.getElementById('edit-overlay').style.display = 'none';
+
+        this.editableElements.forEach((element) => {
+            element.classList.remove('editable-element');
+        });
+    }
+
+    editElement(elementId) {
+        if (!this.isAdmin) return;
+
+        const element = this.editableElements.get(elementId);
+        if (!element) return;
+
+        const newContent = prompt('Edit content:', element.textContent);
+        if (newContent !== null) {
+            element.textContent = newContent;
+            document.getElementById('save-changes').disabled = false;
+        }
+    }
+
+    async saveChanges() {
+        if (!this.isAdmin) return;
+
+        const changes = {};
+        this.editableElements.forEach((element, id) => {
+            changes[id] = element.innerHTML;
+        });
+
+        const pageName = this.getPageIdentifier();
+
+        try {
+            if (this.apiBaseUrl) {
+                const response = await fetch(`${this.apiBaseUrl}/api/content`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        page: pageName,
+                        changes,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) throw new Error('Server save failed');
+                console.log('Saved to backend');
+            } else {
+                localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(changes));
+                console.log('Saved to localStorage');
+            }
+
+            const saveBtn = document.getElementById('save-changes');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Saved!';
+            saveBtn.disabled = true;
+
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+            }, 2000);
+
+        } catch (error) {
+            console.error('Save failed:', error);
+            localStorage.setItem(`admin_content_${pageName}`, JSON.stringify(changes));
+            alert('Server save failed, saved locally');
+        }
+    }
+
+    async resetContent() {
+        if (!this.isAdmin) return;
+
+        if (!confirm('Reset all content to original? This cannot be undone.')) return;
+
+        this.originalContent.forEach((content, id) => {
+            const element = this.editableElements.get(id);
+            if (element) element.innerHTML = content;
+        });
+
+        const pageName = this.getPageIdentifier();
+
+        if (this.apiBaseUrl) {
+            try {
+                await fetch(`${this.apiBaseUrl}/api/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'content' })
+                });
+            } catch (error) {
+                console.error('Reset failed:', error);
+            }
+        }
+
+        localStorage.removeItem(`admin_content_${pageName}`);
+        document.getElementById('save-changes').disabled = true;
+        console.log('Content reset');
     }
 
     showAddProductModal() {
-        const content = `
-            <h3>Add New Product</h3>
-            <p>Create a comprehensive product that matches your existing product modal structure.</p>
-            
-            <div class="form-section">
-                <div class="form-section-title">Basic Information</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Product Name *</label>
-                        <input type="text" id="product-name" placeholder="Enter product name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select id="product-category">
-                            <option value="candles">Candles</option>
-                            <option value="wax-melts">Wax Melts</option>
-                            <option value="room-sprays">Room Sprays</option>
-                            <option value="diffusers">Diffusers</option>
-                            <option value="jewelry">Jewelry</option>
-                            <option value="accessories">Accessories</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="product-description" placeholder="Enter detailed product description" rows="3"></textarea>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <div class="form-section-title">Product Image</div>
-                <div class="form-group">
-                    <label>Upload Product Image *</label>
-                    <div class="image-upload-container" id="image-upload-area">
-                        <input type="file" id="product-image" class="image-upload-input" accept="image/*">
-                        <div id="image-upload-content">
-                            <div class="image-upload-text">Click or drag image here</div>
-                            <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <div class="form-section-title">Size Options & Pricing</div>
-                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Add different size options with their respective prices. First option will be the default/base price.</p>
-                
-                <div id="size-options-container">
-                    <div class="size-option-item">
-                        <div class="size-input">
-                            <label>Size Name</label>
-                            <input type="text" value="8oz Candle" placeholder="Size name">
-                        </div>
-                        <div class="price-input">
-                            <label>Price ($)</label>
-                            <input type="number" value="15.00" step="0.01" min="0" placeholder="0.00">
-                        </div>
-                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                    </div>
-                    <div class="size-option-item">
-                        <div class="size-input">
-                            <label>Size Name</label>
-                            <input type="text" value="10oz Candle" placeholder="Size name">
-                        </div>
-                        <div class="price-input">
-                            <label>Price ($)</label>
-                            <input type="number" value="16.00" step="0.01" min="0" placeholder="0.00">
-                        </div>
-                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                    </div>
-                    <div class="size-option-item">
-                        <div class="size-input">
-                            <label>Size Name</label>
-                            <input type="text" value="16oz Candle" placeholder="Size name">
-                        </div>
-                        <div class="price-input">
-                            <label>Price ($)</label>
-                            <input type="number" value="22.00" step="0.01" min="0" placeholder="0.00">
-                        </div>
-                        <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                    </div>
-                </div>
-                <button class="add-size-btn" onclick="adminModals.addSizeOption()">+ Add Size Option</button>
-            </div>
-
-            <div class="form-section">
-                <div class="form-section-title">Product Settings</div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="product-featured">
-                        <label for="product-featured">Featured Product</label>
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="product-in-stock" checked>
-                        <label for="product-in-stock">In Stock</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="product-preview" id="product-preview">
-                <h4>Live Preview</h4>
-                <div class="preview-card">
-                    <div class="preview-image" id="preview-image">
-                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>
-                    </div>
-                    <div class="preview-info">
-                        <div class="preview-title" id="preview-title">Product Name</div>
-                        <div class="preview-price" id="preview-price">From $15.00</div>
-                        <div class="preview-options" id="preview-options">3 size options available</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="add-product-message"></div>
-        `;
-
-        const actions = [
-            {
-                text: 'Add Product',
-                class: 'admin-btn-primary',
-                onclick: 'adminModals.handleAddProduct()'
-            }
-        ];
-
-        this.createModal('add-product-modal', '➕ Add New Product', content, actions);
-        this.showModal('add-product-modal');
+        if (!this.isAdmin) return;
         
-        // Set up all event listeners after modal is shown
-        setTimeout(() => {
-            this.setupProductPreview();
-            this.setupImageUpload();
-            this.setupSizeOptionsListeners();
-        }, 100);
-    }
-
-    addSizeOption() {
-        const container = document.getElementById('size-options-container');
-        if (!container) return;
-
-        const sizeOption = document.createElement('div');
-        sizeOption.className = 'size-option-item';
-        sizeOption.innerHTML = `
-            <div class="size-input">
-                <label>Size Name</label>
-                <input type="text" value="" placeholder="Size name">
-            </div>
-            <div class="price-input">
-                <label>Price ($)</label>
-                <input type="number" value="" step="0.01" min="0" placeholder="0.00">
-            </div>
-            <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-        `;
-        
-        container.appendChild(sizeOption);
-        
-        // Add event listeners to new inputs immediately
-        const newInputs = sizeOption.querySelectorAll('input');
-        newInputs.forEach(input => {
-            input.addEventListener('input', () => this.updatePreview());
-            input.addEventListener('change', () => this.updatePreview());
-            input.addEventListener('keyup', () => this.updatePreview());
-            input.addEventListener('blur', () => this.updatePreview());
-        });
-        
-        // Focus the first input
-        if (newInputs[0]) newInputs[0].focus();
-        
-        // Update preview immediately
-        this.updatePreview();
-    }
-
-    setupSizeOptionsListeners() {
-        const container = document.getElementById('size-options-container');
-        if (!container) return;
-
-        // Remove any existing listeners to prevent duplicates
-        const existingInputs = container.querySelectorAll('input');
-        existingInputs.forEach(input => {
-            // Clone and replace to remove existing listeners
-            const newInput = input.cloneNode(true);
-            input.parentNode.replaceChild(newInput, input);
-        });
-
-        // Add fresh event listeners to all size option inputs
-        const allInputs = container.querySelectorAll('input');
-        allInputs.forEach(input => {
-            input.addEventListener('input', () => this.updatePreview());
-            input.addEventListener('change', () => this.updatePreview());
-            input.addEventListener('keyup', () => this.updatePreview());
-            input.addEventListener('blur', () => this.updatePreview());
-        });
-
-        console.log('Size options listeners set up for', allInputs.length, 'inputs');
-    }
-
-    getSizeOptions() {
-        const container = document.getElementById('size-options-container');
-        if (!container) {
-            console.log('Size options container not found');
-            return [];
+        if (this.modals) {
+            this.modals.showAddProductModal();
+        } else {
+            this.createProductWithPrompts();
         }
+    }
 
-        const sizeItems = container.querySelectorAll('.size-option-item');
-        const sizeOptions = [];
+    showEditProductsModal() {
+        if (!this.isAdmin) return;
+        
+        if (this.modals) {
+            this.modals.showEditProductsModal();
+        } else {
+            alert('Product management modal not available. Please refresh the page.');
+        }
+    }
 
-        sizeItems.forEach((item, index) => {
-            const nameInput = item.querySelector('.size-input input');
-            const priceInput = item.querySelector('.price-input input');
+    async addProduct(productData) {
+        if (!this.isAdmin) return false;
+
+        try {
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            existingProducts.push(productData);
+            localStorage.setItem('admin_products', JSON.stringify(existingProducts));
             
-            if (nameInput && priceInput) {
-                const name = nameInput.value.trim();
-                const price = parseFloat(priceInput.value) || 0;
-                
-                if (name && price > 0) {
-                    sizeOptions.push({
-                        name: name,
-                        price: price
+            if (this.apiBaseUrl) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            productId: productData.id,
+                            productData
+                        })
                     });
+
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server save failed:', result.error);
+                    } else {
+                        console.log('Product saved to server successfully');
+                    }
+                } catch (serverError) {
+                    console.warn('Server save failed, but local save succeeded:', serverError);
                 }
             }
-        });
-
-        console.log('Got size options:', sizeOptions);
-        return sizeOptions;
-    }
-
-    setupImageUpload() {
-        const uploadArea = document.getElementById('image-upload-area');
-        const fileInput = document.getElementById('product-image');
-        const uploadContent = document.getElementById('image-upload-content');
-
-        if (!uploadArea || !fileInput || !uploadContent) return;
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, this.preventDefaults, false);
-            document.body.addEventListener(eventName, this.preventDefaults, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            this.handleImageFiles(files);
-        }, false);
-
-        fileInput.addEventListener('change', (e) => {
-            this.handleImageFiles(e.target.files);
-        });
-    }
-
-    preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    handleImageFiles(files) {
-        if (files.length === 0) return;
-
-        const file = files[0];
-        
-        if (!file.type.startsWith('image/')) {
-            this.showMessage(document.getElementById('add-product-message'), 'Please select a valid image file', 'error');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            this.showMessage(document.getElementById('add-product-message'), 'Image file must be less than 5MB', 'error');
-            return;
-        }
-
-        this.processImageFile(file);
-    }
-
-    processImageFile(file) {
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const imageDataUrl = e.target.result;
-            this.displayImagePreview(imageDataUrl, file.name);
-            this.updatePreview();
             
-            const fileInput = document.getElementById('product-image');
-            if (fileInput) {
-                fileInput.setAttribute('data-image-url', imageDataUrl);
-                fileInput.setAttribute('data-file-name', file.name);
+            await this.loadProductsForAllUsers();
+            this.updateAdminPanelInfo();
+            
+            return true;
+
+        } catch (error) {
+            console.error('Failed to add product:', error);
+            return false;
+        }
+    }
+
+    async updateProduct(productId, productData) {
+        if (!this.isAdmin) return false;
+
+        try {
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const productIndex = existingProducts.findIndex(p => p.id === productId);
+            
+            if (productIndex === -1) {
+                throw new Error('Product not found in localStorage');
             }
-        };
+            
+            existingProducts[productIndex] = {
+                ...productData,
+                id: productId,
+                updatedAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem('admin_products', JSON.stringify(existingProducts));
+            
+            if (this.apiBaseUrl) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productData)
+                    });
 
-        reader.onerror = () => {
-            this.showMessage(document.getElementById('add-product-message'), 'Error reading image file', 'error');
-        };
-
-        reader.readAsDataURL(file);
-    }
-
-    displayImagePreview(imageUrl, fileName) {
-        const uploadContent = document.getElementById('image-upload-content');
-        if (!uploadContent) return;
-
-        uploadContent.innerHTML = `
-            <img src="${imageUrl}" alt="Preview" class="image-upload-preview">
-            <div class="image-upload-text">${fileName}</div>
-            <button type="button" class="image-remove-btn" onclick="adminModals.removeImage()">Remove Image</button>
-        `;
-    }
-
-    removeImage() {
-        const uploadContent = document.getElementById('image-upload-content');
-        const fileInput = document.getElementById('product-image');
-        
-        if (uploadContent) {
-            uploadContent.innerHTML = `
-                <div class="image-upload-text">Click or drag image here</div>
-                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-            `;
-        }
-        
-        if (fileInput) {
-            fileInput.value = '';
-            fileInput.removeAttribute('data-image-url');
-            fileInput.removeAttribute('data-file-name');
-        }
-        
-        this.updatePreview();
-    }
-
-    setupProductPreview() {
-        // Set up listeners for basic product info
-        const productNameInput = document.getElementById('product-name');
-        if (productNameInput) {
-            productNameInput.addEventListener('input', () => this.updatePreview());
-            productNameInput.addEventListener('change', () => this.updatePreview());
-        }
-
-        // Initial preview update
-        this.updatePreview();
-        console.log('Product preview setup complete');
-    }
-
-    updatePreview() {
-        console.log('Updating preview...');
-        
-        const nameInput = document.getElementById('product-name');
-        const fileInput = document.getElementById('product-image');
-        
-        const name = nameInput?.value.trim() || 'Product Name';
-        const imageUrl = fileInput?.getAttribute('data-image-url');
-        const sizeOptions = this.getSizeOptions();
-
-        console.log('Preview data:', { name, imageUrl: !!imageUrl, sizeOptionsCount: sizeOptions.length });
-
-        const previewTitle = document.getElementById('preview-title');
-        const previewPrice = document.getElementById('preview-price');
-        const previewImage = document.getElementById('preview-image');
-        const previewOptions = document.getElementById('preview-options');
-
-        if (previewTitle) {
-            previewTitle.textContent = name;
-        }
-        
-        if (previewPrice) {
-            if (sizeOptions.length > 0) {
-                const lowestPrice = Math.min(...sizeOptions.map(s => s.price));
-                previewPrice.textContent = `From $${lowestPrice.toFixed(2)}`;
-            } else {
-                previewPrice.textContent = 'From $15.00';
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server update failed:', result.error);
+                    } else {
+                        console.log('Product updated on server successfully');
+                    }
+                } catch (serverError) {
+                    console.warn('Server update failed, but local update succeeded:', serverError);
+                }
             }
-        }
-        
-        if (previewImage) {
-            if (imageUrl) {
-                previewImage.innerHTML = `<img src="${imageUrl}" alt="${this.escapeHtml(name)}">`;
-            } else {
-                previewImage.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>';
-            }
-        }
-        
-        if (previewOptions) {
-            const optionCount = sizeOptions.length;
-            if (optionCount > 0) {
-                previewOptions.textContent = `${optionCount} size option${optionCount !== 1 ? 's' : ''} available`;
-            } else {
-                previewOptions.textContent = 'No size options';
-            }
-        }
+            
+            await this.loadProductsForAllUsers();
+            this.updateAdminPanelInfo();
+            
+            return true;
 
-        console.log('Preview updated successfully');
+        } catch (error) {
+            console.error('Failed to update product:', error);
+            return false;
+        }
     }
 
-    async handleAddProduct() {
-        const nameInput = document.getElementById('product-name');
-        const descriptionInput = document.getElementById('product-description');
-        const categoryInput = document.getElementById('product-category');
-        const featuredInput = document.getElementById('product-featured');
-        const inStockInput = document.getElementById('product-in-stock');
-        const fileInput = document.getElementById('product-image');
-        const messageDiv = document.getElementById('add-product-message');
+    async deleteProduct(productId) {
+        if (!this.isAdmin) return false;
 
-        if (!nameInput || !messageDiv) {
-            console.error('Required form elements not found');
+        try {
+            const existingProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const filteredProducts = existingProducts.filter(p => p.id !== productId);
+            localStorage.setItem('admin_products', JSON.stringify(filteredProducts));
+            
+            if (this.apiBaseUrl) {
+                try {
+                    const response = await fetch(`${this.apiBaseUrl}/api/products/${productId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error('Server delete failed:', result.error);
+                    } else {
+                        console.log('Product deleted from server successfully');
+                    }
+                } catch (serverError) {
+                    console.warn('Server delete failed, but local delete succeeded:', serverError);
+                }
+            }
+            
+            await this.loadProductsForAllUsers();
+            this.updateAdminPanelInfo();
+            
+            return true;
+
+        } catch (error) {
+            console.error('Failed to delete product:', error);
+            return false;
+        }
+    }
+
+    updateAdminPanelInfo() {
+        const localProductCount = this.allProducts.length;
+        const productCountElements = document.querySelectorAll('.admin-section h3');
+        if (productCountElements[1]) {
+            productCountElements[1].textContent = `Products (${localProductCount} total)`;
+        }
+        
+        const editBtn = document.getElementById('edit-products');
+        if (editBtn) {
+            editBtn.disabled = localProductCount === 0;
+        }
+    }
+
+    createProductWithPrompts() {
+        const name = prompt('Product Name:');
+        if (!name) return;
+
+        const priceStr = prompt('Product Price (e.g., 15.00):');
+        const price = parseFloat(priceStr);
+        if (!price || price <= 0) {
+            alert('Please enter a valid price');
             return;
         }
 
-        const name = nameInput.value.trim();
-        const description = descriptionInput?.value.trim() || '';
-        const category = categoryInput?.value || 'candles';
-        const featured = featuredInput?.checked || false;
-        const inStock = inStockInput?.checked ?? true;
-        const imageUrl = fileInput?.getAttribute('data-image-url') || null;
-        const sizeOptions = this.getSizeOptions();
-
-        if (!name) {
-            this.showMessage(messageDiv, 'Please enter a product name', 'error');
-            nameInput.focus();
-            return;
-        }
-
-        if (!imageUrl) {
-            this.showMessage(messageDiv, 'Please upload a product image', 'error');
-            return;
-        }
-
-        if (sizeOptions.length === 0) {
-            this.showMessage(messageDiv, 'Please add at least one size option with a valid price', 'error');
-            return;
-        }
+        const description = prompt('Product Description (optional):') || `Premium ${name} with excellent quality.`;
+        const category = prompt('Category (candles/wax-melts/room-sprays/diffusers/jewelry):', 'candles') || 'candles';
+        const emoji = prompt('Emoji/Icon (optional):', '🕯️') || '🕯️';
 
         const productData = {
             id: this.generateProductId(name),
             name: name,
-            description: description || `Premium ${category.replace('-', ' ')} with excellent quality and multiple size options.`,
+            price: price,
+            description: description,
             category: category,
-            imageUrl: imageUrl,
-            featured: featured,
-            inStock: inStock,
-            sizeOptions: sizeOptions,
-            price: sizeOptions[0].price,
+            emoji: emoji,
+            featured: false,
+            inStock: true,
+            sizeOptions: [
+                { name: '8oz Candle', price: price },
+                { name: '10oz Candle', price: price + 1 },
+                { name: '16oz Candle', price: price + 7 }
+            ],
             createdAt: new Date().toISOString(),
-            createdBy: 'admin',
+            createdBy: 'admin-fallback'
         };
 
-        try {
-            this.showMessage(messageDiv, 'Adding product...', 'info');
-            
-            const addButton = document.querySelector('.admin-btn-primary');
-            if (addButton) addButton.disabled = true;
-            
-            const success = await this.adminPanel.addProduct(productData);
-            
+        this.addProduct(productData).then(success => {
             if (success) {
-                this.showMessage(messageDiv, 'Product added successfully with size options!', 'success');
-                this.clearAddProductForm();
-                
-                setTimeout(() => {
-                    this.closeModal('add-product-modal');
-                }, 2000);
-                
+                alert(`✅ Product "${name}" added successfully!`);
             } else {
-                this.showMessage(messageDiv, 'Failed to add product. Please try again.', 'error');
-                if (addButton) addButton.disabled = false;
-            }
-
-        } catch (error) {
-            console.error('Error adding product:', error);
-            this.showMessage(messageDiv, 'An error occurred while adding the product. Please try again.', 'error');
-            if (addButton) addButton.disabled = false;
-        }
-    }
-
-    clearAddProductForm() {
-        const inputs = ['product-name', 'product-description'];
-        inputs.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) element.value = '';
-        });
-        
-        const checkboxes = ['product-featured', 'product-in-stock'];
-        checkboxes.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.checked = id === 'product-in-stock';
+                alert('❌ Failed to add product. Please try again.');
             }
         });
-
-        const categorySelect = document.getElementById('product-category');
-        if (categorySelect) categorySelect.value = 'candles';
-
-        this.removeImage();
-
-        const container = document.getElementById('size-options-container');
-        if (container) {
-            container.innerHTML = `
-                <div class="size-option-item">
-                    <div class="size-input">
-                        <label>Size Name</label>
-                        <input type="text" value="8oz Candle" placeholder="Size name">
-                    </div>
-                    <div class="price-input">
-                        <label>Price ($)</label>
-                        <input type="number" value="15.00" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                </div>
-                <div class="size-option-item">
-                    <div class="size-input">
-                        <label>Size Name</label>
-                        <input type="text" value="10oz Candle" placeholder="Size name">
-                    </div>
-                    <div class="price-input">
-                        <label>Price ($)</label>
-                        <input type="number" value="16.00" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                </div>
-                <div class="size-option-item">
-                    <div class="size-input">
-                        <label>Size Name</label>
-                        <input type="text" value="22oz Candle" placeholder="Size name">
-                    </div>
-                    <div class="price-input">
-                        <label>Price ($)</label>
-                        <input type="number" value="22.00" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                    <button onclick="this.parentNode.remove(); adminModals.updatePreview()">Remove</button>
-                </div>
-            `;
-        }
-
-        // Re-setup listeners for the reset form with a small delay
-        setTimeout(() => {
-            this.setupSizeOptionsListeners();
-            this.updatePreview();
-        }, 100);
-    }
-
-    showEditProductsModal() {
-        const localProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
-        
-        if (localProducts.length === 0) {
-            alert('No products found. Add some products first!');
-            return;
-        }
-
-        const productsHTML = localProducts.map(product => {
-            let imageDisplay;
-            if (product.imageUrl && product.imageUrl.trim()) {
-                imageDisplay = `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}"></div>`;
-            } else {
-                imageDisplay = `<div class="product-image" style="background: #f0f0f0; color: #999; font-size: 24px; display: flex; align-items: center; justify-content: center; height: 80px;">${product.emoji || '🕯️'}</div>`;
-            }
-            
-            const basePrice = product.sizeOptions && product.sizeOptions.length > 0 
-                ? product.sizeOptions[0].price 
-                : product.price || 0;
-            
-            return `
-                <div class="product-item" data-product-id="${product.id}">
-                    ${imageDisplay}
-                    <div class="product-name">${this.escapeHtml(product.name)}</div>
-                    <div class="product-price">From $${basePrice.toFixed(2)}</div>
-                    <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
-                        ${this.formatCategory(product.category)}
-                    </div>
-                    <div class="product-options">
-                        ${this.formatProductOptions(product)}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        const content = `
-            <h3>Manage Products</h3>
-            <p>Click on a product to edit its details, size options, and settings:</p>
-            
-            <div class="product-grid" id="product-selection-grid">
-                ${productsHTML}
-            </div>
-
-            <div id="edit-form" style="display: none;">
-                <h4>Edit Selected Product</h4>
-                
-                <div class="form-section">
-                    <div class="form-section-title">Basic Information</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Product Name</label>
-                            <input type="text" id="edit-product-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select id="edit-product-category">
-                                <option value="candles">Candles</option>
-                                <option value="wax-melts">Wax Melts</option>
-                                <option value="room-sprays">Room Sprays</option>
-                                <option value="diffusers">Diffusers</option>
-                                <option value="jewelry">Jewelry</option>
-                                <option value="accessories">Accessories</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="edit-product-description" rows="3"></textarea>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div class="form-section-title">Product Image</div>
-                    <div class="form-group">
-                        <label>Update Product Image</label>
-                        <div class="image-upload-container" id="edit-image-upload-area">
-                            <input type="file" id="edit-product-image" class="image-upload-input" accept="image/*">
-                            <div id="edit-image-upload-content">
-                                <div class="image-upload-text">Click or drag image here</div>
-                                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div class="form-section-title">Size Options & Pricing</div>
-                    
-                    <div id="edit-size-options-container"></div>
-                    <button class="add-size-btn" onclick="adminModals.addEditSizeOption()">+ Add Size Option</button>
-                </div>
-
-                <div class="form-section">
-                    <div class="form-section-title">Product Settings</div>
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="edit-product-featured">
-                            <label for="edit-product-featured">Featured Product</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="edit-product-in-stock">
-                            <label for="edit-product-in-stock">In Stock</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="edit-product-message"></div>
-            </div>
-        `;
-
-        const actions = [
-            {
-                text: 'Save Changes',
-                class: 'admin-btn-primary',
-                onclick: 'adminModals.handleSaveProduct()'
-            },
-            {
-                text: 'Delete Product',
-                class: 'admin-btn-danger',
-                onclick: 'adminModals.handleDeleteProduct()'
-            }
-        ];
-
-        this.createModal('edit-products-modal', '📝 Manage Products', content, actions);
-        this.showModal('edit-products-modal');
-
-        setTimeout(() => {
-            document.querySelectorAll('.product-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    this.selectProduct(item.getAttribute('data-product-id'));
-                });
-            });
-        }, 100);
-    }
-
-    addEditSizeOption() {
-        const container = document.getElementById('edit-size-options-container');
-        if (!container) return;
-
-        const sizeOption = document.createElement('div');
-        sizeOption.className = 'size-option-item';
-        sizeOption.innerHTML = `
-            <div class="size-input">
-                <label>Size Name</label>
-                <input type="text" value="" placeholder="Size name">
-            </div>
-            <div class="price-input">
-                <label>Price ($)</label>
-                <input type="number" value="" step="0.01" min="0" placeholder="0.00">
-            </div>
-            <button onclick="this.parentNode.remove()">Remove</button>
-        `;
-        
-        container.appendChild(sizeOption);
-        
-        // Add event listeners to new inputs
-        const newInputs = sizeOption.querySelectorAll('input');
-        newInputs.forEach(input => {
-            input.addEventListener('input', () => this.updateEditPreview());
-            input.addEventListener('change', () => this.updateEditPreview());
-            input.addEventListener('keyup', () => this.updateEditPreview());
-            input.addEventListener('blur', () => this.updateEditPreview());
-        });
-        
-        // Focus the first input
-        if (newInputs[0]) newInputs[0].focus();
-    }
-
-    updateEditPreview() {
-        // Optional: Add edit mode preview if you want real-time updates in edit mode
-        console.log('Edit preview updated');
-    }
-
-    setupEditSizeOptionsListeners() {
-        const container = document.getElementById('edit-size-options-container');
-        if (!container) return;
-
-        // Add event listeners to all edit size option inputs
-        const allInputs = container.querySelectorAll('input');
-        allInputs.forEach(input => {
-            input.addEventListener('input', () => this.updateEditPreview());
-            input.addEventListener('change', () => this.updateEditPreview());
-            input.addEventListener('keyup', () => this.updateEditPreview());
-            input.addEventListener('blur', () => this.updateEditPreview());
-        });
-
-        console.log('Edit size options listeners set up for', allInputs.length, 'inputs');
-    }
-
-    getEditSizeOptions() {
-        const container = document.getElementById('edit-size-options-container');
-        if (!container) return [];
-
-        const sizeItems = container.querySelectorAll('.size-option-item');
-        const sizeOptions = [];
-
-        sizeItems.forEach(item => {
-            const nameInput = item.querySelector('.size-input input');
-            const priceInput = item.querySelector('.price-input input');
-            
-            if (nameInput && priceInput && nameInput.value.trim() && priceInput.value) {
-                sizeOptions.push({
-                    name: nameInput.value.trim(),
-                    price: parseFloat(priceInput.value) || 0
-                });
-            }
-        });
-
-        return sizeOptions;
-    }
-
-    formatProductOptions(product) {
-        let options = [];
-        if (product.sizeOptions && product.sizeOptions.length > 0) {
-            options.push(`${product.sizeOptions.length} size options`);
-        }
-        return options.join(', ') || 'Standard options';
-    }
-
-    populateSizeOptions(container, sizeOptions) {
-        if (!container || !sizeOptions) return;
-
-        container.innerHTML = '';
-        
-        sizeOptions.forEach(option => {
-            const sizeOption = document.createElement('div');
-            sizeOption.className = 'size-option-item';
-            sizeOption.innerHTML = `
-                <div class="size-input">
-                    <label>Size Name</label>
-                    <input type="text" value="${this.escapeHtml(option.name)}" placeholder="Size name">
-                </div>
-                <div class="price-input">
-                    <label>Price ($)</label>
-                    <input type="number" value="${option.price}" step="0.01" min="0" placeholder="0.00">
-                </div>
-                <button onclick="this.parentNode.remove()">Remove</button>
-            `;
-            container.appendChild(sizeOption);
-        });
-
-        // Set up listeners for all the populated inputs
-        setTimeout(() => this.setupEditSizeOptionsListeners(), 50);
-    }
-
-    selectProduct(productId) {
-        document.querySelectorAll('.product-item').forEach(item => {
-            item.classList.remove('selected');
-        });
-
-        const selectedItem = document.querySelector(`[data-product-id="${productId}"]`);
-        if (selectedItem) {
-            selectedItem.classList.add('selected');
-        }
-
-        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
-        const product = products.find(p => p.id === productId);
-        
-        if (product) {
-            document.getElementById('edit-product-name').value = product.name || '';
-            document.getElementById('edit-product-description').value = product.description || '';
-            document.getElementById('edit-product-category').value = product.category || 'candles';
-            document.getElementById('edit-product-featured').checked = product.featured || false;
-            document.getElementById('edit-product-in-stock').checked = product.inStock !== false;
-            
-            if (product.imageUrl) {
-                this.displayEditImagePreview(product.imageUrl, 'Current Image');
-            }
-            
-            const sizeContainer = document.getElementById('edit-size-options-container');
-            const defaultSizes = product.sizeOptions && product.sizeOptions.length > 0 
-                ? product.sizeOptions 
-                : [{ name: 'Standard', price: product.price || 15.00 }];
-            this.populateSizeOptions(sizeContainer, defaultSizes);
-            
-            this.setupEditImageUpload();
-        }
-
-        const editForm = document.getElementById('edit-form');
-        if (editForm) {
-            editForm.style.display = 'block';
-            editForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        this.selectedProductId = productId;
-    }
-
-    setupEditImageUpload() {
-        const uploadArea = document.getElementById('edit-image-upload-area');
-        const fileInput = document.getElementById('edit-product-image');
-        const uploadContent = document.getElementById('edit-image-upload-content');
-
-        if (!uploadArea || !fileInput || !uploadContent) return;
-
-        uploadArea.replaceWith(uploadArea.cloneNode(true));
-        const newUploadArea = document.getElementById('edit-image-upload-area');
-        const newFileInput = document.getElementById('edit-product-image');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            newUploadArea.addEventListener(eventName, this.preventDefaults, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            newUploadArea.addEventListener(eventName, () => newUploadArea.classList.add('dragover'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            newUploadArea.addEventListener(eventName, () => newUploadArea.classList.remove('dragover'), false);
-        });
-
-        newUploadArea.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            this.handleEditImageFiles(files);
-        }, false);
-
-        newFileInput.addEventListener('change', (e) => {
-            this.handleEditImageFiles(e.target.files);
-        });
-    }
-
-    handleEditImageFiles(files) {
-        if (files.length === 0) return;
-
-        const file = files[0];
-        
-        if (!file.type.startsWith('image/')) {
-            this.showMessage(document.getElementById('edit-product-message'), 'Please select a valid image file', 'error');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            this.showMessage(document.getElementById('edit-product-message'), 'Image file must be less than 5MB', 'error');
-            return;
-        }
-
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const imageDataUrl = e.target.result;
-            this.displayEditImagePreview(imageDataUrl, file.name);
-            
-            const fileInput = document.getElementById('edit-product-image');
-            if (fileInput) {
-                fileInput.setAttribute('data-image-url', imageDataUrl);
-                fileInput.setAttribute('data-file-name', file.name);
-            }
-        };
-
-        reader.readAsDataURL(file);
-    }
-
-    displayEditImagePreview(imageUrl, fileName) {
-        const uploadContent = document.getElementById('edit-image-upload-content');
-        if (!uploadContent) return;
-
-        uploadContent.innerHTML = `
-            <img src="${imageUrl}" alt="Preview" class="image-upload-preview">
-            <div class="image-upload-text">${fileName}</div>
-            <button type="button" class="image-remove-btn" onclick="adminModals.removeEditImage()">Remove Image</button>
-        `;
-    }
-
-    removeEditImage() {
-        const uploadContent = document.getElementById('edit-image-upload-content');
-        const fileInput = document.getElementById('edit-product-image');
-        
-        if (uploadContent) {
-            uploadContent.innerHTML = `
-                <div class="image-upload-text">Click or drag image here</div>
-                <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-            `;
-        }
-        
-        if (fileInput) {
-            fileInput.value = '';
-            fileInput.removeAttribute('data-image-url');
-            fileInput.removeAttribute('data-file-name');
-        }
-    }
-
-    async handleSaveProduct() {
-        if (!this.selectedProductId) {
-            alert('Please select a product first');
-            return;
-        }
-
-        const name = document.getElementById('edit-product-name').value.trim();
-        const description = document.getElementById('edit-product-description').value.trim();
-        const category = document.getElementById('edit-product-category').value;
-        const featured = document.getElementById('edit-product-featured').checked;
-        const inStock = document.getElementById('edit-product-in-stock').checked;
-        const fileInput = document.getElementById('edit-product-image');
-        const newImageUrl = fileInput?.getAttribute('data-image-url');
-        const messageDiv = document.getElementById('edit-product-message');
-        const sizeOptions = this.getEditSizeOptions();
-
-        if (!name) {
-            this.showMessage(messageDiv, 'Please enter a product name', 'error');
-            return;
-        }
-
-        if (sizeOptions.length === 0) {
-            this.showMessage(messageDiv, 'Please add at least one size option', 'error');
-            return;
-        }
-
-        this.showMessage(messageDiv, 'Saving changes...', 'info');
-
-        try {
-            const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const existingProduct = products.find(p => p.id === this.selectedProductId);
-            
-            const updatedProduct = {
-                name: name,
-                description: description,
-                category: category,
-                imageUrl: newImageUrl || (existingProduct ? existingProduct.imageUrl : null),
-                featured: featured,
-                inStock: inStock,
-                sizeOptions: sizeOptions,
-                price: sizeOptions[0].price,
-                updatedAt: new Date().toISOString()
-            };
-
-            const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
-
-            if (success) {
-                this.showMessage(messageDiv, 'Product updated successfully!', 'success');
-
-                setTimeout(() => {
-                    this.closeModal('edit-products-modal');
-                }, 2000);
-            } else {
-                this.showMessage(messageDiv, 'Failed to update product. Please try again.', 'error');
-            }
-
-        } catch (error) {
-            console.error('Error updating product:', error);
-            this.showMessage(messageDiv, 'Failed to update product. Please try again.', 'error');
-        }
-    }
-
-    async handleDeleteProduct() {
-        if (!this.selectedProductId) {
-            alert('Please select a product first');
-            return;
-        }
-
-        const products = JSON.parse(localStorage.getItem('admin_products') || '[]');
-        const product = products.find(p => p.id === this.selectedProductId);
-        
-        if (!product) {
-            alert('Product not found');
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to delete "${product.name}"?\n\nThis action cannot be undone.`)) {
-            return;
-        }
-
-        const messageDiv = document.getElementById('edit-product-message');
-        this.showMessage(messageDiv, 'Deleting product...', 'info');
-
-        try {
-            const success = await this.adminPanel.deleteProduct(this.selectedProductId);
-
-            if (success) {
-                this.showMessage(messageDiv, '✅ Product deleted successfully!', 'success');
-
-                setTimeout(() => {
-                    this.closeModal('edit-products-modal');
-                }, 1500);
-            } else {
-                this.showMessage(messageDiv, '❌ Failed to delete product. Please try again.', 'error');
-            }
-
-        } catch (error) {
-            console.error('Error deleting product:', error);
-            this.showMessage(messageDiv, '❌ Failed to delete product. Please try again.', 'error');
-        }
     }
 
     generateProductId(name) {
@@ -1375,11 +1224,39 @@ class AdminModals {
         return `${nameSlug}-${timestamp}-${randomStr}`;
     }
 
-    formatCategory(category) {
-        if (!category) return 'General';
-        return category.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
+    applyContentToPage(changes) {
+        const selectors = [
+            '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+        ];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach((element, index) => {
+                if (element.closest('.product-card')) return;
+                
+                const elementId = `${selector.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`;
+                if (changes[elementId] && changes[elementId] !== 'lastModified' && changes[elementId] !== 'modifiedBy') {
+                    element.innerHTML = changes[elementId];
+                }
+            });
+        });
+    }
+
+    showUpdateNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #8B7355;
+            color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 
     escapeHtml(text) {
@@ -1389,100 +1266,163 @@ class AdminModals {
         return div.innerHTML;
     }
 
-    showMessage(container, message, type) {
-        if (!container) return;
+    formatCategory(category) {
+        if (!category) return 'General';
+        return category.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    }
 
-        const className = type === 'error' ? 'error-message' : 
-                         type === 'success' ? 'success-message' : 'info-message';
-        
-        const icon = type === 'error' ? '❌' : 
-                    type === 'success' ? '✅' : 'ℹ️';
-        
-        container.innerHTML = `<div class="${className}">${icon} ${message}</div>`;
-        
-        if (type !== 'success') {
-            setTimeout(() => {
-                if (container.innerHTML.includes(message)) {
-                    container.innerHTML = '';
-                }
-            }, 5000);
+    destroy() {
+        if (this.updateCheckInterval) {
+            clearTimeout(this.updateCheckInterval);
         }
+        
+        this.debounceTimers.forEach(timer => clearTimeout(timer));
+        this.debounceTimers.clear();
+        
+        this.cache.clear();
     }
 }
 
-// Auto-initialization code
-document.addEventListener('DOMContentLoaded', () => {
-    const initializeModals = () => {
-        if (window.adminPanel && window.adminPanel.isAdmin) {
-            console.log('Initializing admin modals...');
-            window.adminModals = new AdminModals(window.adminPanel);
-            console.log('Admin modals initialized successfully');
-            return true;
+class ProductManager {
+    constructor(adminPanel) {
+        this.adminPanel = adminPanel;
+    }
+
+    openProductDetail(productId) {
+        const product = this.findProduct(productId);
+        if (!product) {
+            console.error('Product not found:', productId);
+            return;
         }
-        return false;
-    };
 
-    const maxAttempts = 8;
-    let attempts = 0;
+        this.adminPanel.openProductModal(product);
+    }
 
-    const tryInit = () => {
-        attempts++;
+    quickAddToCart(productId) {
+        const product = this.findProduct(productId);
+        if (!product) {
+            console.error('Product not found for quick add:', productId);
+            return;
+        }
+
+        if (!product.inStock) {
+            alert('Sorry, this product is out of stock.');
+            return;
+        }
+
+        const defaultSize = product.sizeOptions && product.sizeOptions.length > 0 
+            ? product.sizeOptions[0] 
+            : { name: 'Standard', price: product.price || 15.00 };
+
+        const cartItem = {
+            id: product.id,
+            name: product.name,
+            price: defaultSize.price,
+            quantity: 1,
+            size: defaultSize.name,
+            image: product.imageUrl || '', 
+            isCustom: false
+        };
+
+        console.log('Adding to cart:', cartItem);
+
+        this.addToCartHandler(cartItem);
+        this.showAddToCartConfirmation(product.name, 1);
+    }
+
+    validateProduct(product) {
+        if (!product || typeof product !== 'object') {
+            console.error('Invalid product object');
+            return false;
+        }
         
-        try {
-            if (initializeModals()) {
-                return;
-            }
-        } catch (error) {
-            console.error(`Admin modal initialization attempt ${attempts} failed:`, error);
+        if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
+            console.error('Invalid product name:', product.name);
+            return false;
         }
         
-        if (attempts < maxAttempts) {
-            const delay = Math.min(200 * Math.pow(1.3, attempts - 1), 3000);
-            setTimeout(tryInit, delay);
-        } else {
-            console.warn('Admin modals failed to initialize after all attempts');
+        if (!product.id || typeof product.id !== 'string' || product.id.trim() === '') {
+            console.error('Invalid product ID:', product.id);
+            return false;
         }
-    };
-
-    tryInit();
-});
-
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        if (!window.adminModals && window.adminPanel && window.adminPanel.isAdmin) {
-            console.log('Trying admin modals initialization on window load...');
-            try {
-                window.adminModals = new AdminModals(window.adminPanel);
-                console.log('Admin modals initialized on window load');
-            } catch (error) {
-                console.error('Window load initialization failed:', error);
-            }
-        }
-    }, 1000);
-});
-
-window.initAdminModals = function() {
-    if (window.adminPanel && window.adminPanel.isAdmin) {
-        window.adminModals = new AdminModals(window.adminPanel);
-        console.log('Admin modals manually initialized');
+        
         return true;
     }
-    console.log('Cannot initialize - admin panel not ready or not admin');
-    return false;
-};
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && window.adminModals && window.adminModals.currentModal) {
-        window.adminModals.closeModal(window.adminModals.currentModal);
+    findProduct(productId) {
+        return this.adminPanel.allProducts.find(p => p.id === productId);
     }
-});
 
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('admin-modal') && window.adminModals) {
-        window.adminModals.closeModal(window.adminModals.currentModal);
+    addToCartHandler(item) {
+        if (window.cartManager) {
+            window.cartManager.addItem(item);
+            console.log('Added to cart via cartManager:', item);
+        } else {
+            this.addToFallbackCart(item);
+        }
     }
-});
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AdminModals;
+    addToFallbackCart(item) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingIndex = cart.findIndex(cartItem => 
+            cartItem.id === item.id && 
+            cartItem.size === item.size
+        );
+        
+        if (existingIndex >= 0) {
+            cart[existingIndex].quantity += item.quantity;
+        } else {
+            cart.push(item);
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        console.log('Added to fallback cart:', item);
+        
+        if (window.updateCartUI) {
+            window.updateCartUI();
+        }
+    }
+
+    showAddToCartConfirmation(productName, quantity) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #4CAF50;
+            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.innerHTML = `
+            <strong>✅ Added to Cart!</strong><br>
+            ${quantity}x ${this.escapeHtml(productName)}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.adminPanel = new AdminPanel();
+            window.productManager = new ProductManager(window.adminPanel);
+        }, 100);
+    });
+} else {
+    setTimeout(() => {
+        window.adminPanel = new AdminPanel();
+        window.productManager = new ProductManager(window.adminPanel);
+    }, 100);
 }
