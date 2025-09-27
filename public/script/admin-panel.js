@@ -376,7 +376,7 @@ class AdminPanel {
             price: sizePrice,
             quantity: quantity,
             size: sizeName,
-            image: product.imageUrl || product.emoji || '🕯️',
+            image: product.imageUrl || '', 
             isCustom: false
         };
 
@@ -433,12 +433,18 @@ showAddToCartConfirmation(productName, quantity) {
 }
 
     selectSize(button, price) {
-        document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+        const modal = document.getElementById('product-modal');
+        if (!modal) return;
+        
+        modal.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
         
-        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+        const quantity = parseInt(document.getElementById('quantity')?.value) || 1;
         const total = (price * quantity).toFixed(2);
-        document.getElementById('total-price').textContent = total;
+        const totalPriceElement = document.getElementById('total-price');
+        if (totalPriceElement) {
+            totalPriceElement.textContent = total;
+        }
     }
 
     async checkIPAddress() {
@@ -1255,7 +1261,7 @@ class ProductManager {
             price: defaultSize.price,
             quantity: 1,
             size: defaultSize.name,
-            image: product.emoji || '🕯️',
+            image: product.imageUrl || '',  
             isCustom: false
         };
 
