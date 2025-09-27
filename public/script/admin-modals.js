@@ -802,22 +802,28 @@ class AdminModals {
             return;
         }
 
-        const productsHTML = localProducts.map(product => `
-            <div class="product-item" data-product-id="${product.id}">
-                ${product.imageUrl ? 
-                    `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}"></div>` :
-                    `<div class="product-image" style="background: #f0f0f0; color: #999; font-size: 12px; display: flex; align-items: center; justify-content: center;">No Image</div>`
-                }
-                <div class="product-name">${this.escapeHtml(product.name)}</div>
-                <div class="product-price">${(product.price || 0).toFixed(2)}</div>
-                <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
-                    ${this.formatCategory(product.category)}
+        const productsHTML = localProducts.map(product => {
+            let imageDisplay;
+            if (product.imageUrl && product.imageUrl.trim()) {
+                imageDisplay = `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\"background: #f0f0f0; color: #999; font-size: 12px; display: flex; align-items: center; justify-content: center; height: 80px;\\">${product.emoji || '🕯️'}</div>'"></div>`;
+            } else {
+                imageDisplay = `<div class="product-image" style="background: #f0f0f0; color: #999; font-size: 24px; display: flex; align-items: center; justify-content: center; height: 80px;">${product.emoji || '🕯️'}</div>`;
+            }
+            
+            return `
+                <div class="product-item" data-product-id="${product.id}">
+                    ${imageDisplay}
+                    <div class="product-name">${this.escapeHtml(product.name)}</div>
+                    <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                    <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
+                        ${this.formatCategory(product.category)}
+                    </div>
+                    <div class="product-options">
+                        ${this.formatProductOptions(product)}
+                    </div>
                 </div>
-                <div class="product-options">
-                    ${this.formatProductOptions(product)}
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         const content = `
             <h3>Manage Products</h3>

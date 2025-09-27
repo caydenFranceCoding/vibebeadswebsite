@@ -264,11 +264,14 @@ class AdminPanel {
         const productEmoji = this.escapeHtml(product.emoji || '🕯️');
         const productDescription = this.escapeHtml(product.description || '');
 
+        // FIXED: Clear either/or logic for image vs emoji
         let imageContent;
         if (product.imageUrl && product.imageUrl.trim()) {
-            imageContent = `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">`;
+            // Show ONLY the image, no emoji
+            imageContent = `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\"display: flex; align-items: center; justify-content: center; height: 100%; font-size: 2.5rem;\\">${productEmoji}</div>'">`;
         } else {
-            imageContent = `<div class="product-emoji">${productEmoji}</div>`;
+            // Show ONLY the emoji, no image
+            imageContent = productEmoji;
         }
 
         const html = `
