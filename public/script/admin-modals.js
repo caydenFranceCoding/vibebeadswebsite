@@ -379,19 +379,12 @@ class AdminModals {
             <div class="form-section">
                 <div class="form-section-title">Product Image</div>
                 <div class="form-group">
-                    <label>Upload Product Image</label>
+                    <label>Upload Product Image *</label>
                     <div class="image-upload-container" id="image-upload-area">
                         <input type="file" id="product-image" class="image-upload-input" accept="image/*">
                         <div id="image-upload-content">
                             <div class="image-upload-text">Click or drag image here</div>
                             <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-                        </div>
-                    </div>
-                    <div class="image-or-text">OR</div>
-                    <div class="image-fallback-row">
-                        <div>
-                            <div class="image-fallback-label">Fallback Emoji/Icon</div>
-                            <input type="text" id="product-emoji" placeholder="🕯️" maxlength="4" value="🕯️">
                         </div>
                     </div>
                 </div>
@@ -441,7 +434,9 @@ class AdminModals {
             <div class="product-preview" id="product-preview">
                 <h4>Live Preview</h4>
                 <div class="preview-card">
-                    <div class="preview-image" id="preview-image">🕯️</div>
+                    <div class="preview-image" id="preview-image">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>
+                </div>
                     <div class="preview-info">
                         <div class="preview-title" id="preview-title">Product Name</div>
                         <div class="preview-price" id="preview-price">$0.00</div>
@@ -612,7 +607,7 @@ class AdminModals {
     }
 
     setupProductPreview() {
-        const inputs = ['product-name', 'product-price', 'product-emoji'];
+        const inputs = ['product-name', 'product-price'];
         
         inputs.forEach(inputId => {
             const input = document.getElementById(inputId);
@@ -635,7 +630,6 @@ class AdminModals {
     updatePreview() {
         const name = document.getElementById('product-name')?.value.trim() || 'Product Name';
         const price = parseFloat(document.getElementById('product-price')?.value) || 0;
-        const emoji = document.getElementById('product-emoji')?.value.trim() || '🕯️';
         const fileInput = document.getElementById('product-image');
         const imageUrl = fileInput?.getAttribute('data-image-url');
 
@@ -649,13 +643,13 @@ class AdminModals {
         const previewOptions = document.getElementById('preview-options');
 
         if (previewTitle) previewTitle.textContent = name;
-        if (previewPrice) previewPrice.textContent = `$${price.toFixed(2)}`;
+        if (previewPrice) previewPrice.textContent = `${price.toFixed(2)}`;
         
         if (previewImage) {
             if (imageUrl) {
-                previewImage.innerHTML = `<img src="${imageUrl}" alt="${name}">`;
+                previewImage.innerHTML = `<img src="${imageUrl}" alt="${this.escapeHtml(name)}">`;
             } else {
-                previewImage.textContent = emoji;
+                previewImage.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">No Image</div>';
             }
         }
         
@@ -673,7 +667,6 @@ class AdminModals {
         const priceInput = document.getElementById('product-price');
         const descriptionInput = document.getElementById('product-description');
         const categoryInput = document.getElementById('product-category');
-        const emojiInput = document.getElementById('product-emoji');
         const featuredInput = document.getElementById('product-featured');
         const inStockInput = document.getElementById('product-in-stock');
         const fileInput = document.getElementById('product-image');
@@ -688,7 +681,6 @@ class AdminModals {
         const price = parseFloat(priceInput.value);
         const description = descriptionInput?.value.trim() || '';
         const category = categoryInput?.value || 'candles';
-        const emoji = emojiInput?.value.trim() || '🕯️';
         const featured = featuredInput?.checked || false;
         const inStock = inStockInput?.checked ?? true;
         const imageUrl = fileInput?.getAttribute('data-image-url') || null;
@@ -709,6 +701,11 @@ class AdminModals {
             return;
         }
 
+        if (!imageUrl) {
+            this.showMessage(messageDiv, 'Please upload a product image', 'error');
+            return;
+        }
+
         if (sizes.length === 0) {
             sizes.push('Standard');
         }
@@ -719,7 +716,6 @@ class AdminModals {
             price: price,
             description: description || `Premium ${category.replace('-', ' ')} with excellent quality and options.`,
             category: category,
-            emoji: emoji,
             imageUrl: imageUrl,
             featured: featured,
             inStock: inStock,
@@ -739,7 +735,7 @@ class AdminModals {
             const success = await this.adminPanel.addProduct(productData);
             
             if (success) {
-                this.showMessage(messageDiv, '✅ Product added successfully! Image and options are now available.', 'success');
+                this.showMessage(messageDiv, 'Product added successfully with image!', 'success');
                 this.clearAddProductForm();
                 
                 setTimeout(() => {
@@ -747,19 +743,19 @@ class AdminModals {
                 }, 2000);
                 
             } else {
-                this.showMessage(messageDiv, '❌ Failed to add product. Please try again.', 'error');
+                this.showMessage(messageDiv, 'Failed to add product. Please try again.', 'error');
                 if (addButton) addButton.disabled = false;
             }
 
         } catch (error) {
             console.error('Error adding product:', error);
-            this.showMessage(messageDiv, '❌ An error occurred while adding the product. Please try again.', 'error');
+            this.showMessage(messageDiv, 'An error occurred while adding the product. Please try again.', 'error');
             if (addButton) addButton.disabled = false;
         }
     }
 
     clearAddProductForm() {
-        const inputs = ['product-name', 'product-price', 'product-description', 'product-emoji'];
+        const inputs = ['product-name', 'product-price', 'product-description'];
         inputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) element.value = '';
@@ -775,9 +771,6 @@ class AdminModals {
 
         const categorySelect = document.getElementById('product-category');
         if (categorySelect) categorySelect.value = 'candles';
-
-        const emojiInput = document.getElementById('product-emoji');
-        if (emojiInput) emojiInput.value = '🕯️';
 
         // Clear image upload
         this.removeImage();
@@ -813,10 +806,10 @@ class AdminModals {
             <div class="product-item" data-product-id="${product.id}">
                 ${product.imageUrl ? 
                     `<div class="product-image"><img src="${product.imageUrl}" alt="${this.escapeHtml(product.name)}"></div>` :
-                    `<div class="product-emoji">${product.emoji || '🕯️'}</div>`
+                    `<div class="product-image" style="background: #f0f0f0; color: #999; font-size: 12px; display: flex; align-items: center; justify-content: center;">No Image</div>`
                 }
                 <div class="product-name">${this.escapeHtml(product.name)}</div>
-                <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                <div class="product-price">${(product.price || 0).toFixed(2)}</div>
                 <div class="product-category" style="font-size: 12px; color: #666; margin-top: 4px;">
                     ${this.formatCategory(product.category)}
                 </div>
@@ -879,13 +872,6 @@ class AdminModals {
                             <div id="edit-image-upload-content">
                                 <div class="image-upload-text">Click or drag image here</div>
                                 <div class="image-upload-hint">Supports: JPG, PNG, GIF (max 5MB)</div>
-                            </div>
-                        </div>
-                        <div class="image-or-text">OR</div>
-                        <div class="image-fallback-row">
-                            <div>
-                                <div class="image-fallback-label">Fallback Emoji/Icon</div>
-                                <input type="text" id="edit-product-emoji" maxlength="4">
                             </div>
                         </div>
                     </div>
@@ -1010,7 +996,6 @@ class AdminModals {
             document.getElementById('edit-product-price').value = product.price || '';
             document.getElementById('edit-product-description').value = product.description || '';
             document.getElementById('edit-product-category').value = product.category || 'candles';
-            document.getElementById('edit-product-emoji').value = product.emoji || '🕯️';
             document.getElementById('edit-product-featured').checked = product.featured || false;
             document.getElementById('edit-product-in-stock').checked = product.inStock !== false;
             
@@ -1142,7 +1127,6 @@ class AdminModals {
         const price = parseFloat(document.getElementById('edit-product-price').value);
         const description = document.getElementById('edit-product-description').value.trim();
         const category = document.getElementById('edit-product-category').value;
-        const emoji = document.getElementById('edit-product-emoji').value.trim();
         const featured = document.getElementById('edit-product-featured').checked;
         const inStock = document.getElementById('edit-product-in-stock').checked;
         const fileInput = document.getElementById('edit-product-image');
@@ -1179,7 +1163,6 @@ class AdminModals {
                 price: price,
                 description: description,
                 category: category,
-                emoji: emoji,
                 imageUrl: newImageUrl || (existingProduct ? existingProduct.imageUrl : null),
                 featured: featured,
                 inStock: inStock,
@@ -1192,18 +1175,18 @@ class AdminModals {
             const success = await this.adminPanel.updateProduct(this.selectedProductId, updatedProduct);
 
             if (success) {
-                this.showMessage(messageDiv, '✅ Product updated successfully! All options and image are now available.', 'success');
+                this.showMessage(messageDiv, 'Product updated successfully with image!', 'success');
 
                 setTimeout(() => {
                     this.closeModal('edit-products-modal');
                 }, 2000);
             } else {
-                this.showMessage(messageDiv, '❌ Failed to update product. Please try again.', 'error');
+                this.showMessage(messageDiv, 'Failed to update product. Please try again.', 'error');
             }
 
         } catch (error) {
             console.error('Error updating product:', error);
-            this.showMessage(messageDiv, '❌ Failed to update product. Please try again.', 'error');
+            this.showMessage(messageDiv, 'Failed to update product. Please try again.', 'error');
         }
     }
 
