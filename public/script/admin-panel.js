@@ -1261,12 +1261,33 @@ class ProductManager {
             price: defaultSize.price,
             quantity: 1,
             size: defaultSize.name,
-            image: product.imageUrl || '',  
+            image: product.imageUrl || '', 
             isCustom: false
         };
 
+        console.log('Adding to cart:', cartItem);
+
         this.addToCartHandler(cartItem);
         this.showAddToCartConfirmation(product.name, 1);
+    }
+
+    validateProduct(product) {
+        if (!product || typeof product !== 'object') {
+            console.error('Invalid product object');
+            return false;
+        }
+        
+        if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
+            console.error('Invalid product name:', product.name);
+            return false;
+        }
+        
+        if (!product.id || typeof product.id !== 'string' || product.id.trim() === '') {
+            console.error('Invalid product ID:', product.id);
+            return false;
+        }
+        
+        return true;
     }
 
     findProduct(productId) {
