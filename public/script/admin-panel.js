@@ -203,6 +203,14 @@ class AdminPanel {
                     
                     // Append admin products to the container
                     container.appendChild(containerFragment);
+                    
+                    // Trigger fade-in animation after elements are in DOM
+                    setTimeout(() => {
+                        container.querySelectorAll('[data-admin-product="true"]:not(.fade-in)').forEach(element => {
+                            element.classList.add('fade-in');
+                            element.style.opacity = '1'; // Ensure visibility
+                        });
+                    }, 100);
                 });
 
                 console.log(`Rendered admin products to ${containers.length} containers`);
