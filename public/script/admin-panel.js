@@ -391,6 +391,47 @@ class AdminPanel {
         modal.style.display = 'none';
     }
 
+    addToFallbackCart(item) {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingIndex = cart.findIndex(cartItem => 
+        cartItem.id === item.id && 
+        cartItem.size === item.size
+    );
+    
+    if (existingIndex >= 0) {
+        cart[existingIndex].quantity += item.quantity;
+    } else {
+        cart.push(item);
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    console.log('Added to fallback cart:', item);
+    
+    if (window.updateCartUI) {
+        window.updateCartUI();
+    }
+}
+
+showAddToCartConfirmation(productName, quantity) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; background: #4CAF50;
+        color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
+        z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <strong>✅ Added to Cart!</strong><br>
+        ${quantity}x ${this.escapeHtml(productName)}
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
     selectSize(button, price) {
         document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
