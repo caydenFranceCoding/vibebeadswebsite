@@ -258,33 +258,22 @@ class AdminPanel {
         const productEmoji = this.escapeHtml(product.emoji || '🕯️');
         const productDescription = this.escapeHtml(product.description || '');
 
+        // Match the exact structure of your static products
         const html = `
             <div class="product-image">
                 ${product.imageUrl ? 
                     `<img src="${product.imageUrl}" alt="${productName}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"product-emoji\\">${productEmoji}</div>'">` :
-                    `<div class="product-emoji">${productEmoji}</div>`
+                    productEmoji
                 }
             </div>
-            
             <div class="product-info">
                 <h3 class="product-title">${productName}</h3>
+                <p class="product-price">From ${productPrice} USD</p>
                 <p class="product-description">${productDescription}</p>
-                <div class="product-price">$${productPrice}</div>
-                <div class="product-category">${this.formatCategory(product.category)}</div>
-                
-                ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-                ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
-                
-                <button class="add-to-cart-btn quick-add" 
-                        onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">
-                    Quick Add
-                </button>
-                
-                <button class="view-details-btn" 
-                        onclick="event.stopPropagation(); window.productManager?.openProductDetail('${productId}')">
-                    View Details
-                </button>
+                <button class="add-to-cart-btn" onclick="event.stopPropagation(); window.productManager?.quickAddToCart('${productId}')">Add to Cart</button>
             </div>
+            ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+            ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
         `;
 
         this.cache.set(cacheKey, html);
