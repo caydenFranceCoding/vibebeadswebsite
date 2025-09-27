@@ -20,341 +20,7 @@ class AdminPanel {
         this.cache = new Map();
         this.debounceTimers = new Map();
         
-        this.createProductModal();
-        this.setupGlobalEventListeners();
         this.initializeAsync();
-    }
-
-    createProductModal() {
-        if (document.getElementById('product-modal')) return;
-
-        const modalHTML = `
-            <div id="product-modal" class="product-modal" style="display: none;">
-                <div class="product-modal-overlay" onclick="window.adminPanel.closeProductModal()"></div>
-                <div class="product-modal-content">
-                    <div class="product-modal-header">
-                        <button class="product-modal-close" onclick="window.adminPanel.closeProductModal()">&times;</button>
-                    </div>
-                    <div class="product-modal-body">
-                        <div class="product-modal-image">
-                            <img id="modal-product-image" src="" alt="Product Image">
-                        </div>
-                        <div class="product-modal-details">
-                            <h2 id="modal-product-title">Product Title</h2>
-                            <p id="modal-product-description">Product description</p>
-                            <div class="price-section">
-                                <span class="price-label">Price: </span>
-                                <span id="modal-product-price">$15.00</span>
-                            </div>
-                            
-                            <div class="size-selection">
-                                <h4>Size Options:</h4>
-                                <div class="size-buttons" id="modal-size-buttons"></div>
-                            </div>
-                            
-                            <div class="quantity-section">
-                                <label for="modal-quantity">Quantity:</label>
-                                <div class="quantity-controls">
-                                    <button type="button" onclick="window.adminPanel.changeQuantity(-1)">-</button>
-                                    <input type="number" id="modal-quantity" value="1" min="1" max="10" onchange="window.adminPanel.updateTotal()">
-                                    <button type="button" onclick="window.adminPanel.changeQuantity(1)">+</button>
-                                </div>
-                            </div>
-                            
-                            <div class="total-section">
-                                <strong>Total: $<span id="modal-total-price">15.00</span></strong>
-                            </div>
-                            
-                            <button class="add-to-cart-modal-btn" onclick="window.adminPanel.addToCartFromModal()">
-                                Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const modalStyles = `
-            <style id="product-modal-styles">
-                .product-modal {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    z-index: 50000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    opacity: 0;
-                    visibility: hidden;
-                    transition: opacity 0.3s ease, visibility 0.3s ease;
-                }
-
-                .product-modal.active {
-                    opacity: 1;
-                    visibility: visible;
-                }
-
-                .product-modal-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.7);
-                    backdrop-filter: blur(5px);
-                }
-
-                .product-modal-content {
-                    position: relative;
-                    background: white;
-                    border-radius: 16px;
-                    max-width: 700px;
-                    width: 95%;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-                    transform: translateY(30px);
-                    transition: transform 0.3s ease;
-                }
-
-                .product-modal.active .product-modal-content {
-                    transform: translateY(0);
-                }
-
-                .product-modal-header {
-                    position: absolute;
-                    top: 15px;
-                    right: 15px;
-                    z-index: 10;
-                }
-
-                .product-modal-close {
-                    background: rgba(0, 0, 0, 0.5);
-                    border: none;
-                    color: white;
-                    width: 35px;
-                    height: 35px;
-                    border-radius: 50%;
-                    font-size: 20px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: background 0.2s ease;
-                }
-
-                .product-modal-close:hover {
-                    background: rgba(0, 0, 0, 0.7);
-                }
-
-                .product-modal-body {
-                    display: flex;
-                    gap: 30px;
-                    padding: 30px;
-                }
-
-                .product-modal-image {
-                    flex: 1;
-                    max-width: 300px;
-                }
-
-                .product-modal-image img {
-                    width: 100%;
-                    height: auto;
-                    border-radius: 12px;
-                    object-fit: cover;
-                }
-
-                .product-modal-details {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-
-                .product-modal-details h2 {
-                    margin: 0;
-                    color: #2c2c2c;
-                    font-size: 24px;
-                    font-weight: 600;
-                }
-
-                .product-modal-details p {
-                    margin: 0;
-                    color: #666;
-                    line-height: 1.6;
-                }
-
-                .price-section {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    font-size: 18px;
-                }
-
-                .price-label {
-                    color: #666;
-                }
-
-                #modal-product-price {
-                    color: #8B7355;
-                    font-weight: 600;
-                    font-size: 20px;
-                }
-
-                .size-selection h4 {
-                    margin: 0 0 12px 0;
-                    color: #2c2c2c;
-                    font-size: 16px;
-                }
-
-                .size-buttons {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                }
-
-                .size-btn {
-                    padding: 10px 16px;
-                    border: 2px solid #e0e0e0;
-                    background: white;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    font-size: 14px;
-                    font-weight: 500;
-                }
-
-                .size-btn:hover {
-                    border-color: #8B7355;
-                }
-
-                .size-btn.active {
-                    border-color: #8B7355;
-                    background-color: #8B7355;
-                    color: white;
-                }
-
-                .quantity-section {
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                }
-
-                .quantity-section label {
-                    color: #2c2c2c;
-                    font-weight: 500;
-                }
-
-                .quantity-controls {
-                    display: flex;
-                    align-items: center;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 8px;
-                    overflow: hidden;
-                }
-
-                .quantity-controls button {
-                    background: #f5f5f5;
-                    border: none;
-                    width: 35px;
-                    height: 35px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    font-weight: 600;
-                    transition: background 0.2s ease;
-                }
-
-                .quantity-controls button:hover {
-                    background: #8B7355;
-                    color: white;
-                }
-
-                .quantity-controls input {
-                    border: none;
-                    width: 50px;
-                    height: 35px;
-                    text-align: center;
-                    font-size: 14px;
-                    outline: none;
-                }
-
-                .total-section {
-                    padding: 15px 0;
-                    border-top: 1px solid #e0e0e0;
-                    font-size: 18px;
-                    color: #2c2c2c;
-                }
-
-                .add-to-cart-modal-btn {
-                    background: linear-gradient(135deg, #8B7355 0%, #6d5a42 100%);
-                    color: white;
-                    border: none;
-                    padding: 15px 30px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    font-weight: 600;
-                    transition: all 0.2s ease;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-
-                .add-to-cart-modal-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(139, 115, 85, 0.3);
-                }
-
-                .add-to-cart-modal-btn:active {
-                    transform: translateY(0);
-                }
-
-                @media (max-width: 768px) {
-                    .product-modal-content {
-                        width: 95%;
-                        margin: 20px;
-                    }
-
-                    .product-modal-body {
-                        flex-direction: column;
-                        padding: 20px;
-                        gap: 20px;
-                    }
-
-                    .product-modal-image {
-                        max-width: 100%;
-                    }
-
-                    .size-buttons {
-                        gap: 8px;
-                    }
-
-                    .size-btn {
-                        padding: 8px 12px;
-                        font-size: 13px;
-                    }
-                }
-            </style>
-        `;
-
-        document.head.insertAdjacentHTML('beforeend', modalStyles);
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    setupGlobalEventListeners() {
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeProductModal();
-            }
-        });
-
-        document.addEventListener('input', (e) => {
-            if (e.target.id === 'modal-quantity') {
-                this.updateTotal();
-            }
-        });
     }
 
     async initializeAsync() {
@@ -382,240 +48,6 @@ class AdminPanel {
         } catch (error) {
             console.error('Initialization failed:', error);
         }
-    }
-
-    openProductModal(product) {
-        const modal = document.getElementById('product-modal');
-        if (!modal || !product) {
-            console.error('Product modal or product not found');
-            return;
-        }
-
-        const modalImage = document.getElementById('modal-product-image');
-        const modalTitle = document.getElementById('modal-product-title');
-        const modalDescription = document.getElementById('modal-product-description');
-        const modalPrice = document.getElementById('modal-product-price');
-        const sizeButtons = document.getElementById('modal-size-buttons');
-        const quantityInput = document.getElementById('modal-quantity');
-
-        modalImage.src = product.imageUrl || '';
-        modalImage.alt = product.name;
-        modalTitle.textContent = product.name;
-        modalDescription.textContent = product.description || '';
-
-        if (product.sizeOptions && product.sizeOptions.length > 0) {
-            sizeButtons.innerHTML = '';
-            product.sizeOptions.forEach((size, index) => {
-                const button = document.createElement('button');
-                button.className = `size-btn ${index === 0 ? 'active' : ''}`;
-                button.setAttribute('data-size', size.name);
-                button.setAttribute('data-price', size.price);
-                button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
-                button.onclick = () => this.selectSize(button, size.price);
-                sizeButtons.appendChild(button);
-            });
-            
-            modalPrice.textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
-        } else {
-            const defaultPrice = product.price || 15.00;
-            sizeButtons.innerHTML = `
-                <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">
-                    Standard - $${defaultPrice.toFixed(2)}
-                </button>
-            `;
-            modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
-        }
-
-        quantityInput.value = 1;
-        this.updateTotal();
-
-        modal.setAttribute('data-current-product', product.id);
-
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.add('active');
-        }, 10);
-
-        document.body.style.overflow = 'hidden';
-    }
-
-    closeProductModal() {
-        const modal = document.getElementById('product-modal');
-        if (!modal) return;
-
-        modal.classList.remove('active');
-        setTimeout(() => {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }, 300);
-    }
-
-    selectSize(button, price) {
-        document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        document.getElementById('modal-product-price').textContent = `$${price.toFixed(2)}`;
-        this.updateTotal();
-    }
-
-    changeQuantity(delta) {
-        const quantityInput = document.getElementById('modal-quantity');
-        let currentQuantity = parseInt(quantityInput.value) || 1;
-        const newQuantity = Math.max(1, Math.min(10, currentQuantity + delta));
-        quantityInput.value = newQuantity;
-        this.updateTotal();
-    }
-
-    updateTotal() {
-        const activeBtn = document.querySelector('.size-btn.active');
-        const quantity = parseInt(document.getElementById('modal-quantity').value) || 1;
-        
-        if (activeBtn) {
-            const price = parseFloat(activeBtn.getAttribute('data-price')) || 0;
-            const total = (price * quantity).toFixed(2);
-            document.getElementById('modal-total-price').textContent = total;
-        }
-    }
-
-    addToCartFromModal() {
-        const modal = document.getElementById('product-modal');
-        const productId = modal.getAttribute('data-current-product');
-        const product = this.allProducts.find(p => p.id === productId);
-        
-        if (!product) {
-            console.error('Product not found');
-            return;
-        }
-
-        const activeBtn = document.querySelector('.size-btn.active');
-        const sizeName = activeBtn?.getAttribute('data-size') || 'Standard';
-        const price = parseFloat(activeBtn?.getAttribute('data-price')) || product.price || 15.00;
-        const quantity = parseInt(document.getElementById('modal-quantity').value) || 1;
-
-        const cartItem = {
-            id: product.id,
-            name: product.name,
-            price: price,
-            quantity: quantity,
-            size: sizeName,
-            image: product.imageUrl || product.emoji || '🕯️',
-            isCustom: false
-        };
-
-        this.addToCart(cartItem);
-        this.showAddToCartConfirmation(product.name, quantity);
-        this.closeProductModal();
-    }
-
-    addToCart(item) {
-        if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-            window.cartManager.addItem(item);
-            return;
-        }
-
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingIndex = cart.findIndex(cartItem => 
-            cartItem.id === item.id && cartItem.size === item.size
-        );
-        
-        if (existingIndex >= 0) {
-            cart[existingIndex].quantity += item.quantity;
-        } else {
-            cart.push(item);
-        }
-        
-        localStorage.setItem('cart', JSON.stringify(cart));
-        
-        if (window.updateCartUI && typeof window.updateCartUI === 'function') {
-            window.updateCartUI();
-        }
-
-        window.dispatchEvent(new CustomEvent('cartUpdated', { detail: { cart, item } }));
-    }
-
-    showAddToCartConfirmation(productName, quantity) {
-        const existingNotifications = document.querySelectorAll('.cart-notification');
-        existingNotifications.forEach(notification => notification.remove());
-
-        const notification = document.createElement('div');
-        notification.className = 'cart-notification';
-        notification.innerHTML = `
-            <div class="cart-notification-content">
-                <div class="cart-notification-icon">✅</div>
-                <div class="cart-notification-text">
-                    <strong>Added to Cart!</strong><br>
-                    ${quantity}x ${this.escapeHtml(productName)}
-                </div>
-            </div>
-        `;
-
-        const notificationStyles = `
-            <style>
-                .cart-notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-                    color: white;
-                    padding: 0;
-                    border-radius: 12px;
-                    font-size: 14px;
-                    z-index: 60000;
-                    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
-                    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
-                    overflow: hidden;
-                }
-
-                .cart-notification-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 15px 20px;
-                }
-
-                .cart-notification-icon {
-                    font-size: 20px;
-                }
-
-                .cart-notification-text {
-                    line-height: 1.4;
-                }
-
-                @keyframes slideInRight {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-
-                @keyframes fadeOut {
-                    from {
-                        opacity: 1;
-                        transform: translateX(0);
-                    }
-                    to {
-                        opacity: 0;
-                        transform: translateX(100%);
-                    }
-                }
-            </style>
-        `;
-
-        if (!document.getElementById('cart-notification-styles')) {
-            const styleElement = document.createElement('style');
-            styleElement.id = 'cart-notification-styles';
-            styleElement.textContent = notificationStyles.replace(/<\/?style>/g, '');
-            document.head.appendChild(styleElement);
-        }
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
     }
 
     getProductContainers() {
@@ -846,6 +278,56 @@ class AdminPanel {
         }
 
         return html;
+    }
+
+    openProductModal(product) {
+        const modal = document.getElementById('product-modal');
+        if (!modal) {
+            console.error('Product modal not found');
+            return;
+        }
+
+        document.getElementById('modal-product-image').src = product.imageUrl || '';
+        document.getElementById('modal-product-title').textContent = product.name;
+        document.getElementById('modal-product-description').textContent = product.description || '';
+
+        const sizeButtons = modal.querySelector('.size-buttons');
+        if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
+            sizeButtons.innerHTML = '';
+            product.sizeOptions.forEach((size, index) => {
+                const button = document.createElement('button');
+                button.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                button.setAttribute('data-size', size.name);
+                button.setAttribute('data-price', size.price);
+                button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
+                button.onclick = () => this.selectSize(button, size.price);
+                sizeButtons.appendChild(button);
+            });
+            
+            document.getElementById('modal-product-price').textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
+            document.getElementById('total-price').textContent = product.sizeOptions[0].price.toFixed(2);
+        } else {
+            const defaultPrice = product.price || 15.00;
+            sizeButtons.innerHTML = `
+                <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">Standard - $${defaultPrice.toFixed(2)}</button>
+            `;
+            document.getElementById('modal-product-price').textContent = `$${defaultPrice.toFixed(2)}`;
+            document.getElementById('total-price').textContent = defaultPrice.toFixed(2);
+        }
+
+        document.getElementById('quantity').value = 1;
+        modal.style.display = 'block';
+        
+        modal.setAttribute('data-current-product', product.id);
+    }
+
+    selectSize(button, price) {
+        document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+        const total = (price * quantity).toFixed(2);
+        document.getElementById('total-price').textContent = total;
     }
 
     async checkIPAddress() {
@@ -1662,16 +1144,66 @@ class ProductManager {
             price: defaultSize.price,
             quantity: 1,
             size: defaultSize.name,
-            image: product.imageUrl || product.emoji || '🕯️',
+            image: product.emoji || '🕯️',
             isCustom: false
         };
 
-        this.adminPanel.addToCart(cartItem);
-        this.adminPanel.showAddToCartConfirmation(product.name, 1);
+        this.addToCartHandler(cartItem);
+        this.showAddToCartConfirmation(product.name, 1);
     }
 
     findProduct(productId) {
         return this.adminPanel.allProducts.find(p => p.id === productId);
+    }
+
+    addToCartHandler(item) {
+        if (window.cartManager) {
+            window.cartManager.addItem(item);
+            console.log('Added to cart via cartManager:', item);
+        } else {
+            this.addToFallbackCart(item);
+        }
+    }
+
+    addToFallbackCart(item) {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingIndex = cart.findIndex(cartItem => 
+            cartItem.id === item.id && 
+            cartItem.size === item.size
+        );
+        
+        if (existingIndex >= 0) {
+            cart[existingIndex].quantity += item.quantity;
+        } else {
+            cart.push(item);
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        console.log('Added to fallback cart:', item);
+        
+        if (window.updateCartUI) {
+            window.updateCartUI();
+        }
+    }
+
+    showAddToCartConfirmation(productName, quantity) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; background: #4CAF50;
+            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
+            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.innerHTML = `
+            <strong>✅ Added to Cart!</strong><br>
+            ${quantity}x ${this.escapeHtml(productName)}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 
     escapeHtml(text) {
