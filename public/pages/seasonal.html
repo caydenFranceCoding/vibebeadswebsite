@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candles - Vibe Beads</title>
+    <title>Seasonal Collection - Vibe Beads</title>
     <link rel="stylesheet" href="../styles/home.css">
-    <link rel="stylesheet" href="css/candles.css">
+    <link rel="stylesheet" href="css/seasonal.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
@@ -40,10 +40,10 @@
         </nav>
     </header>
 
-    <section class="hero candles-hero">
+    <section class="hero seasonal-hero">
         <div class="hero-video-container">
             <video class="hero-video" autoplay muted loop playsinline>
-                <source src="../video/premium.mp4" type="video/mp4">
+                <source src="../video/seasonal.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="hero-overlay"></div>
@@ -51,11 +51,11 @@
 
         <div class="container">
             <div class="hero-content fade-in">
-                <h1>Premium Handcrafted Candles</h1>
+                <h1>Seasonal Collection</h1>
                 <p class="hero-tagline">
-                    Discover our collection of artisan candles, hand-poured with premium soy wax and natural fragrances. Each candle is carefully crafted to create the perfect ambiance for your special moments.
+                    Celebrate every season with our limited-edition fragrances and specially curated products. From cozy autumn scents to fresh spring florals, discover the perfect seasonal atmosphere for your home.
                 </p>
-                <a href="#products" class="cta-button">Shop Candles</a>
+                <a href="#products" class="cta-button">Shop Seasonal</a>
             </div>
         </div>
     </section>
@@ -63,17 +63,18 @@
     <section class="filter-section">
         <div class="container">
             <div class="filter-tabs">
-                <button class="filter-btn active" data-category="all">All Candles</button>
-                <button class="filter-btn" data-category="signature">Signature Collection</button>
-                <button class="filter-btn" data-category="seasonal">Seasonal</button>
-                <button class="filter-btn" data-category="custom">Pick Your Scent</button>
+                <button class="filter-btn active" data-category="all">All Seasonal</button>
+                <button class="filter-btn" data-category="spring">Spring</button>
+                <button class="filter-btn" data-category="summer">Summer</button>
+                <button class="filter-btn" data-category="fall">Fall</button>
+                <button class="filter-btn" data-category="winter">Winter</button>
             </div>
         </div>
     </section>
 
     <section class="shop-section" id="products">
         <div class="container">
-            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="candles" data-admin-only="true">
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="seasonal" data-admin-only="true">
                 <!-- Only admin-added products will appear here -->
             </div>
         </div>
@@ -95,9 +96,8 @@
                         <div class="size-options">
                             <h4>Size:</h4>
                             <div class="size-buttons">
-                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Candle - $15.00</button>
-                                <button class="size-btn" data-size="10oz" data-price="1">10oz Candle - $16.00</button>
-                                <button class="size-btn" data-size="16oz" data-price="7">16oz Candle - $22.00</button>
+                                <button class="size-btn active" data-size="standard" data-price="0">Standard - $15.00</button>
+                                <button class="size-btn" data-size="large" data-price="10">Large - $25.00</button>
                             </div>
                         </div>
 
@@ -118,87 +118,14 @@
                     <div class="product-details">
                         <h4>Details:</h4>
                         <ul>
-                            <li>Hand-poured premium soy wax</li>
-                            <li>Cotton wick for clean burning</li>
-                            <li>Phthalate-free fragrances</li>
-                            <li>25-60 hour burn time (size dependent)</li>
-                            <li>Reusable glass container</li>
+                            <li>Limited edition seasonal fragrance</li>
+                            <li>Available for a limited time only</li>
+                            <li>Premium quality ingredients</li>
+                            <li>Perfect for gifting</li>
+                            <li>Beautiful seasonal packaging</li>
                         </ul>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-scent-modal" class="modal">
-        <div class="modal-content custom-modal">
-            <span class="close">&times;</span>
-            <div class="modal-body">
-                <h2>Pick Your Scent</h2>
-                <p class="custom-description">Create your perfect candle by choosing from our collection of premium fragrances</p>
-
-                <div class="scent-categories">
-                    <div class="scent-category">
-                        <h3>Fresh & Fruity</h3>
-                        <div class="scent-options">
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Apple Ginger Spritz" data-price="15">
-                                <span>Apple Ginger Spritz</span>
-                            </label>
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Pink Watermelon Lemon" data-price="15">
-                                <span>Pink Watermelon Lemon</span>
-                            </label>
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Mango Papaya" data-price="15">
-                                <span>Mango Papaya</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="scent-category">
-                        <h3>Exotic & Bold</h3>
-                        <div class="scent-options">
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Blackberry Margarita" data-price="15">
-                                <span>Blackberry Margarita</span>
-                            </label>
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Sweet Jamaica" data-price="15">
-                                <span>Sweet Jamaica</span>
-                            </label>
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Egyptian Amber" data-price="15">
-                                <span>Egyptian Amber</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="scent-category">
-                        <h3>Ocean & Earth</h3>
-                        <div class="scent-options">
-                            <label class="scent-option">
-                                <input type="radio" name="scent" value="Black Coral Moss" data-price="15">
-                                <span>Black Coral Moss</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="custom-options">
-                    <div class="size-options">
-                        <h4>Size:</h4>
-                        <div class="size-buttons">
-                            <button class="size-btn active" data-size="8oz" data-extra="0">8oz Candle - $15.00</button>
-                            <button class="size-btn" data-size="10oz" data-extra="1">10oz Candle - $16.00</button>
-                            <button class="size-btn" data-size="16oz" data-extra="7">16oz Candle - $22.00</button>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="add-to-cart-btn" onclick="addCustomToCart()" disabled>
-                    Add Custom Candle to Cart - $<span id="custom-total-price">15.00</span>
-                </button>
             </div>
         </div>
     </div>
@@ -240,7 +167,7 @@
 
     <script src="../script/cart.js"></script>
     <script src="../script/homepage.js"></script>
-    <script src="javascript/candles.js"></script>
+    <script src="javascript/seasonal.js"></script>
     <script src="../script/admin-panel.js"></script>
     <script src="../script/admin-modals.js"></script>
 </body>
