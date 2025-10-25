@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Sprays - Vibe Beads</title>
+    <title>Hand Soaps - Vibe Beads</title>
     <link rel="stylesheet" href="../styles/home.css">
-    <link rel="stylesheet" href="css/room-sprays.css">
+    <link rel="stylesheet" href="css/hand-soaps.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
@@ -21,7 +21,7 @@
                         <li><a href="candles.html">Candles</a></li>
                         <li><a href="hand-soaps.html" class="active">Hand Soaps</a></li>
                         <li><a href="diffusers.html">Diffusers</a></li>
-                        <li><a href="room-sprays.html" class="active">Room Sprays</a></li>
+                        <li><a href="room-sprays.html">Room Sprays</a></li>
                         <li><a href="jewelry.html">Jewelry</a></li>
                     </ul>
                 </li>
@@ -38,10 +38,10 @@
         </nav>
     </header>
 
-    <section class="hero room-sprays-hero">
+    <section class="hero hand-soaps-hero">
         <div class="hero-video-container">
             <video class="hero-video" autoplay muted loop playsinline>
-                <source src="../video/room sprays.mp4" type="video/mp4">
+                <source src="../video/hand-soaps.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="hero-overlay"></div>
@@ -49,11 +49,11 @@
 
         <div class="container">
             <div class="hero-content fade-in">
-                <h1>Instant Room Transformation</h1>
+                <h1>Luxurious Hand Soaps</h1>
                 <p class="hero-tagline">
-                    Transform any space instantly with our premium room sprays. Long-lasting fragrances that eliminate odors while creating the perfect ambiance for your home, office, or car.
+                    Discover our collection of premium hand soaps, crafted with nourishing ingredients and captivating fragrances. Each bottle transforms daily handwashing into a moment of indulgence.
                 </p>
-                <a href="#products" class="cta-button">Shop Room Sprays</a>
+                <a href="#products" class="cta-button">Shop Hand Soaps</a>
             </div>
         </div>
     </section>
@@ -61,17 +61,16 @@
     <section class="filter-section">
         <div class="container">
             <div class="filter-tabs">
-                <button class="filter-btn active" data-category="all">All Room Sprays</button>
+                <button class="filter-btn active" data-category="all">All Hand Soaps</button>
                 <button class="filter-btn" data-category="signature">Signature Collection</button>
-                <button class="filter-btn" data-category="fresh">Fresh & Clean</button>
-                <button class="filter-btn" data-category="bundle">Bundle Deals</button>
+                <button class="filter-btn" data-category="seasonal">Seasonal</button>
             </div>
         </div>
     </section>
 
     <section class="shop-section" id="products">
         <div class="container">
-            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="room-sprays" data-admin-only="true">
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="hand-soaps" data-admin-only="true">
                 <!-- Only admin-added products will appear here -->
             </div>
         </div>
@@ -93,8 +92,8 @@
                         <div class="size-options">
                             <h4>Size:</h4>
                             <div class="size-buttons">
-                                <button class="size-btn active" data-size="4oz" data-price="0">4oz Spray - $9</button>
-                                <button class="size-btn" data-size="8oz" data-price="6">8oz Spray - $15</button>
+                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Bottle - $12.00</button>
+                                <button class="size-btn" data-size="16oz" data-price="8">16oz Bottle - $20.00</button>
                             </div>
                         </div>
 
@@ -109,72 +108,20 @@
                     </div>
 
                     <button class="add-to-cart-btn" onclick="addToCart()">
-                        Add to Cart - $<span id="total-price">9.00</span>
+                        Add to Cart - $<span id="total-price">12.00</span>
                     </button>
 
                     <div class="product-details">
                         <h4>Details:</h4>
                         <ul>
-                            <li>Long-lasting fragrance up to 4 hours</li>
-                            <li>Odor eliminating formula</li>
-                            <li>Safe for fabrics and surfaces</li>
-                            <li>Non-toxic and eco-friendly</li>
-                            <li>Perfect for home, office, and car</li>
+                            <li>Moisturizing formula with natural oils</li>
+                            <li>Gentle on sensitive skin</li>
+                            <li>Paraben and sulfate-free</li>
+                            <li>Rich, luxurious lather</li>
+                            <li>Beautiful reusable bottle</li>
                         </ul>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="bundle-modal" class="modal">
-        <div class="modal-content bundle-modal">
-            <span class="close">&times;</span>
-            <div class="modal-body">
-                <h2>Build Your Bundle</h2>
-                <p class="bundle-description">Mix and match your favorite scents and save up to 20%</p>
-
-                <div class="bundle-builder">
-                    <div class="bundle-size-selector">
-                        <h3>Choose Bundle Size:</h3>
-                        <div class="bundle-size-buttons">
-                            <button class="bundle-size-btn active" data-size="3" data-price="24">
-                                3-Pack Bundle - $24
-                                <small>Save $3</small>
-                            </button>
-                            <button class="bundle-size-btn" data-size="5" data-price="36">
-                                5-Pack Bundle - $36
-                                <small>Save $9</small>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="scent-selection">
-                        <h3>Select Your Scents (<span id="selected-count">0</span>/<span id="max-count">3</span>):</h3>
-                        <div class="scent-grid">
-                            <label class="scent-checkbox">
-                                <input type="checkbox" name="bundle-scents" value="Clean Cotton">
-                                <span class="scent-name">Clean Cotton</span>
-                            </label>
-                            <label class="scent-checkbox">
-                                <input type="checkbox" name="bundle-scents" value="Egyptian Amber">
-                                <span class="scent-name">Egyptian Amber</span>
-                            </label>
-                            <label class="scent-checkbox">
-                                <input type="checkbox" name="bundle-scents" value="Grape Fruit and Mint">
-                                <span class="scent-name">Grapefruit & Mint</span>
-                            </label>
-                            <label class="scent-checkbox">
-                                <input type="checkbox" name="bundle-scents" value="Vanilla Orchid">
-                                <span class="scent-name">Vanilla Orchid</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="add-to-cart-btn" onclick="addBundleToCart()" disabled>
-                    Add Bundle to Cart - $<span id="bundle-total-price">24.00</span>
-                </button>
             </div>
         </div>
     </div>
@@ -216,7 +163,7 @@
 
     <script src="../script/cart.js"></script>
     <script src="../script/homepage.js"></script>
-    <script src="javascript/room-sprays.js"></script>
+    <script src="javascript/hand-soaps.js"></script>
     <script src="../script/admin-panel.js"></script>
     <script src="../script/admin-modals.js"></script>
 </body>
