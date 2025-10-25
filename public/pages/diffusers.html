@@ -38,7 +38,6 @@
         </nav>
     </header>
 
-    <!-- Video Hero Section -->
     <section class="hero diffusers-hero">
         <div class="hero-video-container">
             <video class="hero-video" autoplay muted loop playsinline>
@@ -59,7 +58,6 @@
         </div>
     </section>
 
-    <!-- Filter Section -->
     <section class="filter-section">
         <div class="container">
             <div class="filter-tabs">
@@ -71,17 +69,14 @@
         </div>
     </section>
 
-    <!-- Products Section -->
     <section class="shop-section" id="products">
         <div class="container">
-            <!-- Add data-admin-products="true" and data-category="diffusers" -->
-            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="diffusers">
-                <!-- Products will be populated by JavaScript -->
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="diffusers" data-admin-only="true">
+                <!-- Only admin-added products will appear here -->
             </div>
         </div>
     </section>
 
-    <!-- Product Modal - UPDATED with new size options -->
     <div id="product-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -132,7 +127,6 @@
         </div>
     </div>
 
-    <!-- Updated Refill Oil Modal with $5 pricing -->
     <div id="refill-modal" class="modal">
         <div class="modal-content refill-modal">
             <span class="close">&times;</span>
@@ -240,7 +234,6 @@
         </div>
     </footer>
 
-    <!-- Load scripts in correct order -->
     <script src="../script/cart.js"></script>
     <script src="../script/homepage.js"></script>
     <script src="javascript/diffusers.js"></script>
