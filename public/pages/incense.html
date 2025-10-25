@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Soaps - Vibe Beads</title>
+    <title>Incense - Vibe Beads</title>
     <link rel="stylesheet" href="../styles/home.css">
-    <link rel="stylesheet" href="css/hand-soaps.css">
+    <link rel="stylesheet" href="css/incense.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
@@ -19,7 +19,7 @@
                     <ul class="dropdown-menu">
                         <li><a href="shop-all.html">Shop All</a></li>
                         <li><a href="candles.html">Candles</a></li>
-                        <li><a href="hand-soaps.html" class="active">Hand Soaps</a></li>
+                        <li><a href="hand-soaps.html">Hand Soaps</a></li>
                         <li><a href="incense.html" class="active">Incense</a></li>
                         <li><a href="diffusers.html">Diffusers</a></li>
                         <li><a href="room-sprays.html">Room Sprays</a></li>
@@ -39,10 +39,10 @@
         </nav>
     </header>
 
-    <section class="hero hand-soaps-hero">
+    <section class="hero incense-hero">
         <div class="hero-video-container">
             <video class="hero-video" autoplay muted loop playsinline>
-                <source src="../video/hand-soaps.mp4" type="video/mp4">
+                <source src="../video/incense.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="hero-overlay"></div>
@@ -50,11 +50,11 @@
 
         <div class="container">
             <div class="hero-content fade-in">
-                <h1>Luxurious Hand Soaps</h1>
+                <h1>Premium Incense Collection</h1>
                 <p class="hero-tagline">
-                    Discover our collection of premium hand soaps, crafted with nourishing ingredients and captivating fragrances. Each bottle transforms daily handwashing into a moment of indulgence.
+                    Discover our selection of hand-rolled incense sticks, crafted with natural resins and essential oils. Each stick creates a sacred atmosphere perfect for meditation, relaxation, and spiritual practice.
                 </p>
-                <a href="#products" class="cta-button">Shop Hand Soaps</a>
+                <a href="#products" class="cta-button">Shop Incense</a>
             </div>
         </div>
     </section>
@@ -62,8 +62,9 @@
     <section class="filter-section">
         <div class="container">
             <div class="filter-tabs">
-                <button class="filter-btn active" data-category="all">All Hand Soaps</button>
+                <button class="filter-btn active" data-category="all">All Incense</button>
                 <button class="filter-btn" data-category="signature">Signature Collection</button>
+                <button class="filter-btn" data-category="meditation">Meditation</button>
                 <button class="filter-btn" data-category="seasonal">Seasonal</button>
             </div>
         </div>
@@ -71,7 +72,7 @@
 
     <section class="shop-section" id="products">
         <div class="container">
-            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="hand-soaps" data-admin-only="true">
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="incense" data-admin-only="true">
                 <!-- Only admin-added products will appear here -->
             </div>
         </div>
@@ -91,10 +92,10 @@
 
                     <div class="product-options">
                         <div class="size-options">
-                            <h4>Size:</h4>
+                            <h4>Pack Size:</h4>
                             <div class="size-buttons">
-                                <button class="size-btn active" data-size="8oz" data-price="0">8oz Bottle - $12.00</button>
-                                <button class="size-btn" data-size="16oz" data-price="8">16oz Bottle - $20.00</button>
+                                <button class="size-btn active" data-size="20pack" data-price="0">20 Sticks - $8.00</button>
+                                <button class="size-btn" data-size="40pack" data-price="7">40 Sticks - $15.00</button>
                             </div>
                         </div>
 
@@ -109,17 +110,17 @@
                     </div>
 
                     <button class="add-to-cart-btn" onclick="addToCart()">
-                        Add to Cart - $<span id="total-price">12.00</span>
+                        Add to Cart - $<span id="total-price">8.00</span>
                     </button>
 
                     <div class="product-details">
                         <h4>Details:</h4>
                         <ul>
-                            <li>Moisturizing formula with natural oils</li>
-                            <li>Gentle on sensitive skin</li>
-                            <li>Paraben and sulfate-free</li>
-                            <li>Rich, luxurious lather</li>
-                            <li>Beautiful reusable bottle</li>
+                            <li>Hand-rolled with natural ingredients</li>
+                            <li>45-60 minute burn time per stick</li>
+                            <li>Made with pure essential oils</li>
+                            <li>No synthetic fragrances or chemicals</li>
+                            <li>Includes wooden holder</li>
                         </ul>
                     </div>
                 </div>
@@ -164,7 +165,7 @@
 
     <script src="../script/cart.js"></script>
     <script src="../script/homepage.js"></script>
-    <script src="javascript/hand-soaps.js"></script>
+    <script src="javascript/incense.js"></script>
     <script src="../script/admin-panel.js"></script>
     <script src="../script/admin-modals.js"></script>
 </body>
