@@ -356,9 +356,11 @@ class AdminModals {
                         <label>Category</label>
                         <select id="product-category">
                             <option value="candles">Candles</option>
-                            <option value="wax-melts">Wax Melts</option>
                             <option value="room-sprays">Room Sprays</option>
                             <option value="diffusers">Diffusers</option>
+                            <option value="incense">Incense</option>
+                            <option value="hand-soaps">Hand Soaps</option>
+                            <option value="seasonal">Seasonal</option>
                             <option value="jewelry">Jewelry</option>
                             <option value="accessories">Accessories</option>
                         </select>
@@ -924,13 +926,15 @@ class AdminModals {
                         <div class="form-group">
                             <label>Category</label>
                             <select id="edit-product-category">
-                                <option value="candles">Candles</option>
-                                <option value="wax-melts">Wax Melts</option>
-                                <option value="room-sprays">Room Sprays</option>
-                                <option value="diffusers">Diffusers</option>
-                                <option value="jewelry">Jewelry</option>
-                                <option value="accessories">Accessories</option>
-                            </select>
+                            <option value="candles">Candles</option>
+                            <option value="room-sprays">Room Sprays</option>
+                            <option value="diffusers">Diffusers</option>
+                            <option value="incense">Incense</option>
+                            <option value="hand-soaps">Hand Soaps</option>
+                            <option value="seasonal">Seasonal</option>
+                            <option value="jewelry">Jewelry</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
                         </div>
                     </div>
 

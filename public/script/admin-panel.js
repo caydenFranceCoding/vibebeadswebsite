@@ -218,14 +218,17 @@ class AdminPanel {
 
     mapCategoryName(category) {
         const categoryMap = {
-            'wax-melts': 'wax-melts',
-            'waxmelts': 'wax-melts',
             'room-sprays': 'room-sprays',
             'roomsprays': 'room-sprays',
             'candles': 'candles',
             'diffusers': 'diffusers',
             'jewelry': 'jewelry',
-            'accessories': 'jewelry'
+            'accessories': 'jewelry',
+            'seasonal': 'seasonal',
+            'incense': 'incense',
+            'hand-soaps': 'hand-soaps',
+            'handsoaps': 'hand-soaps',
+            'soaps': 'hand-soaps'
         };
         
         return categoryMap[category] || category;
