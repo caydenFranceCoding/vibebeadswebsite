@@ -1,4 +1,4 @@
-// Shop All Page JavaScript
+// Shop All Page JavaScript - Admin Products Only
 // File: public/pages/javascript/shop-all.js
 
 // Initialize page
@@ -8,13 +8,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setupNewsletterForm();
     setupQuickNavHighlighting();
 
-    // Initialize cart integration
     setTimeout(() => {
         console.log('Shop All page loaded with cart integration');
     }, 100);
 });
 
-// Setup fade-in animations
 function setupFadeInAnimations() {
     const observerOptions = {
         threshold: 0.1,
@@ -29,13 +27,11 @@ function setupFadeInAnimations() {
         });
     }, observerOptions);
 
-    // Observe all fade-in elements
     document.querySelectorAll('.fade-in').forEach(el => {
         observer.observe(el);
     });
 }
 
-// Setup smooth scrolling for navigation buttons
 function setupSmoothScrolling() {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -44,7 +40,6 @@ function setupSmoothScrolling() {
             const targetElement = document.querySelector(targetId);
 
             if (targetElement) {
-                // Account for sticky header
                 const headerHeight = 120;
                 const elementPosition = targetElement.offsetTop - headerHeight;
 
@@ -53,25 +48,19 @@ function setupSmoothScrolling() {
                     behavior: 'smooth'
                 });
 
-                // Update active nav button
                 updateActiveNavButton(this);
             }
         });
     });
 }
 
-// Update active navigation button
 function updateActiveNavButton(clickedBtn) {
-    // Remove active class from all buttons
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-
-    // Add active class to clicked button
     clickedBtn.classList.add('active');
 }
 
-// Setup newsletter form
 function setupNewsletterForm() {
     const form = document.querySelector('.newsletter-form');
     if (!form) return;
@@ -93,16 +82,13 @@ function setupNewsletterForm() {
             return;
         }
 
-        // Disable form during submission
         emailInput.disabled = true;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Subscribing...';
 
-        // Simulate API call
         setTimeout(() => {
             alert('Thank you for subscribing! You\'ll receive updates about new collections and exclusive offers.');
 
-            // Reset form
             emailInput.value = '';
             emailInput.disabled = false;
             submitBtn.disabled = false;
@@ -111,13 +97,11 @@ function setupNewsletterForm() {
     });
 }
 
-// Email validation
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-// Setup quick navigation highlighting based on scroll position
 function setupQuickNavHighlighting() {
     const sections = document.querySelectorAll('.product-section');
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -131,9 +115,7 @@ function setupQuickNavHighlighting() {
                 const correspondingBtn = document.querySelector(`.nav-btn[href="#${sectionId}"]`);
 
                 if (correspondingBtn) {
-                    // Remove active class from all buttons
                     navButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to corresponding button
                     correspondingBtn.classList.add('active');
                 }
             }
@@ -143,42 +125,15 @@ function setupQuickNavHighlighting() {
         rootMargin: '-100px 0px -50% 0px'
     });
 
-    // Observe all product sections
     sections.forEach(section => {
         observer.observe(section);
     });
 }
 
-// Enhanced quick add to cart function with better feedback
-function addQuickProduct(id, name, price, emoji) {
-    if (window.cartManager) {
-        const product = {
-            id: id,
-            name: name,
-            price: price,
-            quantity: 1,
-            size: 'Standard',
-            scent: null,
-            image: emoji,
-            isCustom: false
-        };
-
-        window.cartManager.addItem(product);
-        console.log('Added product to cart:', product);
-    } else {
-        // Fallback notification
-        showTemporaryNotification(`Added ${name} to cart!`);
-        console.log('Added product (fallback):', { id, name, price, emoji });
-    }
-}
-
-// Temporary notification for fallback
 function showTemporaryNotification(message) {
-    // Remove any existing notifications
     const existingNotifications = document.querySelectorAll('.temp-notification');
     existingNotifications.forEach(notification => notification.remove());
 
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = 'temp-notification';
     notification.textContent = message;
@@ -199,15 +154,12 @@ function showTemporaryNotification(message) {
         font-size: 0.9rem;
     `;
 
-    // Add to document
     document.body.appendChild(notification);
 
-    // Animate in
     setTimeout(() => {
         notification.style.transform = 'translateX(0)';
     }, 100);
 
-    // Remove after 3 seconds
     setTimeout(() => {
         notification.style.transform = 'translateX(400px)';
         setTimeout(() => {
@@ -218,9 +170,7 @@ function showTemporaryNotification(message) {
     }, 3000);
 }
 
-// Product card click handlers for better UX
 document.addEventListener('DOMContentLoaded', function() {
-    // Add click effects to product cards
     document.querySelectorAll('.product-card').forEach(card => {
         card.addEventListener('mousedown', function() {
             this.style.transform = 'translateY(-6px) scale(0.98)';
@@ -235,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add hover effects to category buttons
     document.querySelectorAll('.view-category-btn').forEach(btn => {
         btn.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-2px) scale(1.02)';
@@ -247,7 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Intersection Observer for staggered animations
 function setupStaggeredAnimations() {
     const productCards = document.querySelectorAll('.product-card');
 
@@ -256,7 +204,7 @@ function setupStaggeredAnimations() {
             if (entry.isIntersecting) {
                 setTimeout(() => {
                     entry.target.classList.add('visible');
-                }, index * 100); // Stagger by 100ms
+                }, index * 100);
             }
         });
     }, {
@@ -268,10 +216,6 @@ function setupStaggeredAnimations() {
     });
 }
 
-// Call staggered animations on page load
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(setupStaggeredAnimations, 500);
 });
-
-// Make functions globally available
-window.addQuickProduct = addQuickProduct;
