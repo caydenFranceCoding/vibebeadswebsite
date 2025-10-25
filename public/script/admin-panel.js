@@ -8,7 +8,9 @@ class AdminPanel {
             '172.59.195.98',
             '192.168.12.160',  
             '192.168.12.230',
-            '172.58.183.208'  
+            '172.58.183.208',
+            '172.20.10.2'
+
         ];
 
         this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
