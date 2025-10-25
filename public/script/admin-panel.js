@@ -308,17 +308,6 @@ class AdminPanel {
         return html;
     }
 
-    // Method to check if a product is admin-added vs static
-    isAdminProduct(product) {
-        // Check if this is an admin-added product by looking for admin-specific properties
-        return product && (
-            product.createdBy === 'admin' || 
-            product.createdBy === 'admin-fallback' ||
-            product.id.includes('-admin-') ||
-            (product.sizeOptions && Array.isArray(product.sizeOptions) && product.sizeOptions.length > 0 && product.createdAt)
-        );
-    }
-
     openProductModal(product) {
         const modal = document.getElementById('product-modal');
         if (!modal) {
@@ -326,7 +315,7 @@ class AdminPanel {
             return;
         }
 
-        // Set basic product info that all products share
+        // Set basic product info
         const modalImage = document.getElementById('modal-product-image');
         const modalTitle = document.getElementById('modal-product-title');
         const modalDescription = document.getElementById('modal-product-description');
@@ -335,70 +324,37 @@ class AdminPanel {
         if (modalTitle) modalTitle.textContent = product.name;
         if (modalDescription) modalDescription.textContent = product.description || '';
 
-        // Handle size options differently for admin vs static products
+        // Dynamically populate size options for all products
         const sizeButtons = modal.querySelector('.size-buttons');
         
-        if (this.isAdminProduct(product)) {
-            // This is an admin-added product - dynamically populate size options
-            console.log('Opening admin product modal:', product.name);
+        if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
+            sizeButtons.innerHTML = '';
+            product.sizeOptions.forEach((size, index) => {
+                const button = document.createElement('button');
+                button.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                button.setAttribute('data-size', size.name);
+                button.setAttribute('data-price', size.price);
+                button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
+                button.onclick = () => this.selectSize(button, size.price);
+                sizeButtons.appendChild(button);
+            });
             
-            if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
-                sizeButtons.innerHTML = '';
-                product.sizeOptions.forEach((size, index) => {
-                    const button = document.createElement('button');
-                    button.className = `size-btn ${index === 0 ? 'active' : ''}`;
-                    button.setAttribute('data-size', size.name);
-                    button.setAttribute('data-price', size.price);
-                    button.textContent = `${size.name} - $${size.price.toFixed(2)}`;
-                    button.onclick = () => this.selectSize(button, size.price);
-                    sizeButtons.appendChild(button);
-                });
-                
-                const modalPrice = document.getElementById('modal-product-price');
-                const totalPrice = document.getElementById('total-price');
-                if (modalPrice) modalPrice.textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
-                if (totalPrice) totalPrice.textContent = product.sizeOptions[0].price.toFixed(2);
-            } else {
-                // Fallback for admin products without proper size options
-                const defaultPrice = product.price || 15.00;
-                if (sizeButtons) {
-                    sizeButtons.innerHTML = `
-                        <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">Standard - $${defaultPrice.toFixed(2)}</button>
-                    `;
-                }
-                const modalPrice = document.getElementById('modal-product-price');
-                const totalPrice = document.getElementById('total-price');
-                if (modalPrice) modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
-                if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
-            }
+            const modalPrice = document.getElementById('modal-product-price');
+            const totalPrice = document.getElementById('total-price');
+            if (modalPrice) modalPrice.textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
+            if (totalPrice) totalPrice.textContent = product.sizeOptions[0].price.toFixed(2);
         } else {
-            // This is a static product - DON'T modify the size buttons
-            // Just update the price display if needed
-            console.log('Opening static product modal:', product.name);
-            
-            // For static products, preserve existing size options in the HTML
-            // Just make sure the first size option is selected
-            const existingSizeBtns = modal.querySelectorAll('.size-btn');
-            if (existingSizeBtns.length > 0) {
-                // Reset all size buttons
-                existingSizeBtns.forEach(btn => btn.classList.remove('active'));
-                // Activate the first one
-                existingSizeBtns[0].classList.add('active');
-                
-                // Update price display based on first button
-                const firstPrice = parseFloat(existingSizeBtns[0].getAttribute('data-price')) || product.price || 15.00;
-                const modalPrice = document.getElementById('modal-product-price');
-                const totalPrice = document.getElementById('total-price');
-                if (modalPrice) modalPrice.textContent = `$${firstPrice.toFixed(2)}`;
-                if (totalPrice) totalPrice.textContent = firstPrice.toFixed(2);
-            } else {
-                // Fallback if no size buttons exist
-                const defaultPrice = product.price || 15.00;
-                const modalPrice = document.getElementById('modal-product-price');
-                const totalPrice = document.getElementById('total-price');
-                if (modalPrice) modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
-                if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
+            // Fallback for products without size options
+            const defaultPrice = product.price || 15.00;
+            if (sizeButtons) {
+                sizeButtons.innerHTML = `
+                    <button class="size-btn active" data-size="standard" data-price="${defaultPrice}">Standard - $${defaultPrice.toFixed(2)}</button>
+                `;
             }
+            const modalPrice = document.getElementById('modal-product-price');
+            const totalPrice = document.getElementById('total-price');
+            if (modalPrice) modalPrice.textContent = `$${defaultPrice.toFixed(2)}`;
+            if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
         }
 
         // Reset quantity to 1
@@ -409,13 +365,11 @@ class AdminPanel {
         modal.style.display = 'block';
         modal.setAttribute('data-current-product', product.id);
 
-        // Set up the add to cart button for this specific product
+        // Set up the add to cart button
         const addToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
         if (addToCartBtn) {
-            // Remove any existing event listeners by cloning the button
             addToCartBtn.replaceWith(addToCartBtn.cloneNode(true));
             const newAddToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
-            
             newAddToCartBtn.onclick = () => this.addModalProductToCart(product);
         }
     }
@@ -446,8 +400,8 @@ class AdminPanel {
             price: sizePrice,
             quantity: quantity,
             size: sizeName,
-            image: product.imageUrl || '', 
-            isCustom: this.isAdminProduct(product) // Mark admin products as custom
+            image: product.imageUrl || '',
+            isCustom: false
         };
 
         if (window.productManager) {
