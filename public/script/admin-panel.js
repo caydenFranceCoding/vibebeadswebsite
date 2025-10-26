@@ -225,7 +225,7 @@ class AdminPanel {
             'candles': 'candles',
             'diffusers': 'diffusers',
             'jewelry': 'jewelry',
-            'accessories': 'jewelry',
+            'accessories': 'accessories',
             'seasonal': 'seasonal',
             'incense': 'incense',
             'hand-soaps': 'hand-soaps',
