@@ -200,6 +200,9 @@
                         <li><a href="./pages/diffusers.html">Diffusers</a></li>
                         <li><a href="./pages/wax-melts.html">Wax Melts</a></li>
                         <li><a href="./pages/room-sprays.html">Room Sprays</a></li>
+                        <li><a href="./pages/incense.html">Incense</a></li>
+                        <li><a href="./pages/hand-soaps.html">Hand Soaps</a></li>
+                        <li><a href="./pages/seasonal.html">Seasonal</a></li>
                         <li><a href="./pages/jewelry.html">Jewelry</a></li>
                     </ul>
                 </li>
@@ -312,55 +315,8 @@
             <h2 class="section-title fade-in">Featured Collection</h2>
             <p class="section-subtitle fade-in">Discover our most beloved pieces</p>
 
-            <div class="products-grid">
-                <!-- UPDATED: Vanilla Bean - pricing matches candles.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('vanilla-bean', 'Vanilla Bean', 15.00, '🕯️')">
-                    <div class="product-image">
-                        <img src="./images/candles/vanilla bean.jpeg" alt="vanilla bean">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Vanilla Bean</h3>
-                        <p class="product-price"><span class="from">From</span> $15.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('vanilla-bean', 'Vanilla Bean', 15.00, '🕯️')">Add to Cart</button>
-                    </div>
-                </div>
-
-                <!-- UPDATED: Black Coral & Moss - pricing matches candles.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('black-coral-moss', 'Black Coral & Moss', 15.00, '🌿')">
-                    <div class="product-image">
-                        <img src="./images/candles/black coral & moss.jpeg" alt="black coral and moss">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Black Coral & Moss</h3>
-                        <p class="product-price"><span class="from">From</span> $15.00</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('black-coral-moss', 'Black Coral & Moss', 15.00, '🌿')">Add to Cart</button>
-                    </div>
-                </div>
-
-                <!-- UPDATED: Cinnamon Chai - pricing matches candles.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('cinnamon-chai', 'Cinnamon Chai', 15.00, '☀️')">
-                    <div class="product-image">
-                        <img src="./images/candles/cinnamon chai.jpeg" alt="cinnamon chai">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Cinnamon Chai</h3>
-                        <p class="product-price"><span class="from">From</span> $15.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('cinnamon-chai', 'Cinnamon Chai', 15.00, '☀️')">Add to Cart</button>
-                    </div>
-                </div>
-
-                <!-- UPDATED: Grapefruit & Mint - pricing matches candles.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('grapefruit-mint', 'Grapefruit and Mint', 15.00, '🍊')">
-                    <div class="product-image">
-                        <img src="./images/candles/grapefruit & mint.jpeg" alt="grapefruit and mint">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Grapefruit & Mint</h3>
-                        <p class="product-price"><span class="from">From</span> $15.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('grapefruit-mint', 'Grapefruit and Mint', 15.00, '🍊')">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
+            <!-- UPDATED: This will show admin-added products only -->
+            <div class="products-grid" data-admin-products="true"></div>
 
             <!-- View All Button -->
             <div class="view-all-section fade-in">
@@ -421,62 +377,54 @@
         </div>
     </section>
 
-    <section class="collection-section">
-        <div class="container">
-            <h2 class="section-title fade-in">NEW! Artisan Scents Collection</h2>
-            <p class="section-subtitle fade-in">Hand-poured with premium soy wax and natural fragrances</p>
-
-            <div class="collection-grid">
-                <!-- UPDATED: Blueberry Cheesecake Diffuser - pricing matches diffusers.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('blueberry-cheesecake-diffuser', 'Blueberry Cheesecake Diffuser', 16.00, '🍂')">
-                    <div class="product-image">
-                        <img src="./images/diffusers/blueberry cheesecake.jpeg" alt="diffuser">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Blueberry Cheesecake Diffuser</h3>
-                        <p class="product-price">$16.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('blueberry-cheesecake-diffuser', 'Blueberry Cheesecake Diffuser', 16.00, '🍂')">Add to Cart</button>
-                    </div>
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-product-image" src="" alt="">
                 </div>
+                <div class="modal-info">
+                    <h2 id="modal-product-title"></h2>
+                    <p class="modal-price" id="modal-product-price"></p>
+                    <div class="modal-description" id="modal-product-description"></div>
 
-                <!-- UPDATED: Egyptian Amber Room Spray - pricing matches room-sprays.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('egyptian-amber-spray', 'Egyptian Amber Room Spray', 9.00, '🏺')">
-                    <div class="product-image">
-                        <img src="./images/room sprays/egyption amber room spray.jpeg" alt="egyptian amber room spray">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Egyptian Amber Room Spray</h3>
-                        <p class="product-price"><span class="from">From</span> $9.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('egyptian-amber-spray', 'Egyptian Amber Room Spray', 9.00, '🏺')">Add to Cart</button>
-                    </div>
-                </div>
+                    <div class="product-options">
+                        <div class="size-options">
+                            <h4>Size:</h4>
+                            <div class="size-buttons">
+                                <!-- Size buttons will be dynamically populated -->
+                            </div>
+                        </div>
 
-                <!-- UPDATED: Vanilla Orchid Room Spray - pricing matches room-sprays.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('vanilla-orchid-spray', 'Vanilla Orchid Room Spray', 9.00, '☀️')">
-                    <div class="product-image">
-                        <img src="./images/room sprays/vanilla orchid.jpeg" alt="Vanilla orchid">
+                        <div class="quantity-section">
+                            <label for="quantity">Quantity:</label>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                                <input type="number" id="quantity" value="1" min="1" max="10">
+                                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Vanilla Orchid Room Spray</h3>
-                        <p class="product-price">$9.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('vanilla-orchid-spray', 'Vanilla Orchid Room Spray', 9.00, '☀️')">Add to Cart</button>
-                    </div>
-                </div>
 
-                <!-- UPDATED: Clean Cotton Room Spray - pricing matches room-sprays.js -->
-                <div class="product-card fade-in" onclick="addQuickProduct('clean-cotton-spray', 'Clean Cotton Room Spray', 9.00, '🌺')">
-                    <div class="product-image">
-                        <img src="./images/room sprays/clean cotton room spray.jpeg" alt="Clean cotton room spray">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Clean Cotton Room Spray</h3>
-                        <p class="product-price">$9.00 USD</p>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addQuickProduct('clean-cotton-spray', 'Clean Cotton Room Spray', 9.00, '🌺')">Add to Cart</button>
+                    <button class="add-to-cart-btn" id="add-to-cart-btn">
+                        Add to Cart - $<span id="total-price">0.00</span>
+                    </button>
+
+                    <div class="product-details">
+                        <h4>Details:</h4>
+                        <ul>
+                            <li>Premium quality materials</li>
+                            <li>Handcrafted with care</li>
+                            <li>Made in USA</li>
+                            <li>Satisfaction guaranteed</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     <section class="faq-section">
         <div class="container">
@@ -565,34 +513,71 @@
         </div>
     </footer>
 
-    <!-- Load cart manager first, then other scripts -->
+    <!-- Load scripts in correct order -->
     <script src="./script/cart.js"></script>
+    <script src="./script/admin-panel.js"></script>
+    <script src="./script/admin-modals.js"></script>
     <script src="./script/homepage.js"></script>
-    <script src="./pages/javascript/candles.js"></script>
 
-    <!-- Quick add to cart function for homepage -->
+    <!-- Modal quantity controls -->
     <script>
-        function addQuickProduct(id, name, price, emoji) {
-            if (window.cartManager) {
-                const product = {
-                    id: id,
-                    name: name + ' (8oz)',
-                    price: price,
-                    quantity: 1,
-                    size: '8oz',
-                    scent: null,
-                    image: emoji,
-                    isCustom: false
-                };
+        let quantity = 1;
 
-                window.cartManager.addItem(product);
-            } else {
-                alert(`Added ${name} to cart! (Cart manager not loaded)`);
+        window.changeQuantity = function(change) {
+            const quantityInput = document.getElementById('quantity');
+            const newQuantity = Math.max(1, Math.min(10, quantity + change));
+            quantity = newQuantity;
+            quantityInput.value = quantity;
+            
+            // Update total price in modal
+            const modal = document.getElementById('product-modal');
+            const activeSize = modal.querySelector('.size-btn.active');
+            if (activeSize) {
+                const price = parseFloat(activeSize.getAttribute('data-price'));
+                const total = (price * quantity).toFixed(2);
+                document.getElementById('total-price').textContent = total;
             }
-        }
+        };
 
-        // Enhanced reviews scroll functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const quantityInput = document.getElementById('quantity');
+            if (quantityInput) {
+                quantityInput.addEventListener('change', function() {
+                    quantity = Math.max(1, Math.min(10, parseInt(this.value) || 1));
+                    this.value = quantity;
+                    
+                    // Update total price
+                    const modal = document.getElementById('product-modal');
+                    const activeSize = modal.querySelector('.size-btn.active');
+                    if (activeSize) {
+                        const price = parseFloat(activeSize.getAttribute('data-price'));
+                        const total = (price * quantity).toFixed(2);
+                        document.getElementById('total-price').textContent = total;
+                    }
+                });
+            }
+
+            // Close modal functionality
+            const modal = document.getElementById('product-modal');
+            const closeBtn = modal?.querySelector('.close');
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+
+            // Enhanced reviews scroll functionality
             const scrollContainer = document.querySelector('.reviews-scroll');
             const scrollLeft = document.getElementById('scrollLeft');
             const scrollRight = document.getElementById('scrollRight');
