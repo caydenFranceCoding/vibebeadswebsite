@@ -300,7 +300,6 @@ class AdminPanel {
                 <button class="add-to-cart-btn" onclick="${buttonOnClick}">Add to Cart</button>
             </div>
             ${!product.inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-            ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
         `;
 
         this.cache.set(cacheKey, html);
