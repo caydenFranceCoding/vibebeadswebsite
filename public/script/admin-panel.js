@@ -12,7 +12,6 @@ class AdminPanel {
             '172.20.10.2',
             '146.75.164.253',
             '172.225.18.249'
-
         ];
 
         this.apiBaseUrl = 'https://adminbackend-4ils.onrender.com';
@@ -319,7 +318,6 @@ class AdminPanel {
             return;
         }
 
-        // Set basic product info
         const modalImage = document.getElementById('modal-product-image');
         const modalTitle = document.getElementById('modal-product-title');
         const modalDescription = document.getElementById('modal-product-description');
@@ -328,7 +326,6 @@ class AdminPanel {
         if (modalTitle) modalTitle.textContent = product.name;
         if (modalDescription) modalDescription.textContent = product.description || '';
 
-        // Dynamically populate size options for all products
         const sizeButtons = modal.querySelector('.size-buttons');
         
         if (sizeButtons && product.sizeOptions && product.sizeOptions.length > 0) {
@@ -348,7 +345,6 @@ class AdminPanel {
             if (modalPrice) modalPrice.textContent = `$${product.sizeOptions[0].price.toFixed(2)}`;
             if (totalPrice) totalPrice.textContent = product.sizeOptions[0].price.toFixed(2);
         } else {
-            // Fallback for products without size options
             const defaultPrice = product.price || 15.00;
             if (sizeButtons) {
                 sizeButtons.innerHTML = `
@@ -361,15 +357,12 @@ class AdminPanel {
             if (totalPrice) totalPrice.textContent = defaultPrice.toFixed(2);
         }
 
-        // Reset quantity to 1
         const quantityInput = document.getElementById('quantity');
         if (quantityInput) quantityInput.value = 1;
 
-        // Show the modal
         modal.style.display = 'block';
         modal.setAttribute('data-current-product', product.id);
 
-        // Set up the add to cart button
         const addToCartBtn = modal.querySelector('.add-to-cart-btn, #add-to-cart-btn, [data-action="add-to-cart"]');
         if (addToCartBtn) {
             addToCartBtn.replaceWith(addToCartBtn.cloneNode(true));
@@ -410,10 +403,8 @@ class AdminPanel {
 
         if (window.productManager) {
             window.productManager.addToCartHandler(cartItem);
-            window.productManager.showAddToCartConfirmation(product.name, quantity);
         } else {
             this.addToFallbackCart(cartItem);
-            this.showAddToCartConfirmation(product.name, quantity);
         }
 
         modal.style.display = 'none';
@@ -438,26 +429,6 @@ class AdminPanel {
         if (window.updateCartUI) {
             window.updateCartUI();
         }
-    }
-
-    showAddToCartConfirmation(productName, quantity) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed; top: 20px; right: 20px; background: #4CAF50;
-            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
-            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.innerHTML = `
-            <strong>✅ Added to Cart!</strong><br>
-            ${quantity}x ${this.escapeHtml(productName)}
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
     }
 
     selectSize(button, price) {
@@ -803,7 +774,13 @@ class AdminPanel {
 
         const selectors = [
             '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
-            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text',
+            '.footer-section h3', '.footer-section h4', '.footer-section a',
+            '.footer-links a', '.contact-info p', '.contact-info a',
+            '.about-section p', '.about-section h2', '.about-section h3',
+            '.feature-text', '.benefit-text', '.testimonial-text',
+            'footer p', 'footer a', 'footer span', 'footer li',
+            '.social-links a', '.newsletter-text', '.contact-email'
         ];
 
         selectors.forEach(selector => {
@@ -1194,7 +1171,13 @@ class AdminPanel {
     applyContentToPage(changes) {
         const selectors = [
             '.hero-content h1', '.hero-tagline', '.section-title', '.section-subtitle',
-            '.faq-question', '.faq-answer', '.footer-section p', '.review-text'
+            '.faq-question', '.faq-answer', '.footer-section p', '.review-text',
+            '.footer-section h3', '.footer-section h4', '.footer-section a',
+            '.footer-links a', '.contact-info p', '.contact-info a',
+            '.about-section p', '.about-section h2', '.about-section h3',
+            '.feature-text', '.benefit-text', '.testimonial-text',
+            'footer p', 'footer a', 'footer span', 'footer li',
+            '.social-links a', '.newsletter-text', '.contact-email'
         ];
 
         selectors.forEach(selector => {
@@ -1296,7 +1279,6 @@ class ProductManager {
         console.log('Adding to cart:', cartItem);
 
         this.addToCartHandler(cartItem);
-        this.showAddToCartConfirmation(product.name, 1);
     }
 
     validateProduct(product) {
@@ -1350,26 +1332,6 @@ class ProductManager {
         if (window.updateCartUI) {
             window.updateCartUI();
         }
-    }
-
-    showAddToCartConfirmation(productName, quantity) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed; top: 20px; right: 20px; background: #4CAF50;
-            color: white; padding: 15px 20px; border-radius: 8px; font-size: 14px;
-            z-index: 10003; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.innerHTML = `
-            <strong>✅ Added to Cart!</strong><br>
-            ${quantity}x ${this.escapeHtml(productName)}
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
     }
 
     escapeHtml(text) {
