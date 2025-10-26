@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Incense - Vibe Beads</title>
+    <title>Accessories - Vibe Beads</title>
     <link rel="stylesheet" href="../styles/home.css">
-    <link rel="stylesheet" href="css/incense.css">
+    <link rel="stylesheet" href="css/accessories.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
@@ -18,14 +18,14 @@
                     <a href="#" class="dropdown-toggle">Shop <span class="dropdown-arrow">▼</span></a>
                     <ul class="dropdown-menu">
                         <li><a href="shop-all.html">Shop All</a></li>
-                        <li><a href="candles.html" class="active">Candles</a></li>
-                        <li><a href="hand-soaps.html" class="active">Hand Soaps</a></li>
-                        <li><a href="incense.html" class="active">Incense</a></li>
+                        <li><a href="candles.html">Candles</a></li>
+                        <li><a href="hand-soaps.html">Hand Soaps</a></li>
+                        <li><a href="incense.html">Incense</a></li>
                         <li><a href="diffusers.html">Diffusers</a></li>
                         <li><a href="room-sprays.html">Room Sprays</a></li>
                         <li><a href="jewelry.html">Jewelry</a></li>
                         <li><a href="seasonal.html">Seasonal</a></li>
-                        <li><a href="accessories.html">Accessories</a></li>
+                        <li><a href="accessories.html" class="active">Accessories</a></li>
                     </ul>
                 </li>
             </ul>
@@ -41,10 +41,10 @@
         </nav>
     </header>
 
-    <section class="hero incense-hero">
+    <section class="hero accessories-hero">
         <div class="hero-video-container">
             <video class="hero-video" autoplay muted loop playsinline>
-                <source src="../video/incense.mp4" type="video/mp4">
+                <source src="../video/accessories.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="hero-overlay"></div>
@@ -52,29 +52,18 @@
 
         <div class="container">
             <div class="hero-content fade-in">
-                <h1>Premium Incense Collection</h1>
+                <h1>Premium Accessories</h1>
                 <p class="hero-tagline">
-                    Discover our selection of hand-rolled incense sticks, crafted with natural resins and essential oils. Each stick creates a sacred atmosphere perfect for meditation, relaxation, and spiritual practice.
+                    Discover our collection of luxury accessories, carefully curated to complement your lifestyle. Each piece is crafted with attention to detail and quality materials.
                 </p>
-                <a href="#products" class="cta-button">Shop Incense</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="filter-section">
-        <div class="container">
-            <div class="filter-tabs">
-                <button class="filter-btn active" data-category="all">All Incense</button>
-                <button class="filter-btn" data-category="signature">Signature Collection</button>
-                <button class="filter-btn" data-category="meditation">Meditation</button>
-                <button class="filter-btn" data-category="seasonal">Seasonal</button>
+                <a href="#products" class="cta-button">Shop Accessories</a>
             </div>
         </div>
     </section>
 
     <section class="shop-section" id="products">
         <div class="container">
-            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="incense" data-admin-only="true">
+            <div class="products-grid" id="products-grid" data-admin-products="true" data-category="accessories" data-admin-only="true">
                 <!-- Only admin-added products will appear here -->
             </div>
         </div>
@@ -94,10 +83,9 @@
 
                     <div class="product-options">
                         <div class="size-options">
-                            <h4>Pack Size:</h4>
+                            <h4>Options:</h4>
                             <div class="size-buttons">
-                                <button class="size-btn active" data-size="20pack" data-price="0">20 Sticks - $8.00</button>
-                                <button class="size-btn" data-size="40pack" data-price="7">40 Sticks - $15.00</button>
+                                <!-- Size buttons will be dynamically populated -->
                             </div>
                         </div>
 
@@ -112,17 +100,16 @@
                     </div>
 
                     <button class="add-to-cart-btn" onclick="addToCart()">
-                        Add to Cart - $<span id="total-price">8.00</span>
+                        Add to Cart - $<span id="total-price">0.00</span>
                     </button>
 
                     <div class="product-details">
                         <h4>Details:</h4>
                         <ul>
-                            <li>Hand-rolled with natural ingredients</li>
-                            <li>45-60 minute burn time per stick</li>
-                            <li>Made with pure essential oils</li>
-                            <li>No synthetic fragrances or chemicals</li>
-                            <li>Includes wooden holder</li>
+                            <li>Premium quality materials</li>
+                            <li>Handcrafted with care</li>
+                            <li>Made in USA</li>
+                            <li>Satisfaction guaranteed</li>
                         </ul>
                     </div>
                 </div>
@@ -167,7 +154,7 @@
 
     <script src="../script/cart.js"></script>
     <script src="../script/homepage.js"></script>
-    <script src="javascript/incense.js"></script>
+    <script src="javascript/accessories.js"></script>
     <script src="../script/admin-panel.js"></script>
     <script src="../script/admin-modals.js"></script>
 </body>
